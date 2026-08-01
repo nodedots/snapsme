@@ -138,12 +138,13 @@ export function OnboardingFlowModal({
       <div className="w-full max-w-lg my-8 relative bg-white border border-black/10 rounded-xl p-6 shadow-lg">
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-3 border-b border-black/10 mb-5">
-          <div className="flex items-center gap-2">
-            <a href="/home" className="font-display font-bold text-lg text-[#000000] tracking-tight hover:opacity-80 transition-opacity">
-              Snap<span className="text-[#0075de]">SME</span>
+          <div className="flex items-center gap-2.5">
+            <a href="/home" className="flex items-center gap-2 font-display font-bold text-lg text-[#000000] tracking-tight hover:opacity-80 transition-opacity no-underline">
+              <img src="/logo.jpg" alt="SnapSME Logo" className="w-7 h-7 rounded-lg object-cover border border-black/10" />
+              <span>Snap<span className="text-[#0075de]">SME</span></span>
             </a>
             <span className="text-[11px] font-mono bg-[#e6f3fe] text-[#0075de] px-2.5 py-0.5 rounded-full font-bold">
-              Owner Onboarding
+              {isSignIn ? "Authentication" : "Owner Onboarding"}
             </span>
           </div>
 
