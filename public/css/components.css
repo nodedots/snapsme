@@ -31,29 +31,30 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
   border: none;
   cursor: pointer;
+  text-decoration: none;
   transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 2px 8px rgba(255, 90, 60, 0.25);
+  box-shadow: 0 2px 8px rgba(255, 90, 60, 0.22);
 }
 
 .btn-snap-coral:hover {
-  background-color: #e54d31;
+  background-color: #e0482c;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(255, 90, 60, 0.35);
+  box-shadow: 0 4px 14px rgba(255, 90, 60, 0.32);
 }
 
 .btn-snap-coral:active {
   transform: translateY(0);
 }
 
-/* Primary Action — Ledger Green Button */
+/* Ledger Primary Button */
 .btn-ledger-green {
   background-color: var(--color-ledger-green);
   color: #ffffff;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 500;
   font-size: 15px;
   border-radius: 10px;
   padding: 12px 24px;
@@ -63,6 +64,7 @@
   gap: 8px;
   border: none;
   cursor: pointer;
+  text-decoration: none;
   transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
@@ -82,41 +84,19 @@
   padding: 12px 20px;
   border: 1px solid var(--color-fiber-gray);
   cursor: pointer;
-  transition: background-color 0.15s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn-secondary-paper:hover {
   background-color: #eee8d8;
+  border-color: #c4bea5;
 }
 
-/* Form Inputs */
-.form-input-snapsme {
-  width: 100%;
-  border-radius: 8px;
-  border: 1px solid var(--color-fiber-gray);
-  color: var(--color-ink);
-  font-family: var(--font-body);
-  font-size: 16px;
-  padding: 12px 16px;
-  background-color: #ffffff;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.form-input-snapsme:focus {
-  outline: none;
-  border-color: var(--color-ledger-green);
-  box-shadow: 0 0 0 3px rgba(15, 122, 82, 0.12);
-}
-
-/* Step Indicator */
-.step-indicator-text {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 14px;
-  color: var(--color-ink-fade);
-}
-
-/* Torn Receipt Card styling */
+/* Torn Receipt Card signature component */
 .torn-receipt-card {
   background-color: #ffffff;
   border-top-left-radius: 12px;
@@ -127,7 +107,7 @@
   position: relative;
 }
 
-/* Perforation dots line */
+/* Row of small fiber-gray dots just above the tear */
 .torn-receipt-card::after {
   content: '';
   position: absolute;
@@ -138,9 +118,10 @@
   background-image: radial-gradient(circle, var(--color-fiber-gray) 1.5px, transparent 1.5px);
   background-size: 8px 2px;
   background-repeat: repeat-x;
+  pointer-events: none;
 }
 
-/* Torn bottom edge path using CSS clip-path */
+/* Jagged perforated bottom edge using CSS polygon clip-path (~10px period) */
 .torn-bottom-edge {
   position: relative;
   clip-path: polygon(
@@ -181,4 +162,75 @@
     4% calc(100% - 10px),
     0% 100%
   );
+}
+
+/* Confidence Dot: 8px filled circle */
+.confidence-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.confidence-dot-confirmed {
+  background-color: var(--color-ledger-green);
+}
+.confidence-dot-review {
+  background-color: var(--color-amber-flag);
+}
+
+/* Status Pill */
+.status-pill {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 12px;
+  border-radius: 9999px;
+  padding: 3px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.status-pill-confirmed {
+  background-color: var(--color-mint-wash);
+  color: var(--color-ledger-green);
+}
+.status-pill-review {
+  background-color: var(--color-amber-wash);
+  color: var(--color-amber-flag);
+}
+
+/* Monospace Amount Styling */
+.amount-mono {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+/* Interactive Preview Tabs */
+.preview-tab-btn {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-ink-fade);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.preview-tab-btn:hover {
+  color: var(--color-ink);
+  background-color: var(--color-paper);
+}
+
+.preview-tab-btn.active {
+  background-color: #ffffff;
+  color: var(--color-ink);
+  border-color: var(--color-fiber-gray);
+  box-shadow: 0 1px 3px rgba(28, 27, 25, 0.05);
 }

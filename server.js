@@ -35,6 +35,9 @@ const DEFAULT_CATEGORIES = [
   "Other Expenses"
 ];
 
+// Favicon handler
+app.get("/favicon.ico", (_req, res) => res.status(204).end());
+
 // 1. Health check
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -257,6 +260,11 @@ app.post("/api/chat/generate-link", (req, res) => {
     channel,
     instructions: `Send '/link ${randomCode}' to the @snapsme_bot on ${channel === "telegram" ? "Telegram" : "WhatsApp"} to connect your account.`
   });
+});
+
+// Landing page route
+app.get(["/landing", "/landing.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "landing.html"));
 });
 
 // Start Express server with Vite middleware in dev or static serving in prod
