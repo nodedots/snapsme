@@ -1,0 +1,11 @@
+{
+  "name": "snapsme",
+  "description": "Zero-friction AI expense capture and real-time feed for small teams",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUser(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isBusinessMember(businessId) {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/businesses/$(businessId)/members/$(request.auth.uid));
+    }
+
+    function isBusinessOwner(businessId) {
+      return isAuthenticated() && (
+        (exists(/databases/$(database)/documents/businesses/$(businessId)) &&
+         get(/databases/$(database)/documents/businesses/$(businessId)).data.ownerUid == request.auth.uid) ||
+        (exists(/databases/$(database)/documents/businesses/$(businessId)/members/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/businesses/$(businessId)/members/$(request.auth.uid)).data.role == "owner")
+      );
+    }
+
+    // Business Root Document
+    // NOTE FOR ONBOARDING FLOW:
+    // Firestore security rule allows an authenticated-but-not-yet-a-member user
+    // to create their first business document prior to becoming a member.
+    match /businesses/{businessId} {
+      allow read: if isBusinessMember(businessId) || isBusinessOwner(businessId);
+      allow create: if isAuthenticated(); // Allowed for initial workspace creation during onboarding
+      allow update: if isBusinessOwner(businessId);
+      allow delete: if isBusinessOwner(businessId);
+
+      // Members Subcollection
+      // NOTE FOR ONBOARDING FLOW:
+      // Allows an authenticated user to write their own initial "owner" member record
+      // upon workspace setup (isUser(userId) permits creation prior to full member query validation).
+      match /members/{userId} {
+        allow read: if isBusinessMember(businessId) || isBusinessOwner(businessId);
+        // User can update their own display profile or write initial owner record; owner can manage all members
+        allow create, update: if isBusinessOwner(businessId) || isUser(userId);
+        allow delete: if isBusinessOwner(businessId);
+      }
+
+      // Categories Subcollection
+      match /categories/{categoryId} {
+        allow read: if isBusinessMember(businessId) || isBusinessOwner(businessId);
+        allow create, update, delete: if isBusinessOwner(businessId);
+      }
+    }
+
+    // Chat Links Collection (for Telegram / WhatsApp auth pairing)
+    match /chatLinks/{linkCode} {
+      allow read: if isAuthenticated() && (
+        resource == null || resource.data.userId == request.auth.uid
+      );
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.channel in ['telegram', 'whatsapp'];
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,130 @@
+@import "tailwindcss";
+@import "../public/css/components.css";
+@import "../public/css/layout.css";
+
+@layer base {
+  :root {
+    --color-ink: #1c1b19;
+    --color-ledger-green: #0f7a52;
+    --color-snap-coral: #ff5a3c;
+    --color-amber-flag: #e0982a;
+    --color-fiber-gray: #d9d4c8;
+    --color-ink-fade: #6b665c;
+    --color-paper: #f7f3ea;
+    --color-pure-white: #ffffff;
+    --color-mint-wash: #e7f4ec;
+    --color-amber-wash: #fbf1de;
+
+    --font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+
+    --shadow-card: rgba(28, 27, 25, 0.04) 0px 1px 2px 0px, rgba(28, 27, 25, 0.03) 0px 8px 16px 0px;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+  }
+
+  .font-mono-amount {
+    font-family: var(--font-mono);
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
+
+/* Torn Receipt Card signature styling */
+.torn-receipt-card {
+  background-color: #ffffff;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border: 1px solid var(--color-fiber-gray);
+  border-bottom: none;
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+
+/* Perforation dots line */
+.torn-receipt-card::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background-image: radial-gradient(circle, var(--color-fiber-gray) 1.5px, transparent 1.5px);
+  background-size: 8px 2px;
+  background-repeat: repeat-x;
+}
+
+/* Torn bottom edge path using CSS mask or polygon */
+.torn-bottom-edge {
+  position: relative;
+  clip-path: polygon(
+    0% 0%,
+    100% 0%,
+    100% calc(100% - 10px),
+    97% 100%,
+    94% calc(100% - 10px),
+    91% 100%,
+    88% calc(100% - 10px),
+    85% 100%,
+    82% calc(100% - 10px),
+    79% 100%,
+    76% calc(100% - 10px),
+    73% 100%,
+    70% calc(100% - 10px),
+    67% 100%,
+    64% calc(100% - 10px),
+    61% 100%,
+    58% calc(100% - 10px),
+    55% 100%,
+    52% calc(100% - 10px),
+    49% 100%,
+    46% calc(100% - 10px),
+    43% 100%,
+    40% calc(100% - 10px),
+    37% 100%,
+    34% calc(100% - 10px),
+    31% 100%,
+    28% calc(100% - 10px),
+    25% 100%,
+    22% calc(100% - 10px),
+    19% 100%,
+    16% calc(100% - 10px),
+    13% 100%,
+    10% calc(100% - 10px),
+    7% 100%,
+    4% calc(100% - 10px),
+    0% 100%
+  );
+}
+
+/* Custom scrollbar */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-paper);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-fiber-gray);
+  border-radius: 4px;
+}

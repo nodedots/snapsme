@@ -1,0 +1,1271 @@
+import React, { useState, useEffect } from "react";
+import { TornCard } from "./TornCard.js";
+import { loadActivityLogs } from "../lib/storage.js";
+import { WORLD_CURRENCIES, getCurrencySymbol, getCurrencyLabel } from "../lib/currencies.js";
+import {
+  getProfile,
+  updateProfile,
+  generateChatLink,
+  unlinkChatChannel,
+  signOutUser
+} from "../../public/js/settings.js";
+import {
+  isOwner,
+  updateWorkspace,
+  inviteMember,
+  removeMember,
+  addCategory,
+  updateCategory,
+  deleteCategory
+} from "../../public/js/workspace.js";
+import {
+  User,
+  Building2,
+  Lock,
+  ShieldCheck,
+  QrCode,
+  MessageSquare,
+  Copy,
+  Check,
+  Trash2,
+  UserPlus,
+  Plus,
+  Save,
+  Clock,
+  LogOut,
+  Sparkles,
+  ExternalLink,
+  AlertCircle,
+  HelpCircle,
+  CheckCircle2,
+  DollarSign,
+  History,
+  Search,
+  Filter,
+  FileSpreadsheet,
+  RefreshCw,
+  Activity,
+  Tag
+} from "lucide-react";
+
+export const SettingsView = ({
+  currentUser,
+  setCurrentUser,
+  workspace,
+  onUpdateWorkspace,
+  members,
+  setMembers,
+  categories,
+  setCategories
+}) => {
+  const userIsOwner = isOwner(currentUser);
+
+  // Profile Form state
+  const [profileName, setProfileName] = useState(currentUser.displayName || "");
+  const [profileEmail, setProfileEmail] = useState(currentUser.email || "");
+  const [profilePhone, setProfilePhone] = useState(currentUser.phone || "");
+  const [profileToast, setProfileToast] = useState("");
+
+  // Sync profile state on currentUser change
+  useEffect(() => {
+    setProfileName(currentUser.displayName || "");
+    setProfileEmail(currentUser.email || "");
+    setProfilePhone(currentUser.phone || "");
+  }, [currentUser]);
+
+  // Chat Link Generation state
+  const [chatLink, setChatLink] = useState(null);
+  const [activeChannel, setActiveChannel] = useState(null); // 'telegram' or 'whatsapp'
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(86400); // 24 hours in seconds
+
+  // Workspace Form state
+  const [wsName, setWsName] = useState(workspace.name || "");
+  const [wsCurrency, setWsCurrency] = useState(workspace.currency || "USD");
+  const [wsToast, setWsToast] = useState("");
+
+  // Invite Member state
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviteError, setInviteError] = useState("");
+
+  // Category Add/Edit state
+  const [showCatModal, setShowCatModal] = useState(false);
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [catName, setCatName] = useState("");
+  const [catBudget, setCatBudget] = useState("");
+  const [catError, setCatError] = useState("");
+
+  // Activity Log state
+  const [activityLogs, setActivityLogs] = useState(() => loadActivityLogs());
+  const [logSearch, setLogSearch] = useState("");
+  const [logTagFilter, setLogTagFilter] = useState("all");
+  const [logActorFilter, setLogActorFilter] = useState("all");
+
+  const refreshLogs = () => {
+    setActivityLogs(loadActivityLogs());
+  };
+
+  // Filter activity logs
+  const filteredLogs = activityLogs.filter((log) => {
+    const matchesSearch =
+      !logSearch ||
+      log.description.toLowerCase().includes(logSearch.toLowerCase()) ||
+      log.actorName.toLowerCase().includes(logSearch.toLowerCase()) ||
+      (log.tag && log.tag.toLowerCase().includes(logSearch.toLowerCase()));
+
+    const matchesTag = logTagFilter === "all" || log.tag === logTagFilter;
+    const matchesActor = logActorFilter === "all" || log.actorId === logActorFilter;
+
+    return matchesSearch && matchesTag && matchesActor;
+  });
+
+  // Unique tags for filter dropdown
+  const uniqueTags = Array.from(new Set(activityLogs.map((l) => l.tag).filter(Boolean)));
+
+  // Export Activity Logs as CSV
+  const handleExportActivityCSV = () => {
+    if (filteredLogs.length === 0) return;
+
+    const headers = ["Log ID", "Timestamp", "Actor Name", "Actor Role", "Event Tag", "Description"];
+    const escapeCsv = (str) => `"${String(str || "").replace(/"/g, '""')}"`;
+
+    const rows = filteredLogs.map((l) => [
+      escapeCsv(l.id),
+      escapeCsv(l.timestamp),
+      escapeCsv(l.actorName),
+      escapeCsv(l.actorRole),
+      escapeCsv(l.tag),
+      escapeCsv(l.description)
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("download", `snapsme_audit_activity_log_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Countdown timer for chat link token
+  useEffect(() => {
+    if (!chatLink) return;
+    const interval = setInterval(() => {
+      const expiresAt = new Date(chatLink.expiresAt).getTime();
+      const now = new Date().getTime();
+      const diff = Math.max(0, Math.floor((expiresAt - now) / 1000));
+      setTimeLeft(diff);
+      if (diff <= 0) {
+        clearInterval(interval);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [chatLink]);
+
+  const formatTimeLeft = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hrs}h ${mins}m ${secs}s`;
+  };
+
+  // Handle Profile Update
+  const handleSaveProfile = (e) => {
+    e.preventDefault();
+    try {
+      const updated = updateProfile(
+        currentUser.userId,
+        { displayName: profileName, email: profileEmail, phone: profilePhone },
+        members,
+        setMembers,
+        setCurrentUser
+      );
+      setProfileToast("Profile updated successfully!");
+      refreshLogs();
+      setTimeout(() => setProfileToast(""), 3000);
+    } catch (err) {
+      alert(err.message || "Failed to update profile");
+    }
+  };
+
+  // Handle Chat Link Code Generation
+  const handleGenerateLink = (channel) => {
+    try {
+      const link = generateChatLink(currentUser.userId, channel);
+      setChatLink(link);
+      setActiveChannel(channel);
+      setCopiedCode(false);
+      refreshLogs();
+    } catch (err) {
+      alert(err.message || "Failed to generate link code");
+    }
+  };
+
+  // Copy Link Code to Clipboard
+  const handleCopyCode = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2500);
+  };
+
+  // Handle Unlink Channel
+  const handleUnlinkChannel = (channel) => {
+    if (confirm(`Are you sure you want to disconnect your ${channel === 'telegram' ? 'Telegram' : 'WhatsApp'} account?`)) {
+      unlinkChatChannel(currentUser.userId, channel, members, setMembers, setCurrentUser);
+      if (activeChannel === channel) {
+        setChatLink(null);
+        setActiveChannel(null);
+      }
+      refreshLogs();
+    }
+  };
+
+  // Handle Workspace Update (Owner Only)
+  const handleSaveWorkspace = (e) => {
+    e.preventDefault();
+    try {
+      const updated = updateWorkspace(
+        workspace,
+        { name: wsName, currency: wsCurrency },
+        currentUser,
+        onUpdateWorkspace
+      );
+      setWsToast("Workspace settings saved!");
+      refreshLogs();
+      setTimeout(() => setWsToast(""), 3000);
+    } catch (err) {
+      alert(err.message || "Owner privileges required.");
+    }
+  };
+
+  // Handle Invite Member (Owner Only)
+  const handleSendInvite = (e) => {
+    e.preventDefault();
+    setInviteError("");
+    try {
+      inviteMember(
+        members,
+        { email: inviteEmail, phone: invitePhone, displayName: inviteName },
+        currentUser,
+        setMembers
+      );
+      setShowInviteModal(false);
+      setInviteEmail("");
+      setInvitePhone("");
+      setInviteName("");
+      refreshLogs();
+    } catch (err) {
+      setInviteError(err.message || "Failed to send invitation.");
+    }
+  };
+
+  // Handle Remove Member (Owner Only)
+  const handleRemoveMember = (targetUserId) => {
+    if (confirm("Are you sure you want to remove this staff member from the workspace?")) {
+      try {
+        const updated = removeMember(members, targetUserId, currentUser, setMembers);
+        refreshLogs();
+      } catch (err) {
+        alert(err.message || "Owner privileges required.");
+      }
+    }
+  };
+
+  // Handle Add/Edit Category (Owner Only)
+  const handleOpenCatModal = (cat = null) => {
+    setCatError("");
+    if (cat) {
+      setEditingCatId(cat.id);
+      setCatName(cat.name);
+      setCatBudget(cat.budget !== null ? cat.budget.toString() : "");
+    } else {
+      setEditingCatId(null);
+      setCatName("");
+      setCatBudget("");
+    }
+    setShowCatModal(true);
+  };
+
+  const handleSaveCategory = (e) => {
+    e.preventDefault();
+    setCatError("");
+    try {
+      if (editingCatId) {
+        updateCategory(categories, editingCatId, { name: catName, budget: catBudget }, currentUser, setCategories);
+      } else {
+        addCategory(categories, { name: catName, budget: catBudget }, currentUser, setCategories);
+      }
+      setShowCatModal(false);
+      refreshLogs();
+    } catch (err) {
+      setCatError(err.message || "Owner privileges required.");
+    }
+  };
+
+  const handleDeleteCategory = (catId) => {
+    if (confirm("Are you sure you want to delete this category?")) {
+      try {
+        deleteCategory(categories, catId, currentUser, setCategories);
+        refreshLogs();
+      } catch (err) {
+        alert(err.message || "Owner privileges required.");
+      }
+    }
+  };
+
+  const currencySymbols = {
+    USD: "$",
+    EUR: "€",
+    GBP: "£",
+    CAD: "CA$",
+    AUD: "AU$",
+    SGD: "SG$",
+    JPY: "¥",
+    CHF: "Fr"
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Top Section Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-[#d9d4c8] rounded-2xl p-5 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-0.5 rounded-full">
+              Account & Workspace
+            </span>
+            {userIsOwner ? (
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#0f7a52] bg-[#0f7a52]/10 border border-[#0f7a52]/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <ShieldCheck className="w-3 h-3" /> Owner Role
+              </span>
+            ) : (
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#1c1b19] bg-[#1c1b19]/10 border border-[#1c1b19]/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <User className="w-3 h-3" /> Staff Role
+              </span>
+            )}
+          </div>
+          <h1 className="font-display font-bold text-2xl text-[#1c1b19] mt-1">
+            Settings & User Control
+          </h1>
+          <p className="text-xs text-[#6b665c] mt-0.5">
+            Manage your personal profile, messaging bot connections, workspace details, and team permissions.
+          </p>
+        </div>
+
+        {/* User Switcher / Sign Out */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => signOutUser(setCurrentUser)}
+            className="flex items-center gap-1.5 text-xs font-semibold text-[#6b665c] hover:text-[#ff5a3c] bg-[#f7f3ea] hover:bg-red-50 border border-[#d9d4c8] px-3 py-2 rounded-xl transition-colors cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Grid Layout for Settings Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* CARD 1: User Profile & Identity */}
+        <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
+          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold">
+                <User className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                  My Profile & Identity
+                </h2>
+                <p className="text-[11px] text-[#6b665c]">Personal credentials and notifications</p>
+              </div>
+            </div>
+            {profileToast && (
+              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 animate-fade-in">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {profileToast}
+              </span>
+            )}
+          </div>
+
+          <form onSubmit={handleSaveProfile} className="space-y-3">
+            <div>
+              <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                Display Name
+              </label>
+              <input
+                type="text"
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                required
+                className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors"
+                placeholder="e.g. Alex Rivera"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={profileEmail}
+                  onChange={(e) => setProfileEmail(e.target.value)}
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors"
+                  placeholder="alex@acme.com"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  value={profilePhone}
+                  onChange={(e) => setProfilePhone(e.target.value)}
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors"
+                  placeholder="+1 555-019-2834"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between">
+              <span className="text-[11px] text-[#6b665c] font-mono">
+                User ID: <span className="font-semibold text-[#1c1b19]">{currentUser.userId}</span>
+              </span>
+              <button
+                type="submit"
+                className="bg-[#0f7a52] hover:bg-[#0b5e3f] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Profile</span>
+              </button>
+            </div>
+          </form>
+        </TornCard>
+
+        {/* CARD 2: Chat Bot Integrations (Telegram & WhatsApp) */}
+        <TornCard headerColor="bg-[#ff5a3c]" tornBottom={true}>
+          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#ff5a3c]/10 text-[#ff5a3c] flex items-center justify-center font-bold">
+                <MessageSquare className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                  Chat Bot Integrations
+                </h2>
+                <p className="text-[11px] text-[#6b665c]">Link Telegram or WhatsApp to snap expenses on the go</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Telegram Channel Status */}
+            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-[#0088cc]/10 text-[#0088cc] flex items-center justify-center font-bold text-xs">
+                  TG
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-display font-bold text-xs text-[#1c1b19]">Telegram Bot</span>
+                    {currentUser.telegramUserId ? (
+                      <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
+                        Connected
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono bg-gray-200 text-[#6b665c] px-2 py-0.2 rounded-full">
+                        Not Linked
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#6b665c]">
+                    {currentUser.telegramUserId ? `@${currentUser.telegramUserId}` : "Snap photos & audio directly to @snapsme_bot"}
+                  </p>
+                </div>
+              </div>
+
+              {currentUser.telegramUserId ? (
+                <button
+                  type="button"
+                  onClick={() => handleUnlinkChannel("telegram")}
+                  className="text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-2.5 py-1.5 rounded-lg cursor-pointer"
+                >
+                  Unlink
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleGenerateLink("telegram")}
+                  className="text-xs font-semibold text-[#0088cc] bg-white border border-[#0088cc]/30 hover:border-[#0088cc] px-2.5 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Connect</span>
+                </button>
+              )}
+            </div>
+
+            {/* WhatsApp Channel Status */}
+            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center font-bold text-xs">
+                  WA
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-display font-bold text-xs text-[#1c1b19]">WhatsApp Bot</span>
+                    {currentUser.whatsappUserId ? (
+                      <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
+                        Connected
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono bg-gray-200 text-[#6b665c] px-2 py-0.2 rounded-full">
+                        Not Linked
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-[#6b665c]">
+                    {currentUser.whatsappUserId ? currentUser.whatsappUserId : "Send receipts to +1-800-SNAPSME"}
+                  </p>
+                </div>
+              </div>
+
+              {currentUser.whatsappUserId ? (
+                <button
+                  type="button"
+                  onClick={() => handleUnlinkChannel("whatsapp")}
+                  className="text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-2.5 py-1.5 rounded-lg cursor-pointer"
+                >
+                  Unlink
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleGenerateLink("whatsapp")}
+                  className="text-xs font-semibold text-[#0f7a52] bg-white border border-[#0f7a52]/30 hover:border-[#0f7a52] px-2.5 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"
+                >
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span>Connect</span>
+                </button>
+              )}
+            </div>
+
+            {/* Active Link Code Display with Countdown Timer */}
+            {chatLink && (
+              <div className="bg-[#fff9f0] border-2 border-[#e0982a]/50 rounded-xl p-4 space-y-3 animate-fade-in">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-display font-bold text-[#e0982a]">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Active {activeChannel === 'telegram' ? 'Telegram' : 'WhatsApp'} Link Code</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-[11px] font-mono text-[#6b665c]">
+                    <Clock className="w-3 h-3 text-[#e0982a]" />
+                    <span>Expires in {formatTimeLeft(timeLeft)}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between bg-white border border-[#d9d4c8] rounded-xl px-4 py-3">
+                  <div>
+                    <span className="text-[10px] uppercase font-mono tracking-widest text-[#6b665c] block">
+                      Pairing Code
+                    </span>
+                    <span className="font-mono font-bold text-xl text-[#1c1b19] tracking-wider">
+                      {chatLink.linkCode}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyCode(chatLink.linkCode)}
+                    className="bg-[#1c1b19] hover:bg-[#ff5a3c] text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                  >
+                    {copiedCode ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedCode ? "Copied!" : "Copy Code"}</span>
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-[#6b665c] leading-relaxed">
+                  <strong>Instructions:</strong> Open {activeChannel === 'telegram' ? 'Telegram' : 'WhatsApp'} and send: <code className="bg-[#f7f3ea] px-1.5 py-0.5 rounded font-mono font-bold text-[#1c1b19]">/start {chatLink.linkCode}</code> to automatically pair your expense account.
+                </p>
+              </div>
+            )}
+          </div>
+        </TornCard>
+
+        {/* CARD 3: Workspace & Default Currency Settings (Owner Only) */}
+        <TornCard headerColor="bg-[#e0982a]" tornBottom={true}>
+          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#e0982a]/10 text-[#e0982a] flex items-center justify-center font-bold">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                  Workspace Settings
+                </h2>
+                <p className="text-[11px] text-[#6b665c]">Workspace name & financial currency</p>
+              </div>
+            </div>
+            {!userIsOwner && (
+              <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Owner Gated
+              </span>
+            )}
+            {wsToast && (
+              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {wsToast}
+              </span>
+            )}
+          </div>
+
+          {!userIsOwner ? (
+            /* Access Restricted Banner for Staff Users */
+            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-4 text-center space-y-2">
+              <Lock className="w-8 h-8 text-[#e0982a] mx-auto" />
+              <h3 className="font-display font-bold text-xs text-[#1c1b19]">
+                Owner Privileges Required
+              </h3>
+              <p className="text-[11px] text-[#6b665c] max-w-sm mx-auto">
+                Workspace name and currency settings are managed exclusively by the workspace owner.
+              </p>
+              <div className="bg-white border border-[#d9d4c8] rounded-lg p-2 text-left text-[11px] font-mono space-y-1">
+                <div><strong>Current Workspace:</strong> {workspace.name}</div>
+                <div><strong>Default Currency:</strong> {workspace.currency} ({getCurrencySymbol(workspace.currency)})</div>
+              </div>
+            </div>
+          ) : (
+            /* Owner Editable Form */
+            <form onSubmit={handleSaveWorkspace} className="space-y-4">
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Workspace Name
+                </label>
+                <input
+                  type="text"
+                  value={wsName}
+                  onChange={(e) => setWsName(e.target.value)}
+                  required
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors"
+                  placeholder="e.g. Acme Agency"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Default Accounting Currency
+                </label>
+                <select
+                  value={wsCurrency}
+                  onChange={(e) => setWsCurrency(e.target.value)}
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-semibold text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors cursor-pointer"
+                >
+                  {WORLD_CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {getCurrencyLabel(c)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="bg-[#1c1b19] hover:bg-[#ff5a3c] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Update Workspace Settings</span>
+                </button>
+              </div>
+            </form>
+          )}
+        </TornCard>
+
+        {/* CARD 4: Category & Budget Limits (Owner Only) */}
+        <TornCard headerColor="bg-[#1c1b19]" tornBottom={true}>
+          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#1c1b19]/10 text-[#1c1b19] flex items-center justify-center font-bold">
+                <DollarSign className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                  Category & Budget Control
+                </h2>
+                <p className="text-[11px] text-[#6b665c]">Monthly expense categories and spending limits</p>
+              </div>
+            </div>
+
+            {userIsOwner ? (
+              <button
+                type="button"
+                onClick={() => handleOpenCatModal(null)}
+                className="bg-[#0f7a52] hover:bg-[#0b5e3f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" /> Add
+              </button>
+            ) : (
+              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Owner Gated
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-2.5 flex items-center justify-between gap-2"
+              >
+                <div>
+                  <span className="font-display font-bold text-xs text-[#1c1b19] block">
+                    {cat.name}
+                  </span>
+                  <span className="text-[10px] font-mono text-[#6b665c]">
+                    Budget: {cat.budget ? `${currencySymbols[workspace.currency] || '$'}${cat.budget.toLocaleString()}/mo` : "Unlimited"}
+                  </span>
+                </div>
+
+                {userIsOwner && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenCatModal(cat)}
+                      className="text-[11px] font-semibold text-[#0f7a52] hover:underline px-2 py-1 bg-white border border-[#d9d4c8] rounded-lg cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCategory(cat.id)}
+                      className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      title="Delete category"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </TornCard>
+
+      </div>
+
+      {/* FULL WIDTH CARD: Team Members & Role Management (Owner Only) */}
+      <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
+        <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold">
+              <UserPlus className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                Team Members & Access Control
+              </h2>
+              <p className="text-[11px] text-[#6b665c]">
+                Staff roster, active invitations, and messaging channels
+              </p>
+            </div>
+          </div>
+
+          {userIsOwner ? (
+            <button
+              type="button"
+              onClick={() => {
+                setInviteError("");
+                setShowInviteModal(true);
+              }}
+              className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>Invite Staff Member</span>
+            </button>
+          ) : (
+            <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <Lock className="w-3 h-3" /> Owner Gated
+            </span>
+          )}
+        </div>
+
+        {/* Members Roster Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[#d9d4c8] text-[11px] font-mono uppercase tracking-wider text-[#6b665c]">
+                <th className="pb-2 font-semibold">Member</th>
+                <th className="pb-2 font-semibold">Role</th>
+                <th className="pb-2 font-semibold">Contact Details</th>
+                <th className="pb-2 font-semibold">Connected Bots</th>
+                <th className="pb-2 font-semibold text-right">Status / Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#d9d4c8]/60 text-xs">
+              {members.map((m) => {
+                const initials = m.displayName
+                  ? m.displayName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+                  : "U";
+
+                return (
+                  <tr key={m.userId} className="hover:bg-[#f7f3ea]/50 transition-colors">
+                    {/* Member Name */}
+                    <td className="py-3 font-semibold text-[#1c1b19]">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-7 h-7 rounded-lg text-white font-mono font-bold text-[10px] flex items-center justify-center ${
+                            m.role === "owner" ? "bg-[#0f7a52]" : "bg-[#1c1b19]"
+                          }`}
+                        >
+                          {initials}
+                        </div>
+                        <div>
+                          <div className="font-display font-bold">{m.displayName}</div>
+                          {m.userId === currentUser.userId && (
+                            <span className="text-[10px] font-mono text-[#0f7a52] font-semibold">( You )</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Role */}
+                    <td className="py-3">
+                      {m.role === "owner" ? (
+                        <span className="text-[10px] font-mono font-bold bg-[#0f7a52]/10 text-[#0f7a52] border border-[#0f7a52]/20 px-2 py-0.5 rounded-md">
+                          OWNER
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-mono font-bold bg-gray-100 text-[#1c1b19] border border-gray-200 px-2 py-0.5 rounded-md">
+                          STAFF
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Contact */}
+                    <td className="py-3 text-[#6b665c] font-mono text-[11px]">
+                      <div>{m.email || "No email"}</div>
+                      {m.phone && <div className="text-[10px] text-[#6b665c]">{m.phone}</div>}
+                    </td>
+
+                    {/* Connected Channels */}
+                    <td className="py-3">
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold ${
+                            m.telegramUserId
+                              ? "bg-[#0088cc]/10 text-[#0088cc]"
+                              : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          TG: {m.telegramUserId ? `@${m.telegramUserId}` : "Off"}
+                        </span>
+                        <span
+                          className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold ${
+                            m.whatsappUserId
+                              ? "bg-[#25D366]/10 text-[#25D366]"
+                              : "bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          WA: {m.whatsappUserId ? "On" : "Off"}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Status & Actions */}
+                    <td className="py-3 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {m.joinedAt ? (
+                          <span className="text-[10px] font-mono font-bold text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-full">
+                            Joined
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono font-bold text-[#e0982a] bg-[#fbf1de] px-2 py-0.5 rounded-full">
+                            Invited
+                          </span>
+                        )}
+
+                        {userIsOwner && m.role !== "owner" && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMember(m.userId)}
+                            className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                            title="Remove member"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </TornCard>
+
+      {/* FULL WIDTH CARD: Activity Log & Audit Trail (Owner Only) */}
+      <TornCard headerColor="bg-[#1c1b19]" tornBottom={true}>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#1c1b19]/10 text-[#1c1b19] flex items-center justify-center font-bold">
+              <History className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                  Activity Log & Audit Trail
+                </h2>
+                <span className="text-[10px] font-mono font-bold bg-[#f7f3ea] text-[#1c1b19] px-2 py-0.5 rounded-full border border-[#d9d4c8]">
+                  {activityLogs.length} events recorded
+                </span>
+              </div>
+              <p className="text-[11px] text-[#6b665c]">
+                Timestamped history of team invitations, expense approvals, budget changes, and system updates
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={refreshLogs}
+              className="p-1.5 text-[#6b665c] hover:text-[#1c1b19] bg-[#f7f3ea] hover:bg-white border border-[#d9d4c8] rounded-lg transition-colors cursor-pointer"
+              title="Refresh activity logs"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+
+            {userIsOwner ? (
+              <button
+                type="button"
+                onClick={handleExportActivityCSV}
+                disabled={filteredLogs.length === 0}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display font-semibold transition-all shadow-2xs whitespace-nowrap cursor-pointer ${
+                  filteredLogs.length > 0
+                    ? "bg-[#0f7a52] hover:bg-[#0b5f40] text-white"
+                    : "bg-[#d9d4c8]/50 text-[#6b665c] cursor-not-allowed"
+                }`}
+                title="Export audit log entries to CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Export Audit CSV</span>
+              </button>
+            ) : (
+              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Owner Restricted
+              </span>
+            )}
+          </div>
+        </div>
+
+        {!userIsOwner ? (
+          /* Restricted Access View for Staff */
+          <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-6 text-center space-y-2">
+            <Lock className="w-8 h-8 text-[#e0982a] mx-auto" />
+            <h3 className="font-display font-bold text-xs text-[#1c1b19]">
+              Audit Trail Restricted to Workspace Owners
+            </h3>
+            <p className="text-[11px] text-[#6b665c] max-w-md mx-auto">
+              The activity log tracks team actions, expense approvals, member additions, and workspace configuration changes for compliance. Only workspace owners have permission to inspect full audit logs.
+            </p>
+          </div>
+        ) : (
+          /* Owner Interactive Activity Log Section */
+          <div className="space-y-4">
+            {/* Log Search & Filters Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-[#f7f3ea] p-3 rounded-xl border border-[#d9d4c8]">
+              {/* Search Box */}
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6b665c]" />
+                <input
+                  type="text"
+                  value={logSearch}
+                  onChange={(e) => setLogSearch(e.target.value)}
+                  placeholder="Filter logs by keyword..."
+                  className="w-full bg-white border border-[#d9d4c8] text-xs rounded-lg pl-8 pr-2.5 py-1.5 focus:outline-none focus:border-[#0f7a52]"
+                />
+              </div>
+
+              {/* Tag Selector */}
+              <div>
+                <select
+                  value={logTagFilter}
+                  onChange={(e) => setLogTagFilter(e.target.value)}
+                  className="w-full bg-white border border-[#d9d4c8] text-xs font-medium rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Event Types ({uniqueTags.length})</option>
+                  {uniqueTags.map((tag) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Actor Selector */}
+              <div>
+                <select
+                  value={logActorFilter}
+                  onChange={(e) => setLogActorFilter(e.target.value)}
+                  className="w-full bg-white border border-[#d9d4c8] text-xs font-medium rounded-lg px-2.5 py-1.5 focus:outline-none cursor-pointer"
+                >
+                  <option value="all">All Team Actors</option>
+                  {members.map((m) => (
+                    <option key={m.userId} value={m.userId}>
+                      {m.displayName} ({m.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Logs List / Timeline */}
+            {filteredLogs.length > 0 ? (
+              <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1 divide-y divide-[#d9d4c8]/40">
+                {filteredLogs.map((log) => {
+                  let tagBg = "bg-gray-100 text-gray-800 border-gray-200";
+                  if (log.tag === "Expense Approval") tagBg = "bg-[#e7f4ec] text-[#0f7a52] border-[#0f7a52]/20";
+                  else if (log.tag === "Expense Captured") tagBg = "bg-emerald-50 text-emerald-800 border-emerald-200";
+                  else if (log.tag === "Member Invitation") tagBg = "bg-purple-50 text-purple-800 border-purple-200";
+                  else if (log.tag === "Member Removal") tagBg = "bg-red-50 text-red-700 border-red-200";
+                  else if (log.tag === "Category Change") tagBg = "bg-[#fbf1de] text-[#e0982a] border-[#e0982a]/30";
+                  else if (log.tag === "Workspace Config") tagBg = "bg-blue-50 text-blue-800 border-blue-200";
+                  else if (log.tag === "Bot Integration") tagBg = "bg-orange-50 text-orange-800 border-orange-200";
+                  else if (log.tag === "User Profile") tagBg = "bg-teal-50 text-teal-800 border-teal-200";
+
+                  const formattedDate = new Date(log.timestamp).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  });
+
+                  return (
+                    <div
+                      key={log.id}
+                      className="pt-2.5 first:pt-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-[#f7f3ea]/40 p-2 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#0f7a52] mt-1.5 shrink-0" />
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-display font-bold text-xs text-[#1c1b19]">
+                              {log.description}
+                            </span>
+                            <span
+                              className={`text-[10px] font-mono font-bold px-2 py-0.2 rounded-full border ${tagBg}`}
+                            >
+                              {log.tag}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px] text-[#6b665c] font-mono mt-0.5">
+                            <span>
+                              By: <strong>{log.actorName}</strong> ({log.actorRole})
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-[10px] font-mono text-[#6b665c] bg-[#f7f3ea] px-2 py-1 rounded-md border border-[#d9d4c8]">
+                          {formattedDate}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-[#f7f3ea] border border-dashed border-[#d9d4c8] rounded-xl p-8 text-center space-y-2">
+                <History className="w-8 h-8 text-[#6b665c] mx-auto" />
+                <h4 className="font-display font-bold text-xs text-[#1c1b19]">
+                  No Activity Logs Match Your Search
+                </h4>
+                <p className="text-[11px] text-[#6b665c]">
+                  Try resetting search keywords or changing event filters.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLogSearch("");
+                    setLogTagFilter("all");
+                    setLogActorFilter("all");
+                  }}
+                  className="text-xs text-[#0f7a52] hover:underline font-bold cursor-pointer"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </TornCard>
+
+      {/* Invite Member Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 bg-[#1c1b19]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-[#d9d4c8] rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-[#ff5a3c]" />
+                <h3 className="font-display font-bold text-lg text-[#1c1b19]">
+                  Invite Staff Member
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInviteModal(false)}
+                className="text-[#6b665c] hover:text-[#1c1b19] font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {inviteError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{inviteError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSendInvite} className="space-y-3">
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Staff Member Name
+                </label>
+                <input
+                  type="text"
+                  value={inviteName}
+                  onChange={(e) => setInviteName(e.target.value)}
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#ff5a3c]"
+                  placeholder="e.g. Jordan Lee"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#ff5a3c]"
+                  placeholder="jordan@acme.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Phone Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={invitePhone}
+                  onChange={(e) => setInvitePhone(e.target.value)}
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#ff5a3c]"
+                  placeholder="+1 555-018-9921"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowInviteModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-[#6b665c] hover:bg-[#f7f3ea] rounded-xl border border-[#d9d4c8]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs"
+                >
+                  Send Invitation
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add / Edit Category Modal */}
+      {showCatModal && (
+        <div className="fixed inset-0 z-50 bg-[#1c1b19]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-[#d9d4c8] rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]">
+              <h3 className="font-display font-bold text-base text-[#1c1b19]">
+                {editingCatId ? "Edit Expense Category" : "Add Expense Category"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCatModal(false)}
+                className="text-[#6b665c] hover:text-[#1c1b19] font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {catError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-2.5 rounded-xl text-xs font-medium">
+                {catError}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveCategory} className="space-y-3">
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Category Name
+                </label>
+                <input
+                  type="text"
+                  value={catName}
+                  onChange={(e) => setCatName(e.target.value)}
+                  required
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52]"
+                  placeholder="e.g. Client Entertainment"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Monthly Budget Limit ({currencySymbols[workspace.currency] || '$'})
+                </label>
+                <input
+                  type="number"
+                  value={catBudget}
+                  onChange={(e) => setCatBudget(e.target.value)}
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52]"
+                  placeholder="e.g. 1000 (leave blank for unlimited)"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCatModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-[#6b665c] hover:bg-[#f7f3ea] rounded-xl border border-[#d9d4c8]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#0f7a52] hover:bg-[#0b5e3f] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs"
+                >
+                  Save Category
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
