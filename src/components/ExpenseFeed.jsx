@@ -145,28 +145,28 @@ export const ExpenseFeed = ({
   return (
     <div className="space-y-6">
       {/* Search & Filter Header Bar */}
-      <div className="bg-white p-4 rounded-xl border border-[#d9d4c8] shadow-sm space-y-3">
+      <div className="bg-white p-4 rounded-xl border border-black/10 space-y-3">
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search input */}
           <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#6b665c]" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#757575]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search vendor, category, staff or note..."
-              className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-medium rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-[#0f7a52]"
+              className="w-full bg-[#f6f5f4] border border-black/10 text-xs font-medium rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-[#0075de]"
             />
           </div>
 
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             {/* Quick Stats Banner */}
-            <div className="flex items-center gap-3 justify-between bg-[#f7f3ea] border border-[#d9d4c8] px-3.5 py-1.5 rounded-lg text-xs">
-              <span className="text-[#6b665c] font-medium">Filtered Feed Total:</span>
-              <span className="font-mono text-[#1c1b19] font-bold text-sm">
+            <div className="flex items-center gap-3 justify-between bg-[#f6f5f4] border border-black/10 px-3.5 py-1.5 rounded-lg text-xs">
+              <span className="text-[#615d59] font-medium">Filtered Feed Total:</span>
+              <span className="font-mono text-[#000000] font-bold text-sm">
                 {getCurrencySymbol(currency)}{totalFilteredAmount.toFixed(2)} ({currency})
               </span>
-              <span className="text-[10px] text-[#6b665c] font-medium bg-white px-2 py-0.5 rounded border border-[#d9d4c8]">
+              <span className="text-[10px] text-[#615d59] font-medium bg-white px-2 py-0.5 rounded border border-black/10">
                 {filteredExpenses.length} entries
               </span>
             </div>
@@ -176,10 +176,10 @@ export const ExpenseFeed = ({
               type="button"
               onClick={handleExportCSV}
               disabled={filteredExpenses.length === 0}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display font-semibold transition-all shadow-2xs whitespace-nowrap cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
                 filteredExpenses.length > 0
-                  ? "bg-[#0f7a52] hover:bg-[#0b5f40] text-white"
-                  : "bg-[#d9d4c8]/50 text-[#6b665c] cursor-not-allowed"
+                  ? "bg-[#0075de] hover:bg-[#0060b8] text-white"
+                  : "bg-black/10 text-[#757575] cursor-not-allowed"
               }`}
               title="Export current filtered expenses as a CSV file for accounting"
             >

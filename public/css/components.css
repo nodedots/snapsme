@@ -1,236 +1,545 @@
-/* snapsme — Core Component Stylesheet */
+/* SnapSME — Notion Style System Components */
 
 :root {
-  --color-ink: #1c1b19;
-  --color-ledger-green: #0f7a52;
-  --color-snap-coral: #ff5a3c;
-  --color-amber-flag: #e0982a;
-  --color-fiber-gray: #d9d4c8;
-  --color-ink-fade: #6b665c;
-  --color-paper: #f7f3ea;
+  /* Colors */
+  --color-notion-blue: #0075de;
+  --color-paper-warmth: #f6f5f4;
   --color-pure-white: #ffffff;
-  --color-mint-wash: #e7f4ec;
-  --color-amber-wash: #fbf1de;
+  --color-ink-black: #000000;
+  --color-charcoal: #111111;
+  --color-stone: #757575;
+  --color-graphite: #615d59;
+  --color-slate: #696969;
+  --color-sky-tint: #e6f3fe;
+  --color-marigold: #ffb110;
+  --color-coral: #f64932;
+  --color-saffron: #e89d01;
+  --color-vermillion: #e32d14;
+  --color-mocha: #b18164;
+  --color-signal-blue: #097fe8;
+  --color-sky-wash: #62aef0;
+  --color-midnight-ink: #02093a;
 
-  --font-display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
-  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  /* Typography */
+  --font-notioninter: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-lyon-text: 'Source Serif Pro', Georgia, serif;
 
-  --shadow-card: rgba(28, 27, 25, 0.04) 0px 1px 2px 0px, rgba(28, 27, 25, 0.03) 0px 8px 16px 0px;
+  /* Border Radius */
+  --radius-cards: 12px;
+  --radius-pills: 9999px;
+  --radius-small: 4px;
+  --radius-buttons: 8px;
+
+  /* Borders & Shadows */
+  --border-hairline: 1px solid rgba(0, 0, 0, 0.08);
+  --shadow-mockup: 0px 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-nav: 0px 0.7px 1.46px 0px rgba(0, 0, 0, 0.015), 0px 3px 9px 0px rgba(0, 0, 0, 0.03);
 }
 
-/* Primary CTA — Snap Coral Button */
-.btn-snap-coral {
-  background-color: var(--color-snap-coral);
+/* Base Body Styles */
+body {
+  background-color: var(--color-paper-warmth);
+  color: var(--color-ink-black);
+  font-family: var(--font-notioninter);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Primary CTA Button (#0075de, 8px radius) */
+.btn-notion-primary, .btn-snap-coral {
+  background-color: var(--color-notion-blue);
   color: #ffffff;
-  font-family: var(--font-display);
+  font-family: var(--font-notioninter);
   font-weight: 500;
-  font-size: 16px;
-  border-radius: 10px;
-  padding: 14px 28px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-  box-shadow: 0 2px 8px rgba(255, 90, 60, 0.22);
-}
-
-.btn-snap-coral:hover {
-  background-color: #e0482c;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(255, 90, 60, 0.32);
-}
-
-.btn-snap-coral:active {
-  transform: translateY(0);
-}
-
-/* Ledger Primary Button */
-.btn-ledger-green {
-  background-color: var(--color-ledger-green);
-  color: #ffffff;
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 15px;
-  border-radius: 10px;
-  padding: 12px 24px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  transition: transform 0.15s ease, background-color 0.15s ease;
-}
-
-.btn-ledger-green:hover {
-  background-color: #0b5f40;
-  transform: translateY(-1px);
-}
-
-/* Secondary Button */
-.btn-secondary-paper {
-  background-color: var(--color-paper);
-  color: var(--color-ink);
-  font-family: var(--font-display);
-  font-weight: 600;
   font-size: 14px;
-  border-radius: 10px;
-  padding: 12px 20px;
-  border: 1px solid var(--color-fiber-gray);
-  cursor: pointer;
-  text-decoration: none;
+  border-radius: var(--radius-buttons);
+  padding: 8px 18px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
 }
 
-.btn-secondary-paper:hover {
-  background-color: #eee8d8;
-  border-color: #c4bea5;
+.btn-notion-primary:hover, .btn-snap-coral:hover {
+  background-color: #0060b8;
+  color: #ffffff;
 }
 
-/* Torn Receipt Card signature component */
-.torn-receipt-card {
-  background-color: #ffffff;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border: 1px solid var(--color-fiber-gray);
-  border-bottom: none;
-  box-shadow: var(--shadow-card);
+/* Ghost CTA Button (#e6f3fe bg, #0075de text) */
+.btn-notion-ghost {
+  background-color: var(--color-sky-tint);
+  color: var(--color-notion-blue);
+  font-family: var(--font-notioninter);
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: var(--radius-buttons);
+  padding: 8px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.btn-notion-ghost:hover {
+  background-color: #d8ebfd;
+}
+
+/* White Feature Card on Warm Canvas */
+.notion-card-white, .torn-receipt-card {
+  background-color: var(--color-pure-white);
+  border-radius: var(--radius-cards);
+  border: var(--border-hairline);
+  padding: 24px;
+  box-shadow: none;
   position: relative;
 }
 
-/* Row of small fiber-gray dots just above the tear */
-.torn-receipt-card::after {
-  content: '';
-  position: absolute;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
-  height: 2px;
-  background-image: radial-gradient(circle, var(--color-fiber-gray) 1.5px, transparent 1.5px);
-  background-size: 8px 2px;
-  background-repeat: repeat-x;
-  pointer-events: none;
-}
-
-/* Jagged perforated bottom edge using CSS polygon clip-path (~10px period) */
-.torn-bottom-edge {
-  position: relative;
-  clip-path: polygon(
-    0% 0%,
-    100% 0%,
-    100% calc(100% - 10px),
-    97% 100%,
-    94% calc(100% - 10px),
-    91% 100%,
-    88% calc(100% - 10px),
-    85% 100%,
-    82% calc(100% - 10px),
-    79% 100%,
-    76% calc(100% - 10px),
-    73% 100%,
-    70% calc(100% - 10px),
-    67% 100%,
-    64% calc(100% - 10px),
-    61% 100%,
-    58% calc(100% - 10px),
-    55% 100%,
-    52% calc(100% - 10px),
-    49% 100%,
-    46% calc(100% - 10px),
-    43% 100%,
-    40% calc(100% - 10px),
-    37% 100%,
-    34% calc(100% - 10px),
-    31% 100%,
-    28% calc(100% - 10px),
-    25% 100%,
-    22% calc(100% - 10px),
-    19% 100%,
-    16% calc(100% - 10px),
-    13% 100%,
-    10% calc(100% - 10px),
-    7% 100%,
-    4% calc(100% - 10px),
-    0% 100%
-  );
-}
-
-/* Confidence Dot: 8px filled circle */
-.confidence-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
+/* Hero Highlight Pill */
+.hero-highlight-pill {
+  background-color: #f6d5b8;
+  color: #000000;
+  border-radius: var(--radius-pills);
+  padding: 4px 18px;
   display: inline-block;
-  flex-shrink: 0;
-}
-.confidence-dot-confirmed {
-  background-color: var(--color-ledger-green);
-}
-.confidence-dot-review {
-  background-color: var(--color-amber-flag);
+  font-weight: 500;
 }
 
-/* Status Pill */
-.status-pill {
-  font-family: var(--font-body);
+/* Pill Tags */
+.pill-tag {
+  font-family: var(--font-notioninter);
   font-weight: 500;
   font-size: 12px;
-  border-radius: 9999px;
-  padding: 3px 10px;
+  border-radius: var(--radius-pills);
+  padding: 4px 12px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
-.status-pill-confirmed {
-  background-color: var(--color-mint-wash);
-  color: var(--color-ledger-green);
+.pill-tag-blue {
+  background-color: var(--color-sky-tint);
+  color: var(--color-notion-blue);
 }
-.status-pill-review {
-  background-color: var(--color-amber-wash);
-  color: var(--color-amber-flag);
+.pill-tag-green {
+  background-color: #e6f7ed;
+  color: #0f7a52;
 }
 
-/* Monospace Amount Styling */
-.amount-mono {
-  font-family: var(--font-mono);
+/* Accent Card Fills */
+.accent-card-marigold {
+  background-color: var(--color-marigold);
+  color: #000000;
+  border-radius: var(--radius-cards);
+  padding: 24px;
+}
+.accent-card-sky {
+  background-color: var(--color-sky-wash);
+  color: #000000;
+  border-radius: var(--radius-cards);
+  padding: 24px;
+}
+.accent-card-coral {
+  background-color: var(--color-coral);
+  color: #ffffff;
+  border-radius: var(--radius-cards);
+  padding: 24px;
+}
+.accent-card-midnight {
+  background-color: var(--color-midnight-ink);
+  color: #ffffff;
+  border-radius: var(--radius-cards);
+  padding: 24px;
+}
+
+/* ==========================================================================
+   Footer Component Styles
+   ========================================================================== */
+.snapsme-footer-component {
+  background-color: var(--color-paper-warmth);
+  border-top: var(--border-hairline);
+  padding: 64px 0 32px 0;
+  margin-top: 64px;
+  width: 100%;
+}
+
+.snapsme-footer-container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.snapsme-footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1.2fr;
+  gap: 40px;
+  margin-bottom: 48px;
+}
+
+@media (max-width: 900px) {
+  .snapsme-footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .snapsme-footer-brand {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 600px) {
+  .snapsme-footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .snapsme-footer-brand {
+    grid-column: span 1;
+  }
+}
+
+.snapsme-footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.snapsme-footer-wordmark {
+  font-family: var(--font-notioninter);
   font-weight: 700;
-  color: var(--color-ink);
+  font-size: 20px;
+  color: var(--color-ink-black);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Interactive Preview Tabs */
-.preview-tab-btn {
-  font-family: var(--font-display);
+.snapsme-footer-tagline {
+  font-family: var(--font-notioninter);
+  font-size: 14px;
+  color: var(--color-graphite);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.snapsme-footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.snapsme-footer-col-title {
+  font-family: var(--font-notioninter);
   font-weight: 600;
+  font-size: 14px;
+  color: var(--color-ink-black);
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.snapsme-footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.snapsme-footer-link {
+  font-family: var(--font-notioninter);
+  font-size: 14px;
+  color: var(--color-graphite);
+  text-decoration: none;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.snapsme-footer-link:hover {
+  opacity: 0.7;
+  color: var(--color-ink-black);
+}
+
+.snapsme-footer-social {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.snapsme-social-icons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.snapsme-social-icon {
+  color: var(--color-ink-black);
+  opacity: 0.8;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.snapsme-social-icon:hover {
+  opacity: 0.5;
+  transform: translateY(-1px);
+}
+
+.snapsme-footer-bottom {
+  border-top: var(--border-hairline);
+  padding-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.snapsme-copyright {
+  font-family: var(--font-notioninter);
   font-size: 13px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  background-color: transparent;
-  color: var(--color-ink-fade);
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  color: var(--color-stone);
+  margin: 0;
+}
+
+/* ==========================================================================
+   Document & Legal Page Layout
+   ========================================================================== */
+.document-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 80px 24px;
+}
+
+.back-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-family: var(--font-notioninter);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-notion-blue);
+  text-decoration: none;
+  margin-bottom: 24px;
+  transition: opacity 0.15s ease;
 }
 
-.preview-tab-btn:hover {
-  color: var(--color-ink);
-  background-color: var(--color-paper);
+.back-link:hover {
+  opacity: 0.7;
 }
 
-.preview-tab-btn.active {
+.legal-disclaimer-note {
+  background-color: var(--color-sky-tint);
+  border: 1px solid rgba(0, 117, 222, 0.2);
+  border-radius: var(--radius-buttons);
+  padding: 14px 18px;
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-notion-blue);
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+.document-title {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 32px;
+  color: var(--color-ink-black);
+  letter-spacing: -0.8px;
+  margin: 0 0 8px 0;
+}
+
+.document-meta {
+  font-family: var(--font-notioninter);
+  font-size: 14px;
+  color: var(--color-stone);
+  margin-bottom: 32px;
+}
+
+.document-section {
+  margin-bottom: 36px;
+}
+
+.document-section-title {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--color-ink-black);
+  letter-spacing: -0.3px;
+  margin: 0 0 12px 0;
+}
+
+.document-body-text {
+  font-family: var(--font-notioninter);
+  font-size: 15px;
+  color: var(--color-charcoal);
+  line-height: 1.65;
+  margin: 0 0 16px 0;
+}
+
+.document-list {
+  padding-left: 20px;
+  margin: 0 0 16px 0;
+}
+
+.document-list li {
+  font-family: var(--font-notioninter);
+  font-size: 15px;
+  color: var(--color-charcoal);
+  line-height: 1.65;
+  margin-bottom: 8px;
+}
+
+/* ==========================================================================
+   FAQ Accordion (Help Center)
+   ========================================================================== */
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.faq-card {
+  background-color: var(--color-pure-white);
+  border-radius: var(--radius-cards);
+  border: var(--border-hairline);
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.faq-card:hover {
+  border-color: rgba(0, 0, 0, 0.16);
+}
+
+.faq-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+
+.faq-question {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-ink-black);
+  margin: 0;
+}
+
+.faq-icon {
+  color: var(--color-stone);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: #faf9f7;
+  border-top: 1px solid transparent;
+}
+
+.faq-card.expanded .faq-answer {
+  border-top: var(--border-hairline);
+}
+
+.faq-answer-inner {
+  padding: 20px 24px;
+  font-family: var(--font-notioninter);
+  font-size: 15px;
+  color: var(--color-graphite);
+  line-height: 1.65;
+  margin: 0;
+}
+
+/* ==========================================================================
+   Contact Form Styles
+   ========================================================================== */
+.contact-card {
+  background-color: var(--color-pure-white);
+  border-radius: var(--radius-cards);
+  border: var(--border-hairline);
+  padding: 32px;
+  margin-top: 32px;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-ink-black);
+}
+
+.form-input, .form-textarea {
+  font-family: var(--font-notioninter);
+  font-size: 14px;
+  color: var(--color-ink-black);
+  background-color: var(--color-paper-warmth);
+  border: var(--border-hairline);
+  border-radius: var(--radius-buttons);
+  padding: 10px 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.form-input:focus, .form-textarea:focus {
+  border-color: var(--color-notion-blue);
   background-color: #ffffff;
-  color: var(--color-ink);
-  border-color: var(--color-fiber-gray);
-  box-shadow: 0 1px 3px rgba(28, 27, 25, 0.05);
 }
+
+.form-textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.form-error {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  color: var(--color-vermillion);
+  background-color: #fdf2f0;
+  border: 1px solid rgba(227, 45, 20, 0.2);
+  border-radius: var(--radius-buttons);
+  padding: 10px 14px;
+  display: none;
+}
+
+.contact-success-state {
+  text-align: center;
+  padding: 24px 12px;
+}
+
+.success-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #e6f7ed;
+  color: #0f7a52;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+}
+

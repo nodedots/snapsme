@@ -108,34 +108,35 @@ export const Header = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#f7f3ea]/95 backdrop-blur-md border-b border-[#d9d4c8] shadow-2xs">
-      <div className="max-w-[1120px] mx-auto px-4 md:px-8 pt-3 pb-2 space-y-3">
+    <header className="sticky top-0 z-40 bg-[#f6f5f4]/95 backdrop-blur-md border-b border-black/10 shadow-2xs">
+      <div className="max-w-[1280px] mx-auto px-4 md:px-8 pt-3 pb-2 space-y-3">
         {/* Top Control Bar: Brand + Workspace + Profile & Actions */}
         <div className="flex items-center justify-between gap-3">
           {/* Brand Logo & Workspace Info */}
           <div className="flex items-center gap-3">
-            <div
-              className="flex items-center gap-2 cursor-pointer group"
-              onClick={() => setCurrentView("feed")}
+            <a
+              href="/home"
+              className="flex items-center gap-2 cursor-pointer group no-underline"
+              title="Go to SnapSME Marketing Homepage"
             >
-              <div className="w-9 h-10 bg-[#ff5a3c] text-white flex items-center justify-center font-mono font-bold text-lg rounded-t-lg relative shadow-xs border border-[#ff5a3c] clip-torn group-hover:scale-105 transition-transform">
-                <Receipt className="w-5 h-5" />
+              <div className="w-8 h-8 bg-[#0075de] text-white flex items-center justify-center rounded-lg overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
+                <img src="/logo.jpg" alt="SnapSME Logo" className="w-full h-full object-cover" />
               </div>
               <div>
-                <span className="font-display font-bold text-2xl tracking-tight text-[#1c1b19]">
-                  Snap<span className="text-[#ff5a3c]">SME</span>
+                <span className="font-display font-bold text-xl tracking-tight text-[#000000]">
+                  Snap<span className="text-[#0075de]">SME</span>
                 </span>
-                <p className="text-[10px] text-[#6b665c] font-medium tracking-wider uppercase -mt-1 hidden sm:block">
+                <p className="text-[10px] text-[#757575] font-medium tracking-wider uppercase -mt-1 hidden sm:block">
                   Team Expense Capture
                 </p>
               </div>
-            </div>
+            </a>
 
-            <div className="h-6 w-[1px] bg-[#d9d4c8] hidden sm:block mx-1" />
+            <div className="h-5 w-[1px] bg-black/10 hidden sm:block mx-1" />
 
             {/* Workspace badge */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-white border border-[#d9d4c8] px-2.5 py-1 rounded-lg text-xs font-semibold text-[#1c1b19] shadow-2xs">
-              <Building2 className="w-3.5 h-3.5 text-[#0f7a52]" />
+            <div className="hidden sm:flex items-center gap-1.5 bg-white border border-black/10 px-2.5 py-1 rounded-lg text-xs font-medium text-[#000000]">
+              <Building2 className="w-3.5 h-3.5 text-[#0075de]" />
               <span className="truncate max-w-[140px] md:max-w-[190px]">{workspace.name}</span>
             </div>
           </div>
@@ -149,30 +150,30 @@ export const Header = ({
               title={isOfflineMode ? "Click to switch back Online" : "Click to test Offline mode"}
               className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border font-medium transition-all cursor-pointer ${
                 isOfflineMode
-                  ? "bg-[#fbf1de] text-[#e0982a] border-[#e0982a] shadow-xs"
-                  : "bg-white text-[#0f7a52] border-[#d9d4c8] hover:border-[#0f7a52]"
+                  ? "bg-[#ffb110]/20 text-[#000000] border-[#ffb110]"
+                  : "bg-white text-[#0075de] border-black/10 hover:border-[#0075de]"
               }`}
             >
               {isOfflineMode ? (
-                <WifiOff className="w-3.5 h-3.5 text-[#e0982a]" />
+                <WifiOff className="w-3.5 h-3.5 text-[#e32d14]" />
               ) : (
-                <Wifi className="w-3.5 h-3.5 text-[#0f7a52]" />
+                <Wifi className="w-3.5 h-3.5 text-[#0075de]" />
               )}
               <span className="hidden md:inline font-semibold">
                 {isOfflineMode ? "Offline" : "Online"}
               </span>
               {pendingSyncCount > 0 && (
-                <span className="bg-[#ff5a3c] text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold">
+                <span className="bg-[#f64932] text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold">
                   {pendingSyncCount}
                 </span>
               )}
             </button>
 
             {/* User Profile Selector with Avatar Pill */}
-            <div className="relative flex items-center bg-white border border-[#d9d4c8] rounded-xl p-1 shadow-2xs">
+            <div className="relative flex items-center bg-white border border-black/10 rounded-lg p-1">
               <div
-                className={`w-6 h-6 rounded-lg text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 ${
-                  currentUser.role === "owner" ? "bg-[#0f7a52]" : "bg-[#1c1b19]"
+                className={`w-6 h-6 rounded-md text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 ${
+                  currentUser.role === "owner" ? "bg-[#0075de]" : "bg-[#111111]"
                 }`}
               >
                 {getInitials(currentUser.displayName)}
@@ -183,7 +184,7 @@ export const Header = ({
                   const found = members.find((m) => m.userId === e.target.value);
                   if (found) setCurrentUser(found);
                 }}
-                className="bg-transparent border-none text-xs font-semibold text-[#1c1b19] pr-1 pl-1.5 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[130px] truncate"
+                className="bg-transparent border-none text-xs font-semibold text-[#000000] pr-1 pl-1.5 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[130px] truncate"
               >
                 {members.map((m) => (
                   <option key={m.userId} value={m.userId}>
@@ -199,18 +200,18 @@ export const Header = ({
                 type="button"
                 onClick={onOpenOnboarding}
                 title="Create a new business workspace & onboarding flow"
-                className="hidden lg:flex items-center gap-1.5 bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0f7a52] text-xs font-display font-semibold px-2.5 py-2 rounded-xl transition-all cursor-pointer"
+                className="hidden lg:flex items-center gap-1.5 bg-[#e6f3fe] hover:bg-[#d8ebfd] text-[#0075de] text-xs font-medium px-3 py-1.5 rounded-lg transition-all cursor-pointer"
               >
-                <Building2 className="w-3.5 h-3.5 text-[#0f7a52]" />
+                <Building2 className="w-3.5 h-3.5 text-[#0075de]" />
                 <span>+ New Workspace</span>
               </button>
             )}
 
-            {/* Primary Coral "Snap Expense" Button */}
+            {/* Primary Notion Blue "Snap Expense" Button */}
             <button
               type="button"
               onClick={onOpenCapture}
-              className="flex items-center gap-1.5 sm:gap-2 bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl transition-all active:scale-95 shadow-xs whitespace-nowrap cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 bg-[#0075de] hover:bg-[#0060b8] text-white font-medium text-xs sm:text-sm px-3.5 py-1.5 rounded-lg transition-all active:scale-95 whitespace-nowrap cursor-pointer"
             >
               <Camera className="w-4 h-4" />
               <span>Snap Expense</span>

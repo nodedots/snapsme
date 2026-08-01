@@ -151,4 +151,5 @@ export function signOutUser(saveCurrentUserFn) {
   if (saveCurrentUserFn) {
     saveCurrentUserFn(null);
   }
+  window.location.href = "/home";
 }

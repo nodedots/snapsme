@@ -217,15 +217,15 @@ export const DashboardView = ({
   return (
     <div className="space-y-6">
       {/* Top Header & Export */}
-      <div className="bg-white p-5 rounded-xl border border-[#d9d4c8] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white p-5 rounded-xl border border-black/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display font-bold text-xl text-[#1c1b19]">Owner & Team Spend Dashboard</h2>
-          <p className="text-xs text-[#6b665c]">Real-time visibility into team expenses, category budgets, and money movement</p>
+          <h2 className="font-display font-bold text-xl text-[#000000]">Owner & Team Spend Dashboard</h2>
+          <p className="text-xs text-[#615d59]">Real-time visibility into team expenses, category budgets, and money movement</p>
         </div>
 
         <button
           onClick={handleExportCSV}
-          className="bg-[#0f7a52] hover:bg-[#0b5f40] text-white font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer"
+          className="bg-[#0075de] hover:bg-[#0060b8] text-white font-medium text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
         >
           <Download className="w-4 h-4" />
           Export CSV for Accountant
@@ -233,15 +233,15 @@ export const DashboardView = ({
       </div>
 
       {/* Workspace Monthly Budget Overview Card */}
-      <div className="bg-white p-5 sm:p-6 rounded-xl border border-[#d9d4c8] shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#d9d4c8] pb-4">
+      <div className="bg-white p-5 sm:p-6 rounded-xl border border-black/10 space-y-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-black/10 pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-[#0f7a52]/10 border border-[#0f7a52]/20 flex items-center justify-center text-[#0f7a52]">
+            <div className="w-10 h-10 rounded-lg bg-[#e6f3fe] border border-black/10 flex items-center justify-center text-[#0075de]">
               <Target className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-display font-bold text-base text-[#1c1b19]">Workspace Monthly Budget</h3>
-              <p className="text-xs text-[#6b665c]">Set a global monthly ceiling to control team-wide spending</p>
+              <h3 className="font-display font-bold text-base text-[#000000]">Workspace Monthly Budget</h3>
+              <p className="text-xs text-[#615d59]">Set a global monthly ceiling to control team-wide spending</p>
             </div>
           </div>
 

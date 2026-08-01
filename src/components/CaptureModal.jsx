@@ -233,29 +233,29 @@ export const CaptureModal = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#1c1b19]/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-[#ffffff] border border-[#d9d4c8] rounded-2xl shadow-xl w-full max-w-xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+      <div className="bg-[#ffffff] border border-black/10 rounded-xl w-full max-w-xl overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="bg-[#f7f3ea] px-5 py-4 border-b border-[#d9d4c8] flex items-center justify-between">
+        <div className="bg-[#f6f5f4] px-5 py-4 border-b border-black/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#ff5a3c] text-white flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-[#0075de] text-white flex items-center justify-center font-bold">
               <Camera className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-display font-bold text-lg text-[#1c1b19]">Snap New Expense</h2>
-              <p className="text-xs text-[#6b665c]">Capture receipt, speak voice note, or enter details</p>
+              <h2 className="font-display font-bold text-lg text-[#000000]">Snap New Expense</h2>
+              <p className="text-xs text-[#615d59]">Capture receipt, speak voice note, or enter details</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-[#6b665c] hover:text-[#1c1b19] p-1.5 rounded-lg hover:bg-[#d9d4c8]/40 transition-colors cursor-pointer"
+            className="text-[#757575] hover:text-[#000000] p-1.5 rounded-lg hover:bg-black/5 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Source Mode Tabs */}
-        <div className="grid grid-cols-3 bg-[#f7f3ea]/50 p-1.5 border-b border-[#d9d4c8] text-xs font-display font-semibold">
+        <div className="grid grid-cols-3 bg-[#f6f5f4] p-1.5 border-b border-black/10 text-xs font-medium">
           <button
             type="button"
             onClick={() => setActiveTab("photo")}

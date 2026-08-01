@@ -262,9 +262,33 @@ app.post("/api/chat/generate-link", (req, res) => {
   });
 });
 
-// Landing page route
-app.get(["/landing", "/landing.html"], (_req, res) => {
-  res.sendFile(path.join(process.cwd(), "public", "landing.html"));
+// Static page routes
+app.get(["/home", "/home.html", "/landing", "/landing.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "home.html"));
+});
+
+app.get(["/help", "/help.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "help.html"));
+});
+
+app.get(["/contact", "/contact.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "contact.html"));
+});
+
+app.get(["/privacy", "/privacy.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "privacy.html"));
+});
+
+app.get(["/terms", "/terms.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "terms.html"));
+});
+
+app.get(["/cookies", "/cookies.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "cookies.html"));
+});
+
+app.get("/404", (_req, res) => {
+  res.status(404).sendFile(path.join(process.cwd(), "public", "404.html"));
 });
 
 // Start Express server with Vite middleware in dev or static serving in prod

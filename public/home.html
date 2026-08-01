@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SnapSME — Never lose track of team spend again</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="SnapSME is an expense-tracking web app for small teams (2–10 staff). Snap photos or record voice notes to track team spend effortlessly." />
+  <meta name="keywords" content="expense tracking, receipt capture, voice note expense, small business finance, team spend" />
+  
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+Pro:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📸</text></svg>">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+</head>
+<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased selection:bg-[#0075de]/20 selection:text-[#000000]">
+
+  <!-- Shared Reusable Nav Header -->
+  <div id="snapsme-header"></div>
+
+  <!-- Main Container -->
+  <div class="snapsme-landing-container">
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <h1 class="hero-headline">
+        Never lose track of <span class="hero-highlight-pill">team spend</span> again
+      </h1>
+      <p class="hero-subtext">
+        No more chasing receipts. Your team snaps a photo or sends a quick voice note — we handle the rest, and you see it all as it happens.
+      </p>
+      <div class="hero-cta-wrapper">
+        <a href="/?onboarding=true" class="btn-notion-primary" style="padding: 10px 24px; font-size: 15px;">
+          <!-- Inline Camera Icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+            <circle cx="12" cy="13" r="3"/>
+          </svg>
+          <span>Create your workspace</span>
+        </a>
+        <a href="/?auth=signin" class="btn-notion-ghost">
+          <span>Sign in</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- Product Preview Section (Visual Anchor directly below Hero) -->
+    <section class="product-preview-section">
+      <div class="product-preview-card notion-card-white">
+        <!-- Mock Feed Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(0,0,0,0.08); flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-family: var(--font-notioninter); font-weight: 700; font-size: 18px; color: var(--color-ink-black);">Acme Services Co.</span>
+            <span class="pill-tag pill-tag-blue">LIVE FEED</span>
+          </div>
+          <span style="font-family: var(--font-notioninter); font-size: 13px; color: var(--color-stone);">4 Team Members Active</span>
+        </div>
+
+        <!-- Mock Expense Feed Items -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <!-- Feed Item 1: Fuel Photo Snap -->
+          <div style="background-color: var(--color-paper-warmth); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <div style="width: 36px; height: 36px; border-radius: 6px; background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-black)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-family: var(--font-notioninter); font-weight: 600; font-size: 15px; color: var(--color-ink-black);" class="truncate">Fuel Stop</div>
+                <div style="font-family: var(--font-notioninter); font-size: 13px; color: var(--color-graphite);" class="truncate">Submitted by Marcus Vance • Fuel & Transport</div>
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <div style="font-family: var(--font-notioninter); font-weight: 600; font-size: 16px; color: var(--color-ink-black);">$88.50</div>
+              <span class="pill-tag pill-tag-green">Saved</span>
+            </div>
+          </div>
+
+          <!-- Feed Item 2: Voice Note Expense -->
+          <div style="background-color: var(--color-paper-warmth); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <div style="width: 36px; height: 36px; border-radius: 6px; background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-black)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-family: var(--font-notioninter); font-weight: 600; font-size: 15px; color: var(--color-ink-black);" class="truncate">Hardware Depot</div>
+                <div style="font-family: var(--font-notioninter); font-size: 13px; color: var(--color-graphite);" class="truncate">Voice note by Sarah Connor • Equipment & Tools</div>
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <div style="font-family: var(--font-notioninter); font-weight: 600; font-size: 16px; color: var(--color-ink-black);">$142.10</div>
+              <span class="pill-tag pill-tag-green">Saved</span>
+            </div>
+          </div>
+
+          <!-- Feed Item 3: Chat Message Snap -->
+          <div style="background-color: var(--color-paper-warmth); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+              <div style="width: 36px; height: 36px; border-radius: 6px; background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-black)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+              </div>
+              <div style="min-width: 0;">
+                <div style="font-family: var(--font-notioninter); font-weight: 600; font-size: 15px; color: var(--color-ink-black);" class="truncate">City Office Supply</div>
+                <div style="font-family: var(--font-notioninter); font-size: 13px; color: var(--color-graphite);" class="truncate">Telegram snap by Alex Chen • Office Supplies</div>
+              </div>
+            </div>
+            <div style="text-align: right; flex-shrink: 0;">
+              <div style="font-family: var(--font-notioninter); font-weight: 600; font-size: 16px; color: var(--color-ink-black);">$64.20</div>
+              <span class="pill-tag pill-tag-green">Saved</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="how-it-works-section">
+      <h2 class="section-heading">How it works</h2>
+      <p class="section-subheading">
+        Three simple steps to eliminate lost paper receipts and manual bookkeeping for your business.
+      </p>
+
+      <div class="steps-grid">
+        <!-- Step 1 -->
+        <div class="notion-card-white">
+          <div class="step-card-content">
+            <div class="step-number-badge">01</div>
+            <h3 class="step-title">Snap a receipt or send a voice note</h3>
+            <p class="step-desc">
+              Staff snap a quick receipt photo or record a 5-second voice note directly on mobile or chat.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="notion-card-white">
+          <div class="step-card-content">
+            <div class="step-number-badge">02</div>
+            <h3 class="step-title">Automatic receipt details reading</h3>
+            <p class="step-desc">
+              snapsme reads the receipt for you — vendor, amount, and category — no typing required.
+            </p>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="notion-card-white">
+          <div class="step-card-content">
+            <div class="step-number-badge">03</div>
+            <h3 class="step-title">Lands in your team's shared list</h3>
+            <p class="step-desc">
+              It shows up in your team's shared list right away, so you always know what's been spent.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Grid Section -->
+    <section id="features" class="features-section">
+      <div style="text-align: center;">
+        <h2 class="section-heading">Features built for small teams</h2>
+        <p class="section-subheading">
+          Everything you need to track spending across 2 to 10 staff members effortlessly.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1: Receipt Photo Capture -->
+        <div class="notion-card-white">
+          <div class="feature-card-content">
+            <h3 class="feature-title">Receipt photo capture</h3>
+            <p class="feature-desc">
+              Snap a photo. We read the vendor, the total, and the category for you.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 2: Voice-Note Entry -->
+        <div class="notion-card-white">
+          <div class="feature-card-content">
+            <h3 class="feature-title">Voice-note entry</h3>
+            <p class="feature-desc">
+              No receipt on hand? Just say what you spent — snapsme turns it into a logged expense.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 3: Telegram & WhatsApp Intake -->
+        <div class="notion-card-white">
+          <div class="feature-card-content">
+            <h3 class="feature-title">Send via Telegram & WhatsApp</h3>
+            <p class="feature-desc">
+              Staff can text receipt photos or voice notes in the chat apps they already use — no new apps to install.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 4: Works Without Internet -->
+        <div class="notion-card-white">
+          <div class="feature-card-content">
+            <h3 class="feature-title">Works without internet</h3>
+            <p class="feature-desc">
+              Snap receipts even with no cell signal. Everything saves on your phone and updates automatically once you're back online.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 5: Budgets & Alerts -->
+        <div class="notion-card-white">
+          <div class="feature-card-content">
+            <h3 class="feature-title">Budgets & alerts</h3>
+            <p class="feature-desc">
+              Set spend limits per category and receive notifications before team budgets are exceeded.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feature 6: CSV Export -->
+        <div class="notion-card-white">
+          <div class="feature-card-content">
+            <h3 class="feature-title">CSV export</h3>
+            <p class="feature-desc">
+              Download a clean spreadsheet of everything, ready to hand to your accountant.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Who It's For Section (Accent Marigold Card with Lyon Text Serif) -->
+    <section class="who-its-for-section">
+      <div class="who-its-for-card">
+        <h2 class="who-its-for-title">Who it's for</h2>
+        <p class="who-its-for-text">
+          You shouldn't have to become a bookkeeper to know where your team's money went. SnapSME is designed specifically for small business owners managing 2 to 10 staff members who purchase supplies, fuel, meals, or equipment on behalf of the company. It gives owners complete oversight without the headache of manual tracking.
+        </p>
+      </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="final-cta-section">
+      <h2 class="final-cta-reinforcing">Start tracking team spend in minutes</h2>
+      <a href="/?onboarding=true" class="btn-notion-primary" style="padding: 12px 28px; font-size: 16px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+          <circle cx="12" cy="13" r="3"/>
+        </svg>
+        <span>Create your workspace</span>
+      </a>
+    </section>
+
+    <!-- Reusable Header & Footer -->
+    <div id="snapsme-footer"></div>
+    <script type="module" src="/js/header.js"></script>
+    <script type="module" src="/js/footer.js"></script>
+
+  </div>
+
+  <!-- Vanilla JS Mobile Menu Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const toggleBtn = document.getElementById("mobile-menu-toggle");
+      const overlay = document.getElementById("mobile-menu-overlay");
+      const triggers = document.querySelectorAll(".mobile-close-trigger");
+
+      if (toggleBtn && overlay) {
+        toggleBtn.addEventListener("click", function() {
+          overlay.classList.toggle("hidden");
+        });
+      }
+
+      triggers.forEach(function(trigger) {
+        trigger.addEventListener("click", function() {
+          if (overlay) overlay.classList.add("hidden");
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
