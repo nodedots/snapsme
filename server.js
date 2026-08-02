@@ -213,12 +213,16 @@ app.get("/api/exchange-rates", async (req, res) => {
       }
     }
 
-    const apiKey = process.env.EXCHANGE_RATE_API_KEY;
-    const apiUrl = process.env.EXCHANGE_RATE_API_URL
-      ? process.env.EXCHANGE_RATE_API_URL.replace("{base}", base)
-      : apiKey
-      ? `https://v6.exchangerate-api.com/v6/${apiKey}/latest/${base}`
-      : `https://open.er-api.com/v6/latest/${base}`;
+    const apiKey = process.env.EXCHANGE_RATE_API_KEY || "d5fd8ab9a8f0e9f51f105af7";
+    let apiUrl = process.env.EXCHANGE_RATE_API_URL || "https://v6.exchangerate-api.com/v6/{key}/latest/{base}";
+
+    // Handle key & base placeholders
+    if (apiUrl.includes("{key}")) {
+      apiUrl = apiUrl.replace("{key}", apiKey);
+    } else if (apiKey && apiUrl.includes("/v6/latest/")) {
+      apiUrl = apiUrl.replace("/v6/latest/", `/v6/${apiKey}/latest/`);
+    }
+    apiUrl = apiUrl.replace("{base}", base);
 
     const response = await fetch(apiUrl);
     if (!response.ok) {
