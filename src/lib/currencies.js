@@ -341,3 +341,41 @@ export function convertCurrency(amount, fromCurrency = "USD", toCurrency = "USD"
     isConverted: true
   };
 }
+
+/**
+ * Fetches live exchange rates from ExchangeRate-API and updates USD_EXCHANGE_RATES in memory.
+ * Caches in localStorage for 12 hours.
+ */
+export async function fetchLiveExchangeRates(base = "USD") {
+  const cacheKey = `snapsme_rates_${base.toLowerCase()}`;
+  const now = Date.now();
+
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (now - parsed.timestamp < 12 * 60 * 60 * 1000) {
+        Object.assign(USD_EXCHANGE_RATES, parsed.rates);
+        return parsed.rates;
+      }
+    }
+  } catch (e) {}
+
+  try {
+    const res = await fetch(`/api/exchange-rates?base=${encodeURIComponent(base)}`);
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.rates) {
+        Object.assign(USD_EXCHANGE_RATES, json.rates);
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({ timestamp: now, rates: json.rates }));
+        } catch (e) {}
+        return json.rates;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not fetch live exchange rates from server API, using benchmark rates:", err.message);
+  }
+
+  return USD_EXCHANGE_RATES;
+}

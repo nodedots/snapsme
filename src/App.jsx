@@ -353,7 +353,7 @@ export function App() {
       {/* Footer */}
       <footer className="border-t border-[#d9d4c8] bg-[#f7f3ea] py-4 text-center text-xs text-[#6b665c]">
         <p className="font-mono text-[11px]">
-          snapsme v1.0 — Receipt & Voice AI Expense Capture · Scoped to <span className="font-bold text-[#1c1b19]">{workspace.name}</span>
+          SnapSME v1.0 — Receipt & Voice AI Expense Capture · Scoped to <span className="font-bold text-[#1c1b19]">{workspace.name}</span>
         </p>
       </footer>
     </div>

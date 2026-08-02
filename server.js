@@ -197,8 +197,49 @@ JSON Schema:
     res.status(500).json({ error: error?.message || "Failed to extract receipt" });
   }
 });
+// Server-side Exchange Rate Cache (12-hour TTL)
+const exchangeRateCache = new Map();
 
-// Batch Receipt Extraction Endpoint for Bulk Uploads
+// Live Exchange Rates Endpoint (ExchangeRate-API Integration)
+app.get("/api/exchange-rates", async (req, res) => {
+  try {
+    const base = (req.query.base || "USD").toUpperCase();
+    const now = Date.now();
+
+    if (exchangeRateCache.has(base)) {
+      const cached = exchangeRateCache.get(base);
+      if (now - cached.timestamp < 12 * 60 * 60 * 1000) { // 12 hours
+        return res.json(cached.data);
+      }
+    }
+
+    const apiKey = process.env.EXCHANGE_RATE_API_KEY;
+    const apiUrl = process.env.EXCHANGE_RATE_API_URL
+      ? process.env.EXCHANGE_RATE_API_URL.replace("{base}", base)
+      : apiKey
+      ? `https://v6.exchangerate-api.com/v6/${apiKey}/latest/${base}`
+      : `https://open.er-api.com/v6/latest/${base}`;
+
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`ExchangeRate API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const payload = {
+      success: true,
+      base: data.base_code || base,
+      rates: data.rates || data.conversion_rates || {},
+      updatedAt: new Date().toISOString()
+    };
+
+    exchangeRateCache.set(base, { timestamp: now, data: payload });
+    return res.json(payload);
+  } catch (error) {
+    console.warn("Live exchange rate fetch failed, returning fallback indicator:", error.message);
+    res.status(500).json({ error: "Failed to fetch live exchange rates", fallback: true });
+  }
+});
 app.post("/api/extract-batch", async (req, res) => {
   try {
     const { items = [] } = req.body;

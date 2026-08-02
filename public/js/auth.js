@@ -247,7 +247,7 @@ export function mountAuthModal() {
 
         <!-- Header -->
         <h2 className="auth-modal-title" style="font-family: var(--font-notioninter); font-size: 24px; font-weight: 600; color: #000000; margin: 0 0 6px 0;">
-          ${isReset ? "Reset your password" : isSignUp ? "Create your account" : "Sign in to snapsme"}
+          ${isReset ? "Reset your password" : isSignUp ? "Create your account" : "Sign in to SnapSME"}
         </h2>
         <p class="auth-modal-subtext">
           ${isReset ? "Enter your email address and we'll send you a link to reset your password." : isSignUp ? "Get started in seconds. No credit card required." : "Never lose track of team spend again."}

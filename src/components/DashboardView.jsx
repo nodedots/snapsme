@@ -110,7 +110,7 @@ export const DashboardView = ({
   };
 
   const handleTestNotification = () => {
-    const message = `[snapsme Test Alert] Workspace spend reached ${Math.round(percentOfMonthlyBudget)}% of monthly budget ($${currentMonthSpend.toFixed(2)} / $${monthlyBudget.toFixed(2)}).`;
+    const message = `[SnapSME Test Alert] Workspace spend reached ${Math.round(percentOfMonthlyBudget)}% of monthly budget ($${currentMonthSpend.toFixed(2)} / $${monthlyBudget.toFixed(2)}).`;
     setTestAlertToast(message);
 
     if (
@@ -118,7 +118,7 @@ export const DashboardView = ({
       "Notification" in window &&
       Notification.permission === "granted"
     ) {
-      new Notification("snapsme Budget Notification", {
+      new Notification("SnapSME Budget Notification", {
         body: message,
         icon: "/favicon.ico"
       });

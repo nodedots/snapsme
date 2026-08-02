@@ -16,7 +16,7 @@ export const ChatIntakeModal = ({
     {
       id: "m1",
       sender: "bot",
-      text: "Welcome to snapsme Chat Bot! Send a receipt photo, a voice note, or text message here to test instant expense logging.",
+      text: "Welcome to SnapSME Chat Bot! Send a receipt photo, a voice note, or text message here to test instant expense logging.",
       time: "10:00 AM"
     }
   ]);
@@ -82,10 +82,12 @@ export const ChatIntakeModal = ({
         vendor = "Staples Supplies";
       }
 
+      const conversion = convertCurrency(amount, currency, workspaceCurrency || "USD");
+
       const botReply = {
         id: `b_${Date.now()}`,
         sender: "bot",
-        text: `✅ Expense Captured!\n• Vendor: ${vendor}\n• Amount: $${amount.toFixed(2)} ${currency}\n• Source: ${activeChannel === "telegram" ? "Telegram" : "WhatsApp"}\nSaved to workspace feed instantly!`,
+        text: `✅ Expense Captured!\n• Vendor: ${vendor}\n• Original: ${getCurrencySymbol(currency)}${amount.toFixed(2)} ${currency}\n• Accounting Ledger: ${getCurrencySymbol(workspaceCurrency || "USD")}${conversion.convertedAmount.toFixed(2)} ${workspaceCurrency || "USD"}\n• Source: ${activeChannel === "telegram" ? "Telegram" : "WhatsApp"}\nSaved to workspace feed instantly!`,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
 
@@ -97,8 +99,12 @@ export const ChatIntakeModal = ({
         submittedBy: currentUser.userId,
         submittedByName: currentUser.displayName,
         submittedByRole: currentUser.role,
-        amount,
-        currency,
+        amount: conversion.convertedAmount,
+        currency: workspaceCurrency || "USD",
+        originalAmount: amount,
+        originalCurrency: currency,
+        exchangeRate: conversion.exchangeRate,
+        isConverted: conversion.isConverted,
         vendor,
         categoryId: categories[0]?.id || "cat_general",
         categoryName: categories[0]?.name || "General",
@@ -211,7 +217,7 @@ export const ChatIntakeModal = ({
               </div>
               <div>
                 <p className="font-display font-bold text-xs text-[#1c1b19]">
-                  snapsme {activeChannel === "telegram" ? "Telegram" : "WhatsApp"} Bot Playground
+                  SnapSME {activeChannel === "telegram" ? "Telegram" : "WhatsApp"} Bot Playground
                 </p>
                 <p className="text-[10px] text-[#0f7a52] font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#0f7a52] animate-pulse" /> Online & Listening

@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { WORLD_CURRENCIES, convertCurrency, getCurrencySymbol } from "../lib/currencies.js";
+import React, { useState, useEffect, useRef } from "react";
+import { WORLD_CURRENCIES, convertCurrency, getCurrencySymbol, fetchLiveExchangeRates } from "../lib/currencies.js";
 import {
   Camera,
   Mic,
@@ -44,6 +44,13 @@ export const CaptureModal = ({
   const [notes, setNotes] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
   const [uploadedDocInfo, setUploadedDocInfo] = useState(null);
+
+  // Fetch live exchange rates on modal open
+  useEffect(() => {
+    if (isOpen) {
+      fetchLiveExchangeRates(workspaceCurrency || "USD");
+    }
+  }, [isOpen, workspaceCurrency]);
 
   // Voice note state
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
