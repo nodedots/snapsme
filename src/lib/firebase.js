@@ -27,9 +27,13 @@ export const firebaseConfig = {
   measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID", "G-ZY2K7H6ZN4")
 };
 
+import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
 // Initialize Firebase App & Services
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
 
 export let analytics = null;
 if (typeof window !== "undefined") {

@@ -61,16 +61,16 @@ export const SettingsView = ({
   const userIsOwner = isOwner(currentUser);
 
   // Profile Form state
-  const [profileName, setProfileName] = useState(currentUser.displayName || "");
-  const [profileEmail, setProfileEmail] = useState(currentUser.email || "");
-  const [profilePhone, setProfilePhone] = useState(currentUser.phone || "");
+  const [profileName, setProfileName] = useState(currentUser?.displayName || "");
+  const [profileEmail, setProfileEmail] = useState(currentUser?.email || "");
+  const [profilePhone, setProfilePhone] = useState(currentUser?.phone || "");
   const [profileToast, setProfileToast] = useState("");
 
   // Sync profile state on currentUser change
   useEffect(() => {
-    setProfileName(currentUser.displayName || "");
-    setProfileEmail(currentUser.email || "");
-    setProfilePhone(currentUser.phone || "");
+    setProfileName(currentUser?.displayName || "");
+    setProfileEmail(currentUser?.email || "");
+    setProfilePhone(currentUser?.phone || "");
   }, [currentUser]);
 
   // Chat Link Generation state
@@ -454,7 +454,7 @@ export const SettingsView = ({
 
             <div className="pt-2 flex items-center justify-between">
               <span className="text-[11px] text-[#6b665c] font-mono">
-                User ID: <span className="font-semibold text-[#1c1b19]">{currentUser.userId}</span>
+                User ID: <span className="font-semibold text-[#1c1b19]">{currentUser?.userId || "Unassigned"}</span>
               </span>
               <button
                 type="submit"
@@ -493,7 +493,7 @@ export const SettingsView = ({
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-display font-bold text-xs text-[#1c1b19]">Telegram Bot</span>
-                    {currentUser.telegramUserId ? (
+                    {currentUser?.telegramUserId ? (
                       <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
                         Connected
                       </span>
@@ -504,12 +504,12 @@ export const SettingsView = ({
                     )}
                   </div>
                   <p className="text-[11px] text-[#6b665c]">
-                    {currentUser.telegramUserId ? `@${currentUser.telegramUserId}` : "Snap photos & audio directly to @snapsme_bot"}
+                    {currentUser?.telegramUserId ? `@${currentUser.telegramUserId}` : "Snap photos & audio directly to @snapsme_bot"}
                   </p>
                 </div>
               </div>
 
-              {currentUser.telegramUserId ? (
+              {currentUser?.telegramUserId ? (
                 <button
                   type="button"
                   onClick={() => handleUnlinkChannel("telegram")}
@@ -538,7 +538,7 @@ export const SettingsView = ({
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-display font-bold text-xs text-[#1c1b19]">WhatsApp Bot</span>
-                    {currentUser.whatsappUserId ? (
+                    {currentUser?.whatsappUserId ? (
                       <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
                         Connected
                       </span>
@@ -549,12 +549,12 @@ export const SettingsView = ({
                     )}
                   </div>
                   <p className="text-[11px] text-[#6b665c]">
-                    {currentUser.whatsappUserId ? currentUser.whatsappUserId : "Send receipts to +1-800-SNAPSME"}
+                    {currentUser?.whatsappUserId ? currentUser.whatsappUserId : "Send receipts to +1-800-SNAPSME"}
                   </p>
                 </div>
               </div>
 
-              {currentUser.whatsappUserId ? (
+              {currentUser?.whatsappUserId ? (
                 <button
                   type="button"
                   onClick={() => handleUnlinkChannel("whatsapp")}

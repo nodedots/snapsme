@@ -229,10 +229,10 @@ export const CaptureModal = ({
     const defaultCurrency = workspaceCurrency || "USD";
 
     onSaveExpense({
-      businessId: currentUser.businessId,
-      submittedBy: currentUser.userId,
-      submittedByName: currentUser.displayName,
-      submittedByRole: currentUser.role,
+      businessId: currentUser?.businessId || "biz_default",
+      submittedBy: currentUser?.userId || "usr_guest",
+      submittedByName: currentUser?.displayName || "Guest User",
+      submittedByRole: currentUser?.role || "owner",
       amount: conversion.convertedAmount,
       currency: defaultCurrency,
       originalAmount: parseFloat(amount),

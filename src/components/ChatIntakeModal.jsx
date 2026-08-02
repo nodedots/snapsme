@@ -93,12 +93,12 @@ export const ChatIntakeModal = ({
 
       setMessages((prev) => [...prev, botReply]);
 
-      // Automatically save to main expense feed
+      // Automatically save converted amount to main expense feed
       onSaveExpense({
-        businessId: currentUser.businessId,
-        submittedBy: currentUser.userId,
-        submittedByName: currentUser.displayName,
-        submittedByRole: currentUser.role,
+        businessId: currentUser?.businessId || "biz_default",
+        submittedBy: currentUser?.userId || "usr_guest",
+        submittedByName: currentUser?.displayName || "Guest User",
+        submittedByRole: currentUser?.role || "owner",
         amount: conversion.convertedAmount,
         currency: workspaceCurrency || "USD",
         originalAmount: amount,
@@ -167,7 +167,7 @@ export const ChatIntakeModal = ({
           </h3>
 
           <p className="text-xs text-[#6b665c]">
-            Generate a 6-digit pairing code to link your phone number to <strong>{currentUser.displayName}</strong>.
+            Generate a 6-digit pairing code to link your phone number to <strong>{currentUser?.displayName || currentUser?.email || "Guest User"}</strong>.
           </p>
 
           {!linkCode ? (

@@ -132,12 +132,10 @@ export const Header = ({
               </div>
             </a>
 
-            <div className="h-5 w-[1px] bg-black/10 hidden sm:block mx-1" />
-
-            {/* Workspace badge */}
-            <div className="hidden sm:flex items-center gap-1.5 bg-white border border-black/10 px-2.5 py-1 rounded-lg text-xs font-medium text-[#000000]">
-              <Building2 className="w-3.5 h-3.5 text-[#0075de]" />
-              <span className="truncate max-w-[140px] md:max-w-[190px]">{workspace.name}</span>
+            {/* Business / Workspace Badge */}
+            <div className="flex items-center gap-1.5 bg-white border border-[#d9d4c8] text-[#1c1b19] px-2.5 py-1 rounded-lg text-xs font-semibold shadow-2xs">
+              <Building2 className="w-3.5 h-3.5 text-[#0075de] shrink-0" />
+              <span className="truncate max-w-[140px] md:max-w-[190px]">{workspace?.name || "My Workspace"}</span>
             </div>
           </div>
 
@@ -170,29 +168,47 @@ export const Header = ({
             </button>
 
             {/* User Profile Selector with Avatar Pill */}
-            <div className="relative flex items-center bg-white border border-black/10 rounded-lg p-1">
-              <div
-                className={`w-6 h-6 rounded-md text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 ${
-                  currentUser.role === "owner" ? "bg-[#0075de]" : "bg-[#111111]"
-                }`}
-              >
-                {getInitials(currentUser.displayName)}
+            {currentUser ? (
+              <div className="relative flex items-center bg-white border border-black/10 rounded-lg p-1">
+                <div
+                  className={`w-6 h-6 rounded-md text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 ${
+                    currentUser.role === "owner" ? "bg-[#0075de]" : "bg-[#111111]"
+                  }`}
+                >
+                  {getInitials(currentUser.displayName || currentUser.email)}
+                </div>
+                <select
+                  value={currentUser.userId || ""}
+                  onChange={(e) => {
+                    if (members && members.length > 0) {
+                      const found = members.find((m) => m.userId === e.target.value);
+                      if (found && setCurrentUser) setCurrentUser(found);
+                    }
+                  }}
+                  className="bg-transparent border-none text-xs font-semibold text-[#000000] pr-1 pl-1.5 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[130px] truncate"
+                >
+                  {members && members.length > 0 ? (
+                    members.map((m) => (
+                      <option key={m.userId} value={m.userId}>
+                        {m.displayName} ({m.role === "owner" ? "Owner" : "Member"})
+                      </option>
+                    ))
+                  ) : (
+                    <option value={currentUser.userId || "user"}>
+                      {currentUser.displayName || "User"} ({currentUser.role === "owner" ? "Owner" : "Member"})
+                    </option>
+                  )}
+                </select>
               </div>
-              <select
-                value={currentUser.userId}
-                onChange={(e) => {
-                  const found = members.find((m) => m.userId === e.target.value);
-                  if (found) setCurrentUser(found);
-                }}
-                className="bg-transparent border-none text-xs font-semibold text-[#000000] pr-1 pl-1.5 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[130px] truncate"
+            ) : (
+              <button
+                type="button"
+                onClick={onOpenOnboarding}
+                className="bg-[#0075de] hover:bg-[#0060b8] text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
               >
-                {members.map((m) => (
-                  <option key={m.userId} value={m.userId}>
-                    {m.displayName} ({m.role === "owner" ? "Owner" : "Member"})
-                  </option>
-                ))}
-              </select>
-            </div>
+                <span>Setup Workspace</span>
+              </button>
+            )}
 
             {/* Create Workspace / Onboarding Button */}
             {onOpenOnboarding && (

@@ -71,13 +71,15 @@ export function App() {
     }
   }, [expenses]);
 
-  // Check URL parameters and hash on load to launch onboarding / signin directly from landing page CTAs
+  // Check URL parameters or uninitialized workspace status on load to launch onboarding
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
 
-      if (
+      if (!workspace || !workspace.id) {
+        setIsOnboardingOpen(true);
+      } else if (
         params.get("onboarding") === "true" ||
         params.get("start") === "true" ||
         params.get("action") === "signup" ||
@@ -98,7 +100,7 @@ export function App() {
     } catch (e) {
       console.warn("Could not parse URL params for auth/onboarding launch:", e);
     }
-  }, []);
+  }, [workspace?.id]);
 
   // Handle onboarding completion
   const handleCompleteOnboarding = (result) => {
@@ -276,7 +278,7 @@ export function App() {
             categories={categories}
             members={members}
             onOpenCapture={() => setIsCaptureOpen(true)}
-            currency={workspace.currency}
+            currency={workspace?.currency || "USD"}
           />
         )}
 
@@ -285,8 +287,8 @@ export function App() {
             expenses={expenses}
             categories={categories}
             members={members}
-            currency={workspace.currency}
-            isOwner={currentUser.role === "owner"}
+            currency={workspace?.currency || "USD"}
+            isOwner={currentUser?.role === "owner"}
             workspace={workspace}
             onUpdateWorkspace={setWorkspace}
           />
@@ -297,7 +299,8 @@ export function App() {
             currentUser={currentUser}
             categories={categories}
             onSaveExpense={handleSaveExpense}
-            currency={workspace.currency}
+            currency={workspace?.currency || "USD"}
+            workspaceCurrency={workspace?.currency || "USD"}
           />
         )}
 
@@ -335,7 +338,7 @@ export function App() {
         onClose={() => setIsCaptureOpen(false)}
         categories={categories}
         currentUser={currentUser}
-        workspaceCurrency={workspace.currency}
+        workspaceCurrency={workspace?.currency || "USD"}
         isOfflineMode={isOfflineMode}
         onSaveExpense={handleSaveExpense}
       />
@@ -353,7 +356,7 @@ export function App() {
       {/* Footer */}
       <footer className="border-t border-[#d9d4c8] bg-[#f7f3ea] py-4 text-center text-xs text-[#6b665c]">
         <p className="font-mono text-[11px]">
-          SnapSME v1.0 — Receipt & Voice AI Expense Capture · Scoped to <span className="font-bold text-[#1c1b19]">{workspace.name}</span>
+          SnapSME v1.0 — Receipt & Voice AI Expense Capture · Scoped to <span className="font-bold text-[#1c1b19]">{workspace?.name || "My Workspace"}</span>
         </p>
       </footer>
     </div>

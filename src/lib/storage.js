@@ -16,7 +16,13 @@ export function loadWorkspace() {
     localStorage.setItem(STORAGE_KEYS.WORKSPACE, JSON.stringify(INITIAL_WORKSPACE));
     return INITIAL_WORKSPACE;
   }
-  return JSON.parse(data);
+  const parsed = JSON.parse(data);
+  // Purge legacy mock business ID if present
+  if (parsed.id === "biz_acme_101" || parsed.name === "Acme Supplies Ltd") {
+    localStorage.setItem(STORAGE_KEYS.WORKSPACE, JSON.stringify(INITIAL_WORKSPACE));
+    return INITIAL_WORKSPACE;
+  }
+  return parsed;
 }
 
 export function saveWorkspace(workspace) {
@@ -29,7 +35,12 @@ export function loadCategories() {
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
     return INITIAL_CATEGORIES;
   }
-  return JSON.parse(data);
+  const parsed = JSON.parse(data);
+  if (Array.isArray(parsed) && parsed.some(c => c.businessId === "biz_acme_101" || c.budget === 500)) {
+    localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+    return INITIAL_CATEGORIES;
+  }
+  return parsed;
 }
 
 export function saveCategories(categories) {
@@ -42,7 +53,12 @@ export function loadMembers() {
     localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(INITIAL_MEMBERS));
     return INITIAL_MEMBERS;
   }
-  return JSON.parse(data);
+  const parsed = JSON.parse(data);
+  if (Array.isArray(parsed) && parsed.some(m => m.businessId === "biz_acme_101" || m.userId === "usr_owner_default")) {
+    localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(INITIAL_MEMBERS));
+    return INITIAL_MEMBERS;
+  }
+  return parsed;
 }
 
 export function saveMembers(members) {
@@ -55,7 +71,12 @@ export function loadExpenses() {
     localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(INITIAL_EXPENSES));
     return INITIAL_EXPENSES;
   }
-  return JSON.parse(data);
+  const parsed = JSON.parse(data);
+  if (Array.isArray(parsed) && parsed.some(e => e.id === "exp_101" || e.vendor === "Shell Petroleum" || e.vendor === "Staples Business Center")) {
+    localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(INITIAL_EXPENSES));
+    return INITIAL_EXPENSES;
+  }
+  return parsed;
 }
 
 export function saveExpenses(expenses) {
@@ -65,11 +86,14 @@ export function saveExpenses(expenses) {
 export function loadCurrentUser() {
   const data = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   if (!data) {
-    const defaultUser = INITIAL_MEMBERS[0];
-    localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(defaultUser));
-    return defaultUser;
+    return null;
   }
-  return JSON.parse(data);
+  const parsed = JSON.parse(data);
+  if (parsed && (parsed.businessId === "biz_acme_101" || parsed.userId === "usr_owner_default")) {
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    return null;
+  }
+  return parsed;
 }
 
 export function saveCurrentUser(user) {

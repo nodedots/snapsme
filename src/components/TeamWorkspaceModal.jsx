@@ -44,7 +44,7 @@ export const TeamWorkspaceModal = ({
   const [newCatName, setNewCatName] = useState("");
   const [newCatBudget, setNewCatBudget] = useState("");
 
-  const isOwner = currentUser.role === "owner";
+  const isOwner = currentUser?.role === "owner";
 
   // Calculate leaderboard statistics for team members
   const currentMonthStr = new Date().toISOString().slice(0, 7);
