@@ -1,0 +1,631 @@
+/**
+ * SnapSME Authentication Module
+ * Firebase Auth (Email/Password, Google Sign-In, Password Reset) & Firestore Member Check
+ * Plain Vanilla JavaScript ES Module
+ *
+ * FIRESTORE SECURITY RULES CHECKLIST:
+ * Ensure your firestore.rules allows authenticated users without a members document
+ * to query their own invite or create their workspace member record:
+ *
+ * rules_version = '2';
+ * service cloud.firestore {
+ *   match /databases/{database}/documents {
+ *     match /members/{memberId} {
+ *       // Allow authenticated users to read their own member document or query by their email/uid
+ *       allow read: if request.auth != null && (resource.data.userId == request.auth.uid || resource.data.email == request.auth.token.email);
+ *       allow create, update: if request.auth != null && (request.resource.data.userId == request.auth.uid || request.auth.uid == memberId);
+ *     }
+ *   }
+ * }
+ */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  GoogleAuthProvider,
+  sendPasswordResetEmail,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  query,
+  where,
+  getDocs
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Safe helper to fetch environment variables
+const getEnv = (key, fallback = "") => {
+  if (typeof import.meta !== "undefined" && import.meta.env && import.meta.env[key]) {
+    return import.meta.env[key];
+  }
+  if (typeof window !== "undefined" && window.__SNAPSME_ENV__ && window.__SNAPSME_ENV__[key]) {
+    return window.__SNAPSME_ENV__[key];
+  }
+  return fallback;
+};
+
+// Environment variable driven Firebase configuration
+export const firebaseConfig = {
+  apiKey: getEnv("VITE_FIREBASE_API_KEY", "AIzaSyAmQZ0c6cvJhJLBgpNIbcZcNM33yi5ZgtY"),
+  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN", "snapsme-d26f6.firebaseapp.com"),
+  projectId: getEnv("VITE_FIREBASE_PROJECT_ID", "snapsme-d26f6"),
+  storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET", "snapsme-d26f6.firebasestorage.app"),
+  messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID", "588031509042"),
+  appId: getEnv("VITE_FIREBASE_APP_ID", "1:588031509042:web:dd11f5a6e29a341156722b"),
+  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID", "G-ZY2K7H6ZN4")
+};
+
+// Initialize Firebase Services
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+
+// In-session draft form state storage (retained across accidental closes in same session)
+let draftAuthState = {
+  email: "",
+  password: "",
+  tab: "signin" // 'signin', 'signup', or 'reset'
+};
+
+/**
+ * Maps Firebase Auth error codes into plain-language messages.
+ */
+export function mapAuthErrorMessage(errorCode) {
+  if (!errorCode) return "An unexpected error occurred. Please try again.";
+
+  switch (errorCode) {
+    case "auth/wrong-password":
+    case "auth/user-not-found":
+    case "auth/invalid-credential":
+    case "auth/invalid-email":
+      return "That email or password doesn't look right. Try again or reset your password.";
+    case "auth/email-already-in-use":
+      return "An account already exists with this email. Try signing in instead.";
+    case "auth/weak-password":
+      return "Choose a password with at least 8 characters.";
+    case "auth/popup-closed-by-user":
+    case "auth/cancelled-popup-request":
+      return null; // Silent failure (user closed popup intentionally)
+    case "auth/network-request-failed":
+      return "Connection issue — check your internet and try again.";
+    default:
+      return "Something went wrong — please try again or contact support.";
+  }
+}
+
+/**
+ * Checks if a user has an existing member document in Firestore.
+ * Updates pending invites (joinedAt: null) automatically.
+ */
+export async function checkUserMemberStatus(user) {
+  if (!user) return { hasMemberDoc: false, hasWorkspace: false };
+
+  try {
+    const memberRef = doc(db, "members", user.uid);
+    let memberSnap = await getDoc(memberRef);
+
+    if (!memberSnap.exists() && user.email) {
+      // Query fallback by email for pending invites
+      const q = query(collection(db, "members"), where("email", "==", user.email.toLowerCase()));
+      const querySnap = await getDocs(q);
+      if (!querySnap.empty) {
+        memberSnap = querySnap.docs[0];
+      }
+    }
+
+    if (memberSnap.exists()) {
+      const data = memberSnap.data();
+      // Complete pending invite if joinedAt is null
+      if (!data.joinedAt) {
+        try {
+          await updateDoc(memberSnap.ref, {
+            joinedAt: new Date().toISOString(),
+            userId: user.uid
+          });
+          data.joinedAt = new Date().toISOString();
+        } catch (e) {
+          console.warn("Could not update joinedAt timestamp:", e);
+        }
+      }
+
+      return {
+        hasMemberDoc: true,
+        hasWorkspace: Boolean(data.businessId),
+        memberData: data
+      };
+    }
+  } catch (err) {
+    console.warn("Firestore member doc lookup fallback:", err);
+  }
+
+  return { hasMemberDoc: false, hasWorkspace: false };
+}
+
+/**
+ * Redirects user based on authentication & workspace membership status.
+ */
+export async function handlePostAuthRedirect(user) {
+  const status = await checkUserMemberStatus(user);
+
+  if (status.hasMemberDoc && status.hasWorkspace) {
+    // Member belongs to a workspace -> redirect to dashboard
+    if (window.location.pathname !== "/") {
+      window.location.href = "/";
+    }
+  } else {
+    // New user with no workspace -> redirect to onboarding flow
+    window.location.href = "/?onboarding=true";
+  }
+}
+
+/**
+ * Initiates Google Sign-In with popup, falling back to redirect on mobile browsers.
+ */
+export async function handleGoogleSignIn() {
+  const provider = new GoogleAuthProvider();
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    await signInWithRedirect(auth, provider);
+    return;
+  }
+
+  try {
+    const result = await signInWithPopup(auth, provider);
+    if (result.user) {
+      await handlePostAuthRedirect(result.user);
+    }
+  } catch (error) {
+    const msg = mapAuthErrorMessage(error.code);
+    if (msg) throw new Error(msg);
+  }
+}
+
+/**
+ * Signs out user and redirects to /home.
+ */
+export async function handleSignOut() {
+  try {
+    await signOut(auth);
+  } catch (e) {
+    console.error("Sign out error:", e);
+  }
+  localStorage.removeItem("snapsme_current_user");
+  window.location.href = "/home";
+}
+
+/**
+ * Checks for Google Redirect Result on mobile page loads.
+ */
+export async function initGoogleRedirectCheck() {
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      await handlePostAuthRedirect(result.user);
+    }
+  } catch (error) {
+    console.error("Google redirect auth error:", error);
+  }
+}
+
+/**
+ * Render & Manage SnapSME Reusable Auth Modal
+ */
+export function mountAuthModal() {
+  let modalElem = document.getElementById("snapsme-auth-modal");
+  if (!modalElem) {
+    modalElem = document.createElement("div");
+    modalElem.id = "snapsme-auth-modal";
+    modalElem.className = "auth-modal-overlay hidden";
+    document.body.appendChild(modalElem);
+  }
+
+  const renderModalContent = () => {
+    const isSignIn = draftAuthState.tab === "signin";
+    const isSignUp = draftAuthState.tab === "signup";
+    const isReset = draftAuthState.tab === "reset";
+
+    modalElem.innerHTML = `
+      <div class="auth-modal-card">
+        <!-- Close Button -->
+        <button id="auth-close-btn" class="auth-modal-close-btn" aria-label="Close Modal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <!-- Header -->
+        <h2 className="auth-modal-title" style="font-family: var(--font-notioninter); font-size: 24px; font-weight: 600; color: #000000; margin: 0 0 6px 0;">
+          ${isReset ? "Reset your password" : isSignUp ? "Create your account" : "Sign in to snapsme"}
+        </h2>
+        <p class="auth-modal-subtext">
+          ${isReset ? "Enter your email address and we'll send you a link to reset your password." : isSignUp ? "Get started in seconds. No credit card required." : "Never lose track of team spend again."}
+        </p>
+
+        <!-- Error Banner -->
+        <div id="auth-banner-error" class="auth-banner-error hidden"></div>
+
+        <!-- Reset Success State -->
+        <div id="auth-reset-success" class="hidden" style="text-align: center; padding: 12px 0 20px 0;">
+          <div style="width: 44px; height: 44px; border-radius: 50%; background-color: #e6f7ed; color: #0f7a52; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <h3 style="font-size: 16px; font-weight: 600; color: #000; margin: 0 0 6px 0;">Check your email</h3>
+          <p style="font-size: 14px; color: #615d59; margin: 0 0 16px 0; line-height: 1.5;">
+            We sent a password reset link to <strong id="reset-email-target"></strong>.
+          </p>
+          <button id="auth-back-to-signin" class="auth-ghost-link" style="color: #0f7a52; font-weight: 600;">
+            &larr; Back to Sign In
+          </button>
+        </div>
+
+        <div id="auth-form-container">
+          ${!isReset ? `
+            <!-- Tab Switcher -->
+            <div class="auth-tabs">
+              <button id="tab-btn-signin" class="auth-tab-btn ${isSignIn ? "active" : ""}">Sign In</button>
+              <button id="tab-btn-signup" class="auth-tab-btn ${isSignUp ? "active" : ""}">Sign Up</button>
+            </div>
+
+            <!-- Google Sign-In Button -->
+            <button id="auth-google-btn" class="auth-google-btn">
+              <svg width="18" height="18" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+
+            <div class="auth-divider">
+              <span>or email</span>
+            </div>
+          ` : ""}
+
+          <!-- Form Fields -->
+          <form id="snapsme-auth-form">
+            <div class="auth-form-group">
+              <label class="auth-label" for="auth-email-input">Email address</label>
+              <input
+                type="email"
+                id="auth-email-input"
+                class="auth-input"
+                placeholder="name@company.com"
+                value="${escapeHtml(draftAuthState.email)}"
+                required
+              />
+              <div id="auth-email-error" class="auth-field-error hidden"></div>
+            </div>
+
+            ${!isReset ? `
+              <div class="auth-form-group">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                  <label class="auth-label" for="auth-password-input" style="margin: 0;">Password</label>
+                  ${isSignIn ? `<button type="button" id="auth-forgot-btn" class="auth-ghost-link" style="font-size: 13px;">Forgot password?</button>` : ""}
+                </div>
+                <input
+                  type="password"
+                  id="auth-password-input"
+                  class="auth-input"
+                  placeholder="${isSignUp ? 'At least 8 characters' : 'Enter your password'}"
+                  value="${escapeHtml(draftAuthState.password)}"
+                  required
+                />
+                <div id="auth-password-error" class="auth-field-error hidden"></div>
+              </div>
+            ` : ""}
+
+            <button type="submit" id="auth-submit-btn" class="auth-btn-primary">
+              <span id="auth-btn-label">${isReset ? "Send Reset Link" : isSignUp ? "Create Account" : "Sign In"}</span>
+            </button>
+          </form>
+
+          ${isReset ? `
+            <div style="text-align: center; margin-top: 16px;">
+              <button type="button" id="auth-cancel-reset" class="auth-ghost-link">&larr; Back to Sign In</button>
+            </div>
+          ` : ""}
+        </div>
+      </div>
+    `;
+
+    attachModalEventListeners();
+  };
+
+  const attachModalEventListeners = () => {
+    const emailInput = document.getElementById("auth-email-input");
+    const passwordInput = document.getElementById("auth-password-input");
+    const bannerError = document.getElementById("auth-banner-error");
+    const emailError = document.getElementById("auth-email-error");
+    const passwordError = document.getElementById("auth-password-error");
+    const submitBtn = document.getElementById("auth-submit-btn");
+    const btnLabel = document.getElementById("auth-btn-label");
+
+    // Retain typed input in draftAuthState
+    if (emailInput) {
+      emailInput.addEventListener("input", (e) => {
+        draftAuthState.email = e.target.value;
+        if (emailError) emailError.classList.add("hidden");
+      });
+      emailInput.addEventListener("blur", () => {
+        const val = emailInput.value.trim();
+        if (val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+          if (emailError) {
+            emailError.textContent = "Please enter a valid email address.";
+            emailError.classList.remove("hidden");
+          }
+        }
+      });
+    }
+
+    if (passwordInput) {
+      passwordInput.addEventListener("input", (e) => {
+        draftAuthState.password = e.target.value;
+        if (passwordError) passwordError.classList.add("hidden");
+      });
+    }
+
+    // Close Modal Event (Preserves draftAuthState)
+    const closeBtn = document.getElementById("auth-close-btn");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", () => hideAuthModal());
+    }
+
+    modalElem.addEventListener("click", (e) => {
+      if (e.target === modalElem) hideAuthModal();
+    });
+
+    // Tab Switchers
+    const signinTab = document.getElementById("tab-btn-signin");
+    const signupTab = document.getElementById("tab-btn-signup");
+    if (signinTab) {
+      signinTab.addEventListener("click", () => {
+        draftAuthState.tab = "signin";
+        renderModalContent();
+      });
+    }
+    if (signupTab) {
+      signupTab.addEventListener("click", () => {
+        draftAuthState.tab = "signup";
+        renderModalContent();
+      });
+    }
+
+    // Google Auth Button
+    const googleBtn = document.getElementById("auth-google-btn");
+    if (googleBtn) {
+      googleBtn.addEventListener("click", async () => {
+        clearErrors();
+        try {
+          googleBtn.disabled = true;
+          googleBtn.style.opacity = "0.7";
+          await handleGoogleSignIn();
+        } catch (err) {
+          showBannerError(err.message || "Google sign-in failed. Try again.");
+        } finally {
+          googleBtn.disabled = false;
+          googleBtn.style.opacity = "1";
+        }
+      });
+    }
+
+    // Forgot Password Trigger
+    const forgotBtn = document.getElementById("auth-forgot-btn");
+    if (forgotBtn) {
+      forgotBtn.addEventListener("click", () => {
+        draftAuthState.tab = "reset";
+        renderModalContent();
+      });
+    }
+
+    const cancelReset = document.getElementById("auth-cancel-reset");
+    const backToSignin = document.getElementById("auth-back-to-signin");
+    if (cancelReset) {
+      cancelReset.addEventListener("click", () => {
+        draftAuthState.tab = "signin";
+        renderModalContent();
+      });
+    }
+    if (backToSignin) {
+      backToSignin.addEventListener("click", () => {
+        draftAuthState.tab = "signin";
+        renderModalContent();
+      });
+    }
+
+    // Form Submission Handler
+    const authForm = document.getElementById("snapsme-auth-form");
+    if (authForm) {
+      authForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        clearErrors();
+
+        const email = emailInput ? emailInput.value.trim() : "";
+        const password = passwordInput ? passwordInput.value.trim() : "";
+
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          showFieldError(emailError, emailInput, "Please enter a valid email address.");
+          return;
+        }
+
+        if (draftAuthState.tab === "reset") {
+          // Password Reset Action
+          try {
+            setLoading(true, "Sending link...");
+            await sendPasswordResetEmail(auth, email);
+            document.getElementById("auth-form-container").classList.add("hidden");
+            document.getElementById("auth-reset-success").classList.remove("hidden");
+            document.getElementById("reset-email-target").textContent = email;
+          } catch (err) {
+            showBannerError(mapAuthErrorMessage(err.code) || "Failed to send reset link.");
+          } finally {
+            setLoading(false, "Send Reset Link");
+          }
+          return;
+        }
+
+        if (draftAuthState.tab === "signup") {
+          // Sign Up Action
+          if (!password || password.length < 8) {
+            showFieldError(passwordError, passwordInput, "Choose a password with at least 8 characters.");
+            return;
+          }
+
+          try {
+            setLoading(true, "Creating account...");
+            const res = await createUserWithEmailAndPassword(auth, email, password);
+            await handlePostAuthRedirect(res.user);
+          } catch (err) {
+            if (err.code === "auth/email-already-in-use") {
+              showBannerError(
+                `An account already exists with this email. <button id="switch-to-signin-link" class="auth-ghost-link" style="color: #0f7a52; text-decoration: underline;">Try signing in instead.</button>`
+              );
+              const switchLink = document.getElementById("switch-to-signin-link");
+              if (switchLink) {
+                switchLink.addEventListener("click", () => {
+                  draftAuthState.tab = "signin";
+                  renderModalContent();
+                });
+              }
+            } else {
+              showBannerError(mapAuthErrorMessage(err.code));
+            }
+          } finally {
+            setLoading(false, "Create Account");
+          }
+          return;
+        }
+
+        // Sign In Action
+        if (!password) {
+          showFieldError(passwordError, passwordInput, "Please enter your password.");
+          return;
+        }
+
+        try {
+          setLoading(true, "Signing in...");
+          const res = await signInWithEmailAndPassword(auth, email, password);
+          await handlePostAuthRedirect(res.user);
+        } catch (err) {
+          showBannerError(mapAuthErrorMessage(err.code));
+        } finally {
+          setLoading(false, "Sign In");
+        }
+      });
+    }
+
+    function setLoading(isLoading, label) {
+      if (!submitBtn) return;
+      submitBtn.disabled = isLoading;
+      if (isLoading) {
+        btnLabel.innerHTML = `<div class="auth-spinner"></div> <span>${label}</span>`;
+      } else {
+        btnLabel.textContent = label;
+      }
+    }
+
+    function clearErrors() {
+      if (bannerError) {
+        bannerError.classList.add("hidden");
+        bannerError.innerHTML = "";
+      }
+      if (emailError) emailError.classList.add("hidden");
+      if (passwordError) passwordError.classList.add("hidden");
+      if (emailInput) emailInput.classList.remove("input-error");
+      if (passwordInput) passwordInput.classList.remove("input-error");
+    }
+
+    function showBannerError(htmlMsg) {
+      if (!htmlMsg) return;
+      if (bannerError) {
+        bannerError.innerHTML = htmlMsg;
+        bannerError.classList.remove("hidden");
+      }
+    }
+
+    function showFieldError(errorElem, inputElem, msg) {
+      if (errorElem) {
+        errorElem.textContent = msg;
+        errorElem.classList.remove("hidden");
+      }
+      if (inputElem) {
+        inputElem.classList.add("input-error");
+        inputElem.focus();
+      }
+    }
+  };
+
+  renderModalContent();
+}
+
+/**
+ * Open Auth Modal with specific initial tab ('signin' or 'signup')
+ */
+export function showAuthModal(initialTab = "signin") {
+  draftAuthState.tab = initialTab;
+  mountAuthModal();
+  const modalElem = document.getElementById("snapsme-auth-modal");
+  if (modalElem) {
+    modalElem.classList.remove("hidden");
+  }
+}
+
+/**
+ * Dismiss Auth Modal
+ */
+export function hideAuthModal() {
+  const modalElem = document.getElementById("snapsme-auth-modal");
+  if (modalElem) {
+    modalElem.classList.add("hidden");
+  }
+}
+
+/**
+ * Helper to escape HTML characters
+ */
+function escapeHtml(str) {
+  if (!str) return "";
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// Check URL search parameters or hash to open modal automatically
+if (typeof window !== "undefined") {
+  document.addEventListener("DOMContentLoaded", () => {
+    initGoogleRedirectCheck();
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("auth") === "signin" || params.get("signin") === "true") {
+      showAuthModal("signin");
+    } else if (params.get("auth") === "signup" || params.get("signup") === "true") {
+      showAuthModal("signup");
+    }
+  });
+
+  // Global Auth Observer for Session Persistence
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // Save authenticated user snapshot to local storage
+      const userPayload = {
+        userId: user.uid,
+        displayName: user.displayName || user.email?.split("@")[0] || "User",
+        email: user.email || "",
+        avatarColor: "#0f7a52"
+      };
+      localStorage.setItem("snapsme_current_user", JSON.stringify(userPayload));
+    }
+  });
+}

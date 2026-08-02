@@ -146,7 +146,16 @@ export function unlinkChatChannel(userId, channel, members = [], saveMembersFn, 
 /**
  * Signs out the current user or resets local session state.
  */
-export function signOutUser(saveCurrentUserFn) {
+export async function signOutUser(saveCurrentUserFn) {
+  try {
+    const { getAuth, signOut } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
+    const auth = getAuth();
+    if (auth) {
+      await signOut(auth);
+    }
+  } catch (e) {
+    console.warn("Firebase signout error:", e);
+  }
   localStorage.removeItem("snapsme_current_user");
   if (saveCurrentUserFn) {
     saveCurrentUserFn(null);

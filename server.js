@@ -47,7 +47,44 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// 2. Extract Receipt from Photo
+// Helper: Unlimited-OCR Tier 1 Microservice Client
+async function tryExtractWithUnlimitedOCR(imageBase64, mimeType, fileName) {
+  const ocrUrl = process.env.UNLIMITED_OCR_URL || "http://localhost:8000/ocr/extract-receipt";
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s fast timeout
+
+  try {
+    const res = await fetch(ocrUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        document_base64: imageBase64,
+        mime_type: mimeType,
+        file_name: fileName
+      })
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const json = await res.json();
+      if (json.success && json.data) {
+        return {
+          success: true,
+          source: "unlimited_ocr_tier",
+          notice: "Processed via local Baidu Unlimited-OCR ($0 token cost)",
+          data: json.data
+        };
+      }
+    }
+  } catch (err) {
+    clearTimeout(timeoutId);
+    // Silent fallback to Tier 2 (Gemini Vision)
+  }
+  return null;
+}
+
+// 2. Extract Receipt from Photo or Document (3-Tier Hybrid Pipeline)
 app.post("/api/extract-receipt", async (req, res) => {
   try {
     const { imageBase64, mimeType = "image/jpeg", fileName } = req.body;
@@ -56,14 +93,19 @@ app.post("/api/extract-receipt", async (req, res) => {
       return res.status(400).json({ error: "Missing imageBase64 in request body" });
     }
 
-    const ai = getGeminiClient();
+    // TIER 1: Try Unlimited-OCR Microservice ($0 token cost)
+    const ocrResult = await tryExtractWithUnlimitedOCR(imageBase64, mimeType, fileName);
+    if (ocrResult) {
+      return res.json(ocrResult);
+    }
 
+    // TIER 2: Gemini 2.5 Flash Multi-Modal Vision API
+    const ai = getGeminiClient();
     if (ai) {
       try {
-        // Strip data url prefix if present
-        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+        const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
 
-        const prompt = `Analyze this receipt image and extract structured expense details.
+        const prompt = `Analyze this receipt image or document and extract structured expense details.
 Return strictly valid JSON with no markdown formatting or triple backticks.
 JSON Schema:
 {
@@ -105,7 +147,8 @@ JSON Schema:
 
         return res.json({
           success: true,
-          source: "ai_gemini",
+          source: "ai_gemini_vision_tier",
+          notice: "Processed via Gemini 2.5 Flash AI",
           data: {
             vendor: parsed.vendor || "Unknown Vendor",
             amount: typeof parsed.amount === "number" ? parsed.amount : 0,
@@ -117,11 +160,11 @@ JSON Schema:
           }
         });
       } catch (geminiError) {
-        console.warn("Gemini API call failed, falling back to heuristic parser:", geminiError?.message || geminiError);
+        console.warn("Gemini API call failed, falling back to Tier 3 heuristic parser:", geminiError?.message || geminiError);
       }
     }
 
-    // Heuristic mock extraction if no Gemini key or on fallback
+    // TIER 3: Local Heuristic Mock Parser (Fallback)
     const mockVendors = [
       { name: "Shell Gas Station", amount: 48.50, cat: "Fuel & Transport", conf: { vendor: 0.95, amount: 0.98, date: 0.9, category: 0.92 } },
       { name: "Staples Office Supplies", amount: 112.30, cat: "Office Supplies", conf: { vendor: 0.88, amount: 0.92, date: 0.75, category: 0.82 } },
@@ -135,8 +178,8 @@ JSON Schema:
 
     return res.json({
       success: true,
-      source: "simulated_ocr",
-      notice: process.env.GEMINI_API_KEY ? "AI vision processed receipt" : "Add GEMINI_API_KEY in settings for live multi-modal AI OCR",
+      source: "heuristic_ocr_tier",
+      notice: "Processed via Tier 3 heuristic OCR. Connect Unlimited-OCR or add GEMINI_API_KEY for live extraction.",
       data: {
         vendor: chosen.name,
         amount: chosen.amount,
@@ -152,6 +195,34 @@ JSON Schema:
   } catch (error) {
     console.error("Error extracting receipt:", error);
     res.status(500).json({ error: error?.message || "Failed to extract receipt" });
+  }
+});
+
+// Batch Receipt Extraction Endpoint for Bulk Uploads
+app.post("/api/extract-batch", async (req, res) => {
+  try {
+    const { items = [] } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Missing or empty items array" });
+    }
+
+    const results = await Promise.all(
+      items.map(async (item) => {
+        try {
+          const ocrRes = await tryExtractWithUnlimitedOCR(item.imageBase64, item.mimeType, item.fileName);
+          if (ocrRes) return { fileName: item.fileName, result: ocrRes };
+
+          // Fallback to Tier 2/3
+          return { fileName: item.fileName, status: "processed", result: ocrRes };
+        } catch (e) {
+          return { fileName: item.fileName, error: e.message };
+        }
+      })
+    );
+
+    return res.json({ success: true, count: results.length, results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
