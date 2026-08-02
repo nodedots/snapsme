@@ -1125,4 +1125,253 @@ body {
   }
 }
 
+/* ==========================================================================
+   NodeDots Developer Credit & Modal (Notion-Inspired Design System)
+   ========================================================================== */
+
+.snapsme-footer-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 24px;
+  margin-top: 24px;
+  border-top: var(--border-hairline, 1px solid rgba(0, 0, 0, 0.08));
+}
+
+.snapsme-developer-credit {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  color: var(--color-stone, #757575);
+  margin: 0;
+}
+
+.nodedots-trigger-link {
+  background: transparent;
+  border: none;
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-notion-blue, #0075de);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
+  text-decoration: none;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.nodedots-trigger-link:hover {
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+/* Modal Backdrop */
+.nodedots-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.nodedots-modal-backdrop.hidden {
+  display: none !important;
+}
+
+/* Modal Card */
+.nodedots-modal-card {
+  background-color: var(--color-pure-white, #ffffff);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  max-width: 440px;
+  padding: 24px;
+  position: relative;
+  box-sizing: border-box;
+  transform: scale(1);
+  animation: nodedotsModalScaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes nodedotsModalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nodedots-modal-card {
+    animation: none !important;
+  }
+}
+
+/* Modal Header */
+.nodedots-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.nodedots-modal-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nodedots-avatar-frame {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: var(--color-paper-warmth, #f6f5f4);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.nodedots-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.nodedots-developer-name {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--color-ink-black, #1c1b19);
+  margin: 0 0 2px 0;
+}
+
+.nodedots-developer-tag {
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  color: var(--color-stone, #757575);
+  font-weight: 500;
+}
+
+.nodedots-modal-close-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  color: var(--color-graphite, #615d59);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.nodedots-modal-close-btn:hover {
+  background-color: var(--color-sky-tint, #e6f3fe);
+  color: var(--color-notion-blue, #0075de);
+  border-color: rgba(0, 117, 222, 0.2);
+}
+
+/* Modal Bio Text */
+.nodedots-modal-bio {
+  font-family: var(--font-notioninter);
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--color-graphite, #615d59);
+  margin: 0 0 20px 0;
+}
+
+/* Links List */
+.nodedots-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.nodedots-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  text-decoration: none;
+  color: var(--color-ink-black, #1c1b19);
+  transition: all 0.15s ease;
+}
+
+.nodedots-link-row:hover {
+  background-color: var(--color-sky-tint, #e6f3fe);
+  border-color: rgba(0, 117, 222, 0.25);
+  color: var(--color-notion-blue, #0075de);
+}
+
+.nodedots-link-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nodedots-link-icon {
+  flex-shrink: 0;
+}
+
+.nodedots-link-label {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.nodedots-link-handle {
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  color: var(--color-stone, #757575);
+}
+
+.nodedots-link-row:hover .nodedots-link-handle {
+  color: var(--color-notion-blue, #0075de);
+}
+
+/* Single Emphasis Moment: Ko-fi Warm Coral Accent */
+.nodedots-kofi-row {
+  background-color: var(--color-coral, #f64932);
+  border-color: var(--color-coral, #f64932);
+  color: #ffffff !important;
+}
+
+.nodedots-kofi-row .nodedots-link-handle {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.nodedots-kofi-row:hover {
+  background-color: #e03b25 !important;
+  border-color: #e03b25 !important;
+  color: #ffffff !important;
+}
+
+.nodedots-kofi-row:hover .nodedots-link-handle {
+  color: #ffffff !important;
+}
+
+@media (max-width: 640px) {
+  .snapsme-footer-bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+}
+
 
