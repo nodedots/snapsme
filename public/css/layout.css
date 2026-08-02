@@ -105,13 +105,21 @@ html, body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding-top: 54px;
-  padding-bottom: 64px;
-  max-width: 900px;
+  background-color: var(--color-paper-warmth, #fbf9f5);
+  background-image: radial-gradient(#e2dcd2 1px, transparent 1px);
+  background-size: 20px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 56px 32px;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  max-width: 960px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
+  box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.04);
 }
 
 .hero-headline {
@@ -219,17 +227,19 @@ html, body {
 /* Mobile Devices (375px, 390px, 414px) */
 @media (max-width: 640px) {
   .hero-section {
-    padding-top: 28px;
-    padding-bottom: 36px;
+    padding: 36px 16px;
+    border-radius: 16px;
+    margin-top: 12px;
+    margin-bottom: 28px;
   }
 
   .hero-headline {
-    font-size: 34px;
+    font-size: 32px;
     letter-spacing: -0.8px;
     line-height: 1.15;
   }
   .hero-subtext {
-    font-size: 16px !important;
+    font-size: 15px !important;
     line-height: 1.45 !important;
     margin-bottom: 24px !important;
   }
@@ -246,18 +256,10 @@ html, body {
     box-sizing: border-box !important;
   }
 
-  .hero-svg-decor {
-    transform: scale(0.48) !important;
-    transform-origin: center center;
+  /* Hide hero decorative illustrations on mobile so text and buttons fit 100% clean inside pane */
+  .hero-decorations-wrapper {
+    display: none !important;
   }
-
-  .decor-top-left-2  { left: -2px; top: 4px; }
-  .decor-mid-left     { left: -4px; top: 95px; }
-  .decor-bottom-left  { left: 8px; top: 165px; }
-
-  .decor-top-right-2 { right: -2px; top: 4px; }
-  .decor-mid-right    { right: -4px; top: 95px; }
-  .decor-bottom-right { right: 8px; top: 165px; }
 }
 
 /* Ultra-Narrow Viewports (< 360px) */
@@ -417,21 +419,219 @@ html, body {
   margin: 0 auto;
 }
 
-/* Final CTA */
+/* Final CTA Section Notion Aesthetics */
 .final-cta-section {
+  position: relative;
+  overflow: hidden;
   text-align: center;
-  background-color: var(--color-pure-white);
-  border-radius: var(--radius-cards);
-  border: var(--border-hairline);
-  padding: 56px 32px;
+  background-color: var(--color-paper-warmth, #fbf9f5);
+  background-image: radial-gradient(#e2dcd2 1px, transparent 1px);
+  background-size: 20px 20px;
+  border-radius: 20px;
+  border: 2px solid var(--color-ink-black, #1c1b19);
+  padding: 64px 32px;
+  box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.07);
+}
+
+.cta-decorations-wrapper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cta-decor-item {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.92;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.cta-svg-decor {
+  display: block;
+  filter: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.05));
+}
+
+/* 4-Corner Decorative Scatter Positions */
+.cta-decor-top-left     { left: 24px; top: 20px; }
+.cta-decor-top-right    { right: 24px; top: 20px; }
+.cta-decor-bottom-left  { left: 28px; bottom: 20px; }
+.cta-decor-bottom-right { right: 28px; bottom: 20px; }
+
+.final-cta-content {
+  position: relative;
+  z-index: 2;
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cta-eyebrow-badge {
+  background-color: var(--color-sky-tint, #e6f3fe);
+  color: var(--color-notion-blue, #0075de);
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 5px 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(0, 117, 222, 0.2);
+  margin-bottom: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cta-pulse-ring {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-notion-blue, #0075de);
+  display: inline-block;
+  animation: ctaPulse 2s ease-in-out infinite;
+}
+
+@keyframes ctaPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.6; }
 }
 
 .final-cta-reinforcing {
   font-family: var(--font-notioninter);
   font-weight: 700;
-  font-size: 36px;
-  letter-spacing: -1px;
+  font-size: 40px;
+  line-height: 1.12;
+  letter-spacing: -1.2px;
+  color: var(--color-ink-black, #000000);
+  margin-bottom: 14px;
+}
+
+.final-cta-subtext {
+  font-family: var(--font-lyon-text, Georgia, serif);
+  font-size: 18px;
+  line-height: 1.45;
+  color: var(--color-graphite, #615d59);
   margin-bottom: 24px;
+  max-width: 540px;
+}
+
+/* Feature Micro-Badges Bar */
+.cta-perks-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.cta-perk-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  font-weight: 600;
+  color: #1c1b19;
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.final-cta-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.cta-btn-primary {
+  padding: 14px 32px;
+  font-size: 16px;
+}
+
+.cta-btn-ghost {
+  padding: 14px 24px;
+  font-size: 15px;
+}
+
+@media (max-width: 640px) {
+  .final-cta-section {
+    padding: 36px 16px;
+    border-radius: 16px;
+    box-sizing: border-box;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .final-cta-content {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .final-cta-reinforcing {
+    font-size: 24px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    word-break: break-word;
+    margin-bottom: 10px;
+  }
+
+  .final-cta-subtext {
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 20px;
+  }
+
+  .cta-perks-bar {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 24px;
+  }
+
+  .cta-perk-item {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+    font-size: 12px;
+    padding: 6px 10px;
+    text-align: center;
+  }
+
+  .final-cta-buttons {
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    gap: 10px;
+    box-sizing: border-box;
+  }
+
+  .final-cta-buttons > a {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 48px !important;
+    padding: 12px 14px !important;
+    font-size: 15px !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+
+  /* Hide decorative corner illustrations on mobile viewports so content and buttons fit 100% inside card pane */
+  .cta-decorations-wrapper {
+    display: none !important;
+  }
 }
 
 /* Footer */

@@ -1,0 +1,209 @@
+/* ==========================================================================
+   SnapSME Motion & Animation System
+   --------------------------------------------------------------------------
+   - Built with native CSS keyframes & transitions
+   - Triggered via IntersectionObserver in landing-motion.js
+   - 100% compliant with prefers-reduced-motion OS preferences
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Base Motion Variables & Initial Revealed States (Reduced Motion Defaults)
+   -------------------------------------------------------------------------- */
+:root {
+  --motion-duration-fast: 200ms;
+  --motion-duration-base: 500ms;
+  --motion-duration-slow: 700ms;
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Default state for non-JS or reduced motion: visible */
+.reveal-item,
+.hero-headline,
+.hero-subtext,
+.hero-cta-wrapper,
+.hero-decor-item,
+.preview-feed-item,
+.diagram-step-card,
+.diagram-arrow-connector,
+.features-grid > div {
+  opacity: 1;
+  transform: none;
+}
+
+/* --------------------------------------------------------------------------
+   2. Motion Keyframes & Reveal Classes (Only active when reduced-motion: no-preference)
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+
+  /* Unrevealed States */
+  .motion-ready .reveal-fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity var(--motion-duration-base) var(--motion-ease-out),
+                transform var(--motion-duration-base) var(--motion-ease-out);
+    will-change: opacity, transform;
+  }
+
+  .motion-ready .reveal-scale-up {
+    opacity: 0;
+    transform: scale(0.97) translateY(16px);
+    transition: opacity var(--motion-duration-base) var(--motion-ease-out),
+                transform var(--motion-duration-base) var(--motion-ease-out);
+    will-change: opacity, transform;
+  }
+
+  .motion-ready .reveal-stagger-card {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity var(--motion-duration-base) var(--motion-ease-out),
+                transform var(--motion-duration-base) var(--motion-ease-out);
+    transition-delay: calc(var(--stagger-index, 0) * 100ms);
+    will-change: opacity, transform;
+  }
+
+  .motion-ready .reveal-arrow {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity var(--motion-duration-base) var(--motion-ease-out),
+                transform var(--motion-duration-base) var(--motion-ease-out);
+    transition-delay: calc(var(--stagger-index, 0) * 100ms + 150ms);
+    will-change: opacity, transform;
+  }
+
+  /* Revealed Active States */
+  .reveal-active {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     3. Hero Entrance Animations (Page Load Stagger)
+     -------------------------------------------------------------------------- */
+  .hero-headline.hero-load-init {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: heroFadeUp 600ms var(--motion-ease-out) 100ms forwards;
+  }
+
+  .hero-subtext.hero-load-init {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: heroFadeUp 600ms var(--motion-ease-out) 220ms forwards;
+  }
+
+  .hero-cta-wrapper.hero-load-init {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: heroFadeUp 600ms var(--motion-ease-out) 340ms forwards;
+  }
+
+  .hero-decor-item.hero-load-decor {
+    opacity: 0;
+    animation: heroDecorFadeIn 500ms var(--motion-ease-out) var(--decor-delay, 450ms) forwards;
+  }
+
+  @keyframes heroFadeUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes heroDecorFadeIn {
+    to {
+      opacity: 0.92;
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     4. Product Preview Live Feed Motion & Pulse
+     -------------------------------------------------------------------------- */
+  /* Live Status Green Dot Pulse */
+  .live-status-dot-pulse {
+    animation: liveDotPulse 2.2s ease-in-out infinite;
+  }
+
+  @keyframes liveDotPulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.25);
+      opacity: 0.65;
+    }
+  }
+
+  /* Live Feed Item Row Activity Flash */
+  .preview-feed-item.feed-activity-flash {
+    animation: feedRowFlash 800ms ease-in-out;
+  }
+
+  @keyframes feedRowFlash {
+    0% {
+      background-color: var(--color-paper-warmth, #f6f5f4);
+    }
+    35% {
+      background-color: #e6f3fe; /* Soft Sky Wash Tint */
+      border-color: #0075de;
+    }
+    100% {
+      background-color: var(--color-paper-warmth, #f6f5f4);
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     5. Micro-interactions (Hover Elevates & Scale)
+     -------------------------------------------------------------------------- */
+  .btn-ledger-primary,
+  .btn-notion-primary {
+    transition: transform var(--motion-duration-fast) var(--motion-ease-out),
+                box-shadow var(--motion-duration-fast) var(--motion-ease-out),
+                background-color var(--motion-duration-fast) var(--motion-ease-out);
+  }
+
+  .btn-ledger-primary:hover,
+  .btn-notion-primary:hover {
+    transform: scale(1.03) translateY(-1px);
+    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.14);
+  }
+
+  .btn-notion-ghost {
+    transition: transform var(--motion-duration-fast) var(--motion-ease-out),
+                background-color var(--motion-duration-fast) var(--motion-ease-out);
+  }
+
+  .btn-notion-ghost:hover {
+    transform: translateY(-1px);
+  }
+
+  /* Content Card Subtle Hover Lift */
+  .notion-card-white,
+  .notion-card-marigold,
+  .notion-card-skywash,
+  .notion-card-coral,
+  .notion-card-midnight,
+  .diagram-step-card,
+  .who-its-for-card {
+    transition: transform var(--motion-duration-fast) var(--motion-ease-out),
+                filter var(--motion-duration-fast) var(--motion-ease-out);
+  }
+
+  .notion-card-white:hover,
+  .notion-card-marigold:hover,
+  .notion-card-skywash:hover,
+  .notion-card-coral:hover,
+  .notion-card-midnight:hover,
+  .diagram-step-card:hover,
+  .who-its-for-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .notion-card-marigold:hover,
+  .notion-card-skywash:hover,
+  .notion-card-coral:hover {
+    filter: brightness(1.02);
+  }
+}

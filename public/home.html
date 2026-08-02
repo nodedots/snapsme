@@ -21,6 +21,7 @@
   <link rel="icon" type="image/jpeg" href="/logo.jpg">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/motion.css">
 </head>
 
 <body
@@ -92,7 +93,7 @@
 
     <!-- Product Preview Section (Realistic UI Mockup directly below Hero) -->
     <section class="product-preview-section">
-      <div class="product-preview-card notion-card-white" style="box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); padding: 20px;">
+      <div class="product-preview-card notion-card-white reveal-scale-up" style="box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); padding: 20px;">
         <!-- Mock Feed Header: Responsive Row Stacking on Mobile -->
         <div class="preview-card-header">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -109,7 +110,7 @@
         <div style="display: flex; flex-direction: column; gap: 12px;">
           
           <!-- Feed Item 1: Fuel Photo Snap -->
-          <div class="preview-feed-item">
+          <div class="preview-feed-item reveal-stagger-card">
             <!-- Row 1: Icon + Vendor Title + Amount -->
             <div class="preview-feed-row-top">
               <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
@@ -141,7 +142,7 @@
           </div>
 
           <!-- Feed Item 2: Voice Note Expense -->
-          <div class="preview-feed-item">
+          <div class="preview-feed-item reveal-stagger-card">
             <!-- Row 1: Icon + Vendor Title + Amount -->
             <div class="preview-feed-row-top">
               <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
@@ -174,7 +175,7 @@
           </div>
 
           <!-- Feed Item 3: Chat Message Snap -->
-          <div class="preview-feed-item">
+          <div class="preview-feed-item reveal-stagger-card">
             <!-- Row 1: Icon + Vendor Title + Amount -->
             <div class="preview-feed-row-top">
               <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
@@ -210,15 +211,15 @@
 
     <!-- How It Works Diagram Section -->
     <section id="how-it-works" class="how-it-works-section">
-      <h2 class="section-heading">How it works</h2>
-      <p class="section-subheading">
+      <h2 class="section-heading reveal-fade-up">How it works</h2>
+      <p class="section-subheading reveal-fade-up">
         Three simple steps to eliminate lost paper receipts and manual bookkeeping for your business.
       </p>
 
       <!-- 3-Step Visual Diagram Flow -->
       <div class="diagram-flow-container">
         <!-- Step 1 -->
-        <div class="diagram-step-card">
+        <div class="diagram-step-card reveal-stagger-card">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div class="char-mark char-mark-blue">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -234,7 +235,7 @@
           </p>
         </div>
 
-        <div class="diagram-arrow-connector">
+        <div class="diagram-arrow-connector reveal-arrow">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
@@ -242,7 +243,7 @@
         </div>
 
         <!-- Step 2 -->
-        <div class="diagram-step-card">
+        <div class="diagram-step-card reveal-stagger-card">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div class="char-mark char-mark-marigold">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -257,7 +258,7 @@
           </p>
         </div>
 
-        <div class="diagram-arrow-connector">
+        <div class="diagram-arrow-connector reveal-arrow">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="5" y1="12" x2="19" y2="12"></line>
             <polyline points="12 5 19 12 12 19"></polyline>
@@ -265,7 +266,7 @@
         </div>
 
         <!-- Step 3 -->
-        <div class="diagram-step-card">
+        <div class="diagram-step-card reveal-stagger-card">
           <div style="display: flex; align-items: center; justify-content: space-between;">
             <div class="char-mark char-mark-skywash">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -287,15 +288,15 @@
     <!-- Accent Features Grid Section (Alternating White & Full-Bleed Accent Cards) -->
     <section id="features" class="features-section">
       <div style="text-align: center;">
-        <h2 class="section-heading">Features built for small teams</h2>
-        <p class="section-subheading">
+        <h2 class="section-heading reveal-fade-up">Features built for small teams</h2>
+        <p class="section-subheading reveal-fade-up">
           Everything you need to track spending across 2 to 10 staff members effortlessly.
         </p>
       </div>
 
       <div class="features-grid">
         <!-- Feature 1: Receipt Photo Capture (White Card) -->
-        <div class="notion-card-white">
+        <div class="notion-card-white reveal-stagger-card">
           <div class="feature-card-content">
             <div class="char-mark char-mark-blue" style="margin-bottom: 6px;">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -311,7 +312,7 @@
         </div>
 
         <!-- Feature 2: Voice-Note Entry (Accent Marigold Card) -->
-        <div class="notion-card-marigold">
+        <div class="notion-card-marigold reveal-stagger-card">
           <div class="feature-card-content">
             <div class="char-mark" style="margin-bottom: 6px; border: 2px solid #000000; color: #000000;">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -328,7 +329,7 @@
         </div>
 
         <!-- Feature 3: Telegram & WhatsApp Intake (Accent Sky-Wash Card) -->
-        <div class="notion-card-skywash">
+        <div class="notion-card-skywash reveal-stagger-card">
           <div class="feature-card-content">
             <div class="char-mark" style="margin-bottom: 6px; border: 2px solid #000000; color: #000000;">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -343,7 +344,7 @@
         </div>
 
         <!-- Feature 4: Works Without Internet (White Card) -->
-        <div class="notion-card-white">
+        <div class="notion-card-white reveal-stagger-card">
           <div class="feature-card-content">
             <div class="char-mark char-mark-blue" style="margin-bottom: 6px;">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -362,7 +363,7 @@
         </div>
 
         <!-- Feature 5: Budgets & Alerts (Accent Coral Card) -->
-        <div class="notion-card-coral">
+        <div class="notion-card-coral reveal-stagger-card">
           <div class="feature-card-content">
             <div class="char-mark" style="margin-bottom: 6px; border: 2px solid #ffffff; color: #ffffff; background: transparent;">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -378,7 +379,7 @@
         </div>
 
         <!-- Feature 6: CSV Export (Accent Midnight Ink Card) -->
-        <div class="notion-card-midnight">
+        <div class="notion-card-midnight reveal-stagger-card">
           <div class="feature-card-content">
             <div class="char-mark" style="margin-bottom: 6px; border: 2px solid #ffffff; color: #ffffff; background: transparent;">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -391,12 +392,13 @@
             <p class="feature-desc">
               Download a clean spreadsheet of everything, ready to hand to your accountant.
             </p>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- Who It's For Section (Accent Marigold Card with Lyon Text Serif) -->
-    <section class="who-its-for-section">
+    <section class="who-its-for-section reveal-fade-up">
       <div class="who-its-for-card">
         <h2 class="who-its-for-title">Who it's for</h2>
         <p class="who-its-for-text">
@@ -408,17 +410,75 @@
       </div>
     </section>
 
-    <!-- Final CTA Section -->
-    <section class="final-cta-section">
-      <h2 class="final-cta-reinforcing">Start tracking team spend in minutes</h2>
-      <a href="/?onboarding=true" class="btn-notion-primary" style="padding: 12px 28px; font-size: 16px;">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-          <circle cx="12" cy="13" r="3" />
-        </svg>
-        <span>Create your workspace</span>
-      </a>
+    <!-- Final CTA Section (Notion Canvas Grid Card with Corner-Scattered Aesthetics) -->
+    <section class="final-cta-section reveal-fade-up">
+      <!-- Scattered Decorative Elements for CTA Section -->
+      <div class="cta-decorations-wrapper">
+        <!-- Top Left Corner: Curled Receipt & Paperclip -->
+        <div class="cta-decor-item cta-decor-top-left float-anim-1">
+          <img src="/assets/hero-illustrations/receipt_curled.svg" alt="" class="cta-svg-decor" style="transform: rotate(-12deg); width: 46px; height: auto;" />
+        </div>
+
+        <!-- Top Right Corner: Itemized Receipt -->
+        <div class="cta-decor-item cta-decor-top-right float-anim-2">
+          <img src="/assets/hero-illustrations/receipt_itemized.svg" alt="" class="cta-svg-decor" style="transform: rotate(9deg); width: 48px; height: auto;" />
+        </div>
+
+        <!-- Bottom Left Corner: Wallet & Coin -->
+        <div class="cta-decor-item cta-decor-bottom-left float-anim-3">
+          <img src="/assets/hero-illustrations/wallet.svg" alt="" class="cta-svg-decor" style="transform: rotate(-7deg); width: 42px; height: auto;" />
+        </div>
+
+        <!-- Bottom Right Corner: Thermal Receipt & Price Tag -->
+        <div class="cta-decor-item cta-decor-bottom-right float-anim-1">
+          <img src="/assets/hero-illustrations/receipt_thermal.svg" alt="" class="cta-svg-decor" style="transform: rotate(8deg); width: 40px; height: auto;" />
+        </div>
+      </div>
+
+      <!-- CTA Content -->
+      <div class="final-cta-content">
+        <div class="cta-eyebrow-badge">
+          <span class="cta-pulse-ring"></span>
+          <span>GET STARTED IN SECONDS</span>
+        </div>
+        
+        <h2 class="final-cta-reinforcing">
+          Start tracking team spend <span class="hero-highlight-pill" style="background-color: var(--color-marigold);">in minutes</span>
+        </h2>
+        <p class="final-cta-subtext">
+          Eliminate lost paper receipts and manual bookkeeping for your business today.
+        </p>
+
+        <!-- 3 Feature Micro-Badges -->
+        <div class="cta-perks-bar">
+          <div class="cta-perk-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-[#0f7a52]"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>No credit card needed</span>
+          </div>
+          <div class="cta-perk-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-[#0f7a52]"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>WhatsApp & Telegram ready</span>
+          </div>
+          <div class="cta-perk-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-[#0f7a52]"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Instant CSV export</span>
+          </div>
+        </div>
+
+        <div class="final-cta-buttons">
+          <a href="/?onboarding=true" class="btn-ledger-primary cta-btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+              <circle cx="12" cy="13" r="3" />
+            </svg>
+            <span>Create your workspace</span>
+          </a>
+          <a href="/?auth=signin" class="btn-notion-ghost cta-btn-ghost">
+            <span>Sign in</span>
+          </a>
+        </div>
+      </div>
     </section>
 
     <!-- Reusable Header, Auth & Footer -->
@@ -426,6 +486,7 @@
     <script type="module" src="/js/header.js"></script>
     <script type="module" src="/js/auth.js"></script>
     <script type="module" src="/js/footer.js"></script>
+    <script type="module" src="/js/landing-motion.js"></script>
 
   </div>
 
