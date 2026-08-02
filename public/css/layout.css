@@ -155,7 +155,7 @@ html, body {
 }
 
 /* ==========================================================================
-   Hero Scattered Visual Decorations System
+   Hero Scattered Visual Decorations System (Paper-trail Illustrations)
    ========================================================================== */
 .hero-decorations-wrapper {
   position: absolute;
@@ -178,18 +178,17 @@ html, body {
 .hero-svg-decor {
   display: block;
   filter: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.04));
+  transition: transform 0.2s ease;
 }
 
-/* Symmetrical Margin Positioning (Left & Right Flanks) */
-.decor-top-left-1  { left: 10px; top: 10px; }
-.decor-top-left-2  { left: 65px; top: 65px; }
-.decor-mid-left     { left: 20px; top: 155px; }
-.decor-bottom-left  { left: 75px; top: 225px; }
+/* Symmetrical Outer Margin Positioning (Desktop >= 769px) */
+.decor-top-left-2  { left: 18px; top: 18px; }
+.decor-mid-left     { left: 8px; top: 145px; }
+.decor-bottom-left  { left: 35px; top: 245px; }
 
-.decor-top-right-1 { right: 10px; top: 10px; }
-.decor-top-right-2 { right: 65px; top: 65px; }
-.decor-mid-right    { right: 20px; top: 155px; }
-.decor-bottom-right { right: 75px; top: 225px; }
+.decor-top-right-2 { right: 18px; top: 18px; }
+.decor-mid-right    { right: 8px; top: 145px; }
+.decor-bottom-right { right: 35px; top: 245px; }
 
 /* Subtle floating animations */
 @keyframes heroSubtleFloat {
@@ -201,20 +200,29 @@ html, body {
 .float-anim-2 { animation: heroSubtleFloat 5.1s ease-in-out 0.8s infinite; }
 .float-anim-3 { animation: heroSubtleFloat 4.6s ease-in-out 1.6s infinite; }
 
-@media (max-width: 860px) {
-  .decor-top-left-2,
-  .decor-bottom-left,
-  .decor-top-right-2,
-  .decor-bottom-right {
-    display: none !important;
+/* Tablet & Medium Mobile (< 768px) */
+@media (max-width: 768px) {
+  .hero-svg-decor {
+    transform: scale(0.6) !important;
+    transform-origin: center center;
   }
+
+  .decor-top-left-2  { left: 4px; top: 10px; }
+  .decor-mid-left     { left: 2px; top: 115px; }
+  .decor-bottom-left  { left: 16px; top: 185px; }
+
+  .decor-top-right-2 { right: 4px; top: 10px; }
+  .decor-mid-right    { right: 2px; top: 115px; }
+  .decor-bottom-right { right: 16px; top: 185px; }
 }
 
+/* Mobile Devices (375px, 390px, 414px) */
 @media (max-width: 640px) {
   .hero-section {
     padding-top: 28px;
     padding-bottom: 36px;
   }
+
   .hero-headline {
     font-size: 34px;
     letter-spacing: -0.8px;
@@ -237,14 +245,27 @@ html, body {
     justify-content: center !important;
     box-sizing: border-box !important;
   }
-  
-  /* On mobile: Hide distracting side items to prioritize legibility & tap targets */
-  .decor-mid-left,
-  .decor-mid-right {
+
+  .hero-svg-decor {
+    transform: scale(0.48) !important;
+    transform-origin: center center;
+  }
+
+  .decor-top-left-2  { left: -2px; top: 4px; }
+  .decor-mid-left     { left: -4px; top: 95px; }
+  .decor-bottom-left  { left: 8px; top: 165px; }
+
+  .decor-top-right-2 { right: -2px; top: 4px; }
+  .decor-mid-right    { right: -4px; top: 95px; }
+  .decor-bottom-right { right: 8px; top: 165px; }
+}
+
+/* Ultra-Narrow Viewports (< 360px) */
+@media (max-width: 360px) {
+  .decor-bottom-left,
+  .decor-bottom-right {
     display: none !important;
   }
-  .decor-top-left-1 { left: 8px; top: 6px; }
-  .decor-top-right-1 { right: 8px; top: 6px; }
 }
 
 @media (min-width: 641px) and (max-width: 1024px) {
