@@ -38,6 +38,28 @@ export const DashboardView = ({
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [testAlertToast, setTestAlertToast] = useState(null);
 
+  const prefs = {
+    showTopVendor: true,
+    showTeamLeaderboard: true,
+    showBudgetVsActual: true,
+    showSpendByDay: false,
+    ...(workspace?.dashboardPreferences || {})
+  };
+
+  const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const spendByDayMap = daysOfWeek.map((dayName, dayIdx) => {
+    const dayExpenses = expenses.filter((e) => {
+      const d = new Date(e.date);
+      return d.getDay() === dayIdx;
+    });
+    const total = dayExpenses.reduce((s, e) => s + e.amount, 0);
+    return {
+      day: dayName,
+      short: dayName.slice(0, 3),
+      total,
+      count: dayExpenses.length
+    };
+  });
   useEffect(() => {
     if (workspace.monthlyBudget !== undefined && workspace.monthlyBudget !== null) {
       setMonthlyBudgetInput(workspace.monthlyBudget);
@@ -233,109 +255,78 @@ export const DashboardView = ({
       </div>
 
       {/* Workspace Monthly Budget Overview Card */}
-      <div className="bg-white p-5 sm:p-6 rounded-xl border border-black/10 space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-black/10 pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-lg bg-[#e6f3fe] border border-black/10 flex items-center justify-center text-[#0075de]">
-              <Target className="w-5 h-5" />
+      {prefs.showBudgetVsActual && (
+        <div className="bg-white p-5 sm:p-6 rounded-xl border border-black/10 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-black/10 pb-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-lg bg-[#e6f3fe] border border-black/10 flex items-center justify-center text-[#0075de]">
+                <Target className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-base text-[#000000]">Workspace Monthly Budget</h3>
+                <p className="text-xs text-[#615d59]">Set a global monthly ceiling to control team-wide spending</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-display font-bold text-base text-[#000000]">Workspace Monthly Budget</h3>
-              <p className="text-xs text-[#615d59]">Set a global monthly ceiling to control team-wide spending</p>
+
+            {/* Monthly Budget Input Form */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-44">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[#6b665c]">
+                  {getCurrencySymbol(currency)}
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="50"
+                  value={monthlyBudgetInput}
+                  onChange={(e) => setMonthlyBudgetInput(e.target.value === "" ? "" : Number(e.target.value))}
+                  placeholder="Monthly Budget"
+                  disabled={!isOwner}
+                  className="w-full bg-[#f7f3ea] border border-[#d9d4c8] font-mono text-sm font-bold text-[#1c1b19] rounded-lg pl-7 pr-3 py-2 focus:outline-none focus:border-[#0f7a52] disabled:opacity-60"
+                />
+              </div>
+              {isOwner && (
+                <button
+                  onClick={handleSaveMonthlyBudget}
+                  className="bg-[#0f7a52] hover:bg-[#0b5f40] text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+                >
+                  {isSavedNotice ? <Check className="w-4 h-4 text-emerald-300" /> : <Save className="w-4 h-4" />}
+                  <span>{isSavedNotice ? "Saved!" : "Set Budget"}</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Monthly Budget Input Form */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-44">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[#6b665c]">
-                {getCurrencySymbol(currency)}
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="50"
-                value={monthlyBudgetInput}
-                onChange={(e) => setMonthlyBudgetInput(e.target.value === "" ? "" : Number(e.target.value))}
-                placeholder="Monthly Budget"
-                disabled={!isOwner}
-                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] font-mono text-sm font-bold text-[#1c1b19] rounded-lg pl-7 pr-3 py-2 focus:outline-none focus:border-[#0f7a52] disabled:opacity-60"
-              />
-            </div>
-            {isOwner && (
-              <button
-                onClick={handleSaveMonthlyBudget}
-                className="bg-[#0f7a52] hover:bg-[#0b5f40] text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
-              >
-                {isSavedNotice ? <Check className="w-4 h-4 text-emerald-300" /> : <Save className="w-4 h-4" />}
-                <span>{isSavedNotice ? "Saved!" : "Set Budget"}</span>
-              </button>
-            )}
-          </div>
-        </div>
+          {/* Progress Bar & Visual Indicators */}
+          {monthlyBudget > 0 ? (
+            <div className="space-y-3 pt-1">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                <div className="flex items-center gap-2 font-mono">
+                  <span className="font-bold text-[#1c1b19] text-sm">{getCurrencySymbol(currency)}{currentMonthSpend.toFixed(2)}</span>
+                  <span className="text-[#6b665c]">spent of</span>
+                  <span className="font-bold text-[#1c1b19] text-sm">{getCurrencySymbol(currency)}{monthlyBudget.toFixed(2)}</span>
+                  <span className="text-[#6b665c] font-sans">({currency})</span>
+                </div>
 
-        {/* Progress Bar & Visual Indicators */}
-        {monthlyBudget > 0 ? (
-          <div className="space-y-3 pt-1">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-              <div className="flex items-center gap-2 font-mono">
-                <span className="font-bold text-[#1c1b19] text-sm">{getCurrencySymbol(currency)}{currentMonthSpend.toFixed(2)}</span>
-                <span className="text-[#6b665c]">spent of</span>
-                <span className="font-bold text-[#1c1b19] text-sm">{getCurrencySymbol(currency)}{monthlyBudget.toFixed(2)}</span>
-                <span className="text-[#6b665c] font-sans">({currency})</span>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs font-bold text-[#1c1b19]">
-                  {percentOfMonthlyBudget.toFixed(1)}% Used
-                </span>
-                {isMonthlyOverBudget ? (
-                  <span className="bg-[#ff5a3c]/10 text-[#ff5a3c] border border-[#ff5a3c]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <ShieldAlert className="w-3 h-3" /> Budget Exceeded
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-[#1c1b19]">
+                    {percentOfMonthlyBudget.toFixed(1)}% Used
                   </span>
-                ) : isMonthlyNearLimit ? (
-                  <span className="bg-[#e0982a]/10 text-[#e0982a] border border-[#e0982a]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" /> Near Limit
-                  </span>
-                ) : (
-                  <span className="bg-[#0f7a52]/10 text-[#0f7a52] border border-[#0f7a52]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                    <Check className="w-3 h-3" /> On Track
-                  </span>
-                )}
+                  {isMonthlyOverBudget ? (
+                    <span className="bg-[#ff5a3c]/10 text-[#ff5a3c] border border-[#ff5a3c]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <ShieldAlert className="w-3 h-3" /> Budget Exceeded
+                    </span>
+                  ) : isMonthlyNearLimit ? (
+                    <span className="bg-[#e0982a]/10 text-[#e0982a] border border-[#e0982a]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" /> Near Limit
+                    </span>
+                  ) : (
+                    <span className="bg-[#0f7a52]/10 text-[#0f7a52] border border-[#0f7a52]/30 text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Check className="w-3 h-3" /> On Track
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-
-            {/* Custom Bar */}
-            <div className="w-full h-3.5 bg-[#d9d4c8]/50 rounded-full overflow-hidden p-0.5 border border-[#d9d4c8]">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${
-                  isMonthlyOverBudget
-                    ? "bg-[#ff5a3c]"
-                    : isMonthlyNearLimit
-                    ? "bg-[#e0982a]"
-                    : "bg-[#0f7a52]"
-                }`}
-                style={{ width: `${Math.min(percentOfMonthlyBudget, 100)}%` }}
-              />
-            </div>
-
-            {/* Quick Metrics Sub-row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-              <div className="bg-[#f7f3ea] p-2.5 rounded-lg border border-[#d9d4c8]/80 flex justify-between items-center">
-                <span className="text-[#6b665c]">Remaining Budget:</span>
-                <span className={`font-mono font-bold ${remainingMonthlyBudget < 0 ? "text-[#ff5a3c]" : "text-[#0f7a52]"}`}>
-                  ${remainingMonthlyBudget >= 0 ? remainingMonthlyBudget.toFixed(2) : `-${Math.abs(remainingMonthlyBudget).toFixed(2)}`}
-                </span>
-              </div>
-              <div className="bg-[#f7f3ea] p-2.5 rounded-lg border border-[#d9d4c8]/80 flex justify-between items-center">
-                <span className="text-[#6b665c]">Monthly Total Logged:</span>
-                <span className="font-mono font-bold text-[#1c1b19]">${currentMonthSpend.toFixed(2)}</span>
-              </div>
-              <div className="bg-[#f7f3ea] p-2.5 rounded-lg border border-[#d9d4c8]/80 flex justify-between items-center">
-                <span className="text-[#6b665c]">Budget Utilization:</span>
-                <span className="font-mono font-bold text-[#1c1b19]">{Math.round(percentOfMonthlyBudget)}%</span>
-              </div>
-            </div>
 
             {/* Soft Warning Banner */}
             {isMonthlyOverBudget && (
@@ -506,6 +497,7 @@ export const DashboardView = ({
           </div>
         )}
       </div>
+      )}
 
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -529,22 +521,24 @@ export const DashboardView = ({
           <p className="text-[11px] text-[#6b665c] mt-1 font-medium">1 Owner, {members.length - 1} Staff members</p>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-[#d9d4c8]">
-          <div className="flex items-center justify-between text-[#6b665c] mb-1">
-            <span className="text-xs font-medium">Top Spend Category</span>
-            <TrendingUp className="w-4 h-4 text-[#ff5a3c]" />
+        {prefs.showTopVendor && (
+          <div className="bg-white p-4 rounded-xl border border-[#d9d4c8]">
+            <div className="flex items-center justify-between text-[#6b665c] mb-1">
+              <span className="text-xs font-medium">Top Spend Category</span>
+              <TrendingUp className="w-4 h-4 text-[#ff5a3c]" />
+            </div>
+            {(() => {
+              const sorted = [...categorySpendMap].sort((a, b) => b.spent - a.spent);
+              const top = sorted[0];
+              return (
+                <>
+                  <p className="font-display font-bold text-lg text-[#1c1b19] truncate">{top?.category.name || "N/A"}</p>
+                  <p className="font-mono text-xs text-[#ff5a3c] font-bold mt-1">${top?.spent.toFixed(2) || "0.00"}</p>
+                </>
+              );
+            })()}
           </div>
-          {(() => {
-            const sorted = [...categorySpendMap].sort((a, b) => b.spent - a.spent);
-            const top = sorted[0];
-            return (
-              <>
-                <p className="font-display font-bold text-lg text-[#1c1b19] truncate">{top?.category.name || "N/A"}</p>
-                <p className="font-mono text-xs text-[#ff5a3c] font-bold mt-1">${top?.spent.toFixed(2) || "0.00"}</p>
-              </>
-            );
-          })()}
-        </div>
+        )}
 
         <div className="bg-white p-4 rounded-xl border border-[#d9d4c8]">
           <div className="flex items-center justify-between text-[#6b665c] mb-1">
@@ -633,25 +627,27 @@ export const DashboardView = ({
 
       {/* Spend Breakdown by Staff & Money Movement */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Spend by Team Member */}
-        <div className="bg-white p-5 rounded-xl border border-[#d9d4c8] space-y-3">
-          <h3 className="font-display font-bold text-sm text-[#1c1b19] uppercase tracking-wider">
-            Spend by Team Member
-          </h3>
-          <div className="space-y-2.5">
-            {memberSpendMap.map((m) => (
-              <div key={m.member.userId} className="flex items-center justify-between text-xs p-2.5 bg-[#f7f3ea] rounded-lg">
-                <div>
-                  <p className="font-semibold text-[#1c1b19]">{m.member.displayName}</p>
-                  <span className="text-[10px] text-[#6b665c] font-mono">{m.count} submissions</span>
+        {/* Spend by Team Member (Leaderboard) */}
+        {prefs.showTeamLeaderboard && (
+          <div className="bg-white p-5 rounded-xl border border-[#d9d4c8] space-y-3">
+            <h3 className="font-display font-bold text-sm text-[#1c1b19] uppercase tracking-wider">
+              Spend by Team Member
+            </h3>
+            <div className="space-y-2.5">
+              {memberSpendMap.map((m) => (
+                <div key={m.member.userId} className="flex items-center justify-between text-xs p-2.5 bg-[#f7f3ea] rounded-lg">
+                  <div>
+                    <p className="font-semibold text-[#1c1b19]">{m.member.displayName}</p>
+                    <span className="text-[10px] text-[#6b665c] font-mono">{m.count} submissions</span>
+                  </div>
+                  <span className="font-mono text-sm font-bold text-[#1c1b19]">
+                    ${m.spent.toFixed(2)}
+                  </span>
                 </div>
-                <span className="font-mono text-sm font-bold text-[#1c1b19]">
-                  ${m.spent.toFixed(2)}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Spend by Money Movement Type */}
         <div className="bg-white p-5 rounded-xl border border-[#d9d4c8] space-y-3">
@@ -673,6 +669,24 @@ export const DashboardView = ({
           </div>
         </div>
       </div>
+
+      {/* Spend by Day of Week Card (Optional) */}
+      {prefs.showSpendByDay && (
+        <div className="bg-white p-5 rounded-xl border border-[#d9d4c8] space-y-3">
+          <h3 className="font-display font-bold text-sm text-[#1c1b19] uppercase tracking-wider">
+            Spend Breakdown by Day of Week
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5 pt-1 text-center">
+            {spendByDayMap.map((d) => (
+              <div key={d.day} className="bg-[#f7f3ea] p-3 rounded-xl border border-[#d9d4c8] space-y-1">
+                <span className="text-[11px] font-bold text-[#6b665c] uppercase tracking-wider block">{d.short}</span>
+                <span className="font-mono text-sm font-bold text-[#1c1b19] block">${d.total.toFixed(2)}</span>
+                <span className="text-[10px] text-[#6b665c] font-mono block">{d.count} txns</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

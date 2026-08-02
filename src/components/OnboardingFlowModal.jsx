@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { WORLD_CURRENCIES, getCurrencyLabel } from "../lib/currencies.js";
 import {
+  BUSINESS_TYPES,
   validateSignUp,
   validateWorkspaceInfo,
   validateStaffInvite,
@@ -17,7 +18,14 @@ import {
   ShieldCheck,
   ChevronLeft,
   X,
-  Loader2
+  Loader2,
+  ShoppingBag,
+  Briefcase,
+  Utensils,
+  HardHat,
+  UserCheck,
+  Layers,
+  Check
 } from "lucide-react";
 import { auth, googleProvider } from "../lib/firebase.js";
 import { signInWithPopup, signInWithRedirect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -28,9 +36,10 @@ export function OnboardingFlowModal({
   onCompleteOnboarding,
   saveWorkspaceFn,
   saveMembersFn,
-  saveCurrentUserFn
+  saveCurrentUserFn,
+  saveCategoriesFn
 }) {
-  const [currentStep, setCurrentStep] = useState(1); // 1: Signup, 2: Workspace, 3: Staff Invites, 4: Confirmation
+  const [currentStep, setCurrentStep] = useState(1); // 1: Signup, 2: Workspace, 3: Business Type, 4: Staff Invites, 5: Confirmation
   const [errorMsg, setErrorMsg] = useState("");
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
@@ -40,6 +49,15 @@ export function OnboardingFlowModal({
     emailOrPhone: "",
     password: ""
   });
+
+  // Step 2: Workspace form state
+  const [workspaceForm, setWorkspaceForm] = useState({
+    name: "",
+    currency: "USD"
+  });
+
+  // Step 3: Business type template selection state
+  const [selectedBusinessType, setSelectedBusinessType] = useState("retail");
 
   const handleGoogleSignIn = async () => {
     setErrorMsg("");
@@ -69,11 +87,7 @@ export function OnboardingFlowModal({
     }
   };
 
-  // Step 2: Workspace form state
-  const [workspaceForm, setWorkspaceForm] = useState({
-    name: "",
-    currency: "USD"
-  });
+
 
   // Step 3: Staff invite list state
   const [inviteInput, setInviteInput] = useState({
@@ -141,17 +155,19 @@ export function OnboardingFlowModal({
         {
           signUpData: validatedSignUp,
           workspaceData: validatedWs,
+          businessType: selectedBusinessType,
           staffInvites: staffToInvite
         },
         {
           saveWorkspaceFn,
           saveMembersFn,
-          saveCurrentUserFn
+          saveCurrentUserFn,
+          saveCategoriesFn
         }
       );
 
       setCreatedResult(result);
-      setCurrentStep(4);
+      setCurrentStep(5);
     } catch (err) {
       setErrorMsg(err.message || "Failed to complete workspace creation.");
     }
@@ -181,9 +197,9 @@ export function OnboardingFlowModal({
           </div>
 
           <div className="flex items-center gap-3">
-            {currentStep <= 3 && (
+            {currentStep <= 4 && (
               <span className="text-xs text-[#757575]">
-                Step {currentStep} of 3
+                Step {currentStep} of 4
               </span>
             )}
             <button
@@ -371,20 +387,100 @@ export function OnboardingFlowModal({
                 type="submit"
                 className="bg-[#0075de] hover:bg-[#0060b8] text-white w-full py-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 cursor-pointer transition-all"
               >
-                <span>Continue to Invite Staff</span>
+                <span>Continue to Business Category Setup</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           </form>
         )}
 
-        {/* STEP 3: Invite Staff (Optional & Skippable) */}
+        {/* STEP 3: Business-Type Onboarding Template */}
         {currentStep === 3 && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setCurrentStep(2)}
+                className="text-xs font-semibold text-[#615d59] hover:text-[#000000] flex items-center gap-1 cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" /> Back
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedBusinessType(null);
+                  setCurrentStep(4);
+                }}
+                className="text-xs font-semibold text-[#615d59] hover:text-[#0075de] underline cursor-pointer"
+              >
+                I'll set up categories myself
+              </button>
+            </div>
+
+            <div className="text-center space-y-1 mb-2">
+              <div className="w-10 h-10 rounded-full bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center mx-auto mb-2 font-bold">
+                <Building2 className="w-5 h-5" />
+              </div>
+              <h2 className="font-display font-bold text-xl text-[#000000]">
+                What kind of business is this?
+              </h2>
+              <p className="text-xs text-[#615d59]">
+                Select a business template to pre-populate default expense categories and remove blank-page friction
+              </p>
+            </div>
+
+            {/* Business Type Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[280px] overflow-y-auto pr-1">
+              {BUSINESS_TYPES.map((bt) => {
+                const isSelected = selectedBusinessType === bt.id;
+                return (
+                  <div
+                    key={bt.id}
+                    onClick={() => setSelectedBusinessType(bt.id)}
+                    className={`p-3 rounded-xl border cursor-pointer transition-all flex items-start gap-2.5 ${
+                      isSelected
+                        ? "bg-[#e7f4ec] border-[#0f7a52] shadow-2xs"
+                        : "bg-[#f6f5f4] border-black/10 hover:border-black/25"
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${
+                      isSelected ? "bg-[#0f7a52] text-white" : "bg-black/5 text-[#615d59]"
+                    }`}>
+                      {isSelected ? <Check className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+                    </div>
+                    <div className="space-y-0.5">
+                      <h3 className="font-display font-bold text-xs text-[#000000]">
+                        {bt.name}
+                      </h3>
+                      <p className="text-[11px] text-[#615d59] leading-tight line-clamp-2">
+                        {bt.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(4)}
+                className="bg-[#0075de] hover:bg-[#0060b8] text-white w-full py-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 cursor-pointer transition-all"
+              >
+                <span>Continue with Template</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Invite Staff (Optional & Skippable) */}
+        {currentStep === 4 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(3)}
                 className="text-xs font-semibold text-[#615d59] hover:text-[#000000] flex items-center gap-1 cursor-pointer"
               >
                 <ChevronLeft className="w-3.5 h-3.5" /> Back

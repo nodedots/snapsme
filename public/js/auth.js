@@ -38,6 +38,7 @@ import {
   getDoc,
   updateDoc,
   collection,
+  collectionGroup,
   query,
   where,
   getDocs
@@ -104,67 +105,169 @@ export function mapAuthErrorMessage(errorCode) {
 }
 
 /**
- * Checks if a user has an existing member document in Firestore.
- * Updates pending invites (joinedAt: null) automatically.
+ * Checks if a user has an existing member document in Firestore using a collectionGroup query
+ * across all businesses/{businessId}/members subcollections.
+ * Automatically accepts & completes pending invites (joinedAt: null).
  */
 export async function checkUserMemberStatus(user) {
-  if (!user) return { hasMemberDoc: false, hasWorkspace: false };
+  if (!user) return { hasMemberDoc: false, hasWorkspace: false, memberData: null };
+
+  const targetUid = user.uid || user.userId;
+  const targetEmail = user.email ? user.email.toLowerCase() : null;
 
   try {
-    const memberRef = doc(db, "members", user.uid);
-    let memberSnap = await getDoc(memberRef);
+    let memberDocSnap = null;
 
-    if (!memberSnap.exists() && user.email) {
-      // Query fallback by email for pending invites
-      const q = query(collection(db, "members"), where("email", "==", user.email.toLowerCase()));
+    // 1. Collection Group Query across all members subcollections filtering by userId
+    if (targetUid) {
+      const q = query(collectionGroup(db, "members"), where("userId", "==", targetUid));
       const querySnap = await getDocs(q);
       if (!querySnap.empty) {
-        memberSnap = querySnap.docs[0];
+        memberDocSnap = querySnap.docs[0];
       }
     }
 
-    if (memberSnap.exists()) {
-      const data = memberSnap.data();
+    // 2. Fallback Collection Group Query by email for pending invites
+    if (!memberDocSnap && targetEmail) {
+      const qEmail = query(collectionGroup(db, "members"), where("email", "==", targetEmail));
+      const querySnapEmail = await getDocs(qEmail);
+      if (!querySnapEmail.empty) {
+        memberDocSnap = querySnapEmail.docs[0];
+      }
+    }
+
+    if (memberDocSnap && memberDocSnap.exists()) {
+      const data = memberDocSnap.data();
+      const parentBusinessRef = memberDocSnap.ref.parent?.parent;
+      const businessId = data.businessId || (parentBusinessRef ? parentBusinessRef.id : null);
+
       // Complete pending invite if joinedAt is null
       if (!data.joinedAt) {
         try {
-          await updateDoc(memberSnap.ref, {
-            joinedAt: new Date().toISOString(),
-            userId: user.uid
+          const nowIso = new Date().toISOString();
+          await updateDoc(memberDocSnap.ref, {
+            joinedAt: nowIso,
+            userId: targetUid || user.uid
           });
-          data.joinedAt = new Date().toISOString();
+          data.joinedAt = nowIso;
+          if (targetUid) data.userId = targetUid;
         } catch (e) {
-          console.warn("Could not update joinedAt timestamp:", e);
+          console.warn("Could not update joinedAt on pending invite member doc:", e);
         }
       }
 
       return {
         hasMemberDoc: true,
-        hasWorkspace: Boolean(data.businessId),
+        hasWorkspace: Boolean(businessId || data.joinedAt),
+        isCompleted: Boolean(data.joinedAt),
+        businessId,
         memberData: data
       };
     }
   } catch (err) {
-    console.warn("Firestore member doc lookup fallback:", err);
+    console.warn("Firestore collectionGroup member lookup error or offline fallback:", err);
   }
 
-  return { hasMemberDoc: false, hasWorkspace: false };
+  // Local Storage Fallback for offline mode / local state
+  try {
+    const localMembersData = localStorage.getItem("snapsme_members");
+    const localWsData = localStorage.getItem("snapsme_workspace");
+    const localWs = localWsData ? JSON.parse(localWsData) : null;
+
+    if (localMembersData) {
+      const membersList = JSON.parse(localMembersData);
+      let matchedMember = membersList.find(
+        (m) =>
+          (targetUid && m.userId === targetUid) ||
+          (targetEmail && m.email && m.email.toLowerCase() === targetEmail)
+      );
+
+      if (matchedMember && localWs && localWs.id) {
+        if (!matchedMember.joinedAt) {
+          matchedMember.joinedAt = new Date().toISOString();
+          if (targetUid) matchedMember.userId = targetUid;
+          localStorage.setItem("snapsme_members", JSON.stringify(membersList));
+        }
+        return {
+          hasMemberDoc: true,
+          hasWorkspace: true,
+          isCompleted: true,
+          businessId: localWs.id,
+          memberData: matchedMember
+        };
+      }
+    }
+
+    if (localWs && localWs.id) {
+      const localUser = localStorage.getItem("snapsme_current_user");
+      if (localUser) {
+        const u = JSON.parse(localUser);
+        if (u && ((targetUid && u.userId === targetUid) || (targetEmail && u.email === targetEmail))) {
+          return {
+            hasMemberDoc: true,
+            hasWorkspace: true,
+            isCompleted: true,
+            businessId: localWs.id,
+            memberData: u
+          };
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("Local storage member status lookup error:", e);
+  }
+
+  return { hasMemberDoc: false, hasWorkspace: false, isCompleted: false, memberData: null };
 }
 
 /**
  * Redirects user based on authentication & workspace membership status.
+ * Executes once, resolves fully, and routes without onboarding flash.
  */
 export async function handlePostAuthRedirect(user) {
+  if (!user) return;
+
   const status = await checkUserMemberStatus(user);
 
+  // Save current user snapshot
+  const userPayload = {
+    userId: user.uid || user.userId,
+    displayName: user.displayName || status.memberData?.displayName || user.email?.split("@")[0] || "User",
+    email: user.email || status.memberData?.email || "",
+    photoURL: user.photoURL || null,
+    role: status.memberData?.role || "member",
+    businessId: status.businessId || null
+  };
+  localStorage.setItem("snapsme_current_user", JSON.stringify(userPayload));
+
   if (status.hasMemberDoc && status.hasWorkspace) {
-    // Member belongs to a workspace -> redirect to dashboard
-    if (window.location.pathname !== "/") {
+    // Returning member or accepted invite -> route to dashboard
+    if (window.location.pathname.includes("home")) {
       window.location.href = "/";
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("onboarding");
+      url.searchParams.delete("auth");
+      url.searchParams.delete("signin");
+      url.searchParams.delete("signup");
+      const target = url.pathname + (url.search ? url.search : "");
+      if (window.location.search.includes("onboarding") || window.location.search.includes("auth")) {
+        window.location.href = target;
+      } else if (window.location.pathname !== "/") {
+        window.location.href = "/";
+      }
     }
   } else {
-    // New user with no workspace -> redirect to onboarding flow
-    window.location.href = "/?onboarding=true";
+    // Brand-new user -> route to onboarding
+    if (window.location.pathname.includes("home")) {
+      window.location.href = "/?onboarding=true";
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.set("onboarding", "true");
+      if (!window.location.search.includes("onboarding=true")) {
+        window.location.href = url.toString();
+      }
+    }
   }
 }
 

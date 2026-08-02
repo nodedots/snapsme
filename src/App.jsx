@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { convertCurrency } from "./lib/currencies.js";
+import { applyBrandAccentColor } from "./lib/brand.js";
 import {
   loadWorkspace,
   saveWorkspace,
@@ -38,9 +39,12 @@ export function App() {
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
-  // Sync state changes to storage
+  // Sync state changes to storage and apply brand accent color
   useEffect(() => {
     saveWorkspace(workspace);
+    if (workspace?.brand?.accentColor) {
+      applyBrandAccentColor(workspace.brand.accentColor);
+    }
   }, [workspace]);
 
   useEffect(() => {
@@ -108,6 +112,9 @@ export function App() {
       if (result.workspace) setWorkspace(result.workspace);
       if (result.members) setMembers(result.members);
       if (result.ownerMember) setCurrentUser(result.ownerMember);
+      if (result.categories && result.categories.length > 0) {
+        setCategories(result.categories);
+      }
       setCurrentView("dashboard");
     }
   };
@@ -198,6 +205,8 @@ export function App() {
     const updated = [candidate, ...expenses];
     setExpenses(updated);
   };
+
+
 
   // Sync all pending offline items to online
   const handleForceSync = () => {
@@ -351,6 +360,7 @@ export function App() {
         saveWorkspaceFn={setWorkspace}
         saveMembersFn={setMembers}
         saveCurrentUserFn={setCurrentUser}
+        saveCategoriesFn={setCategories}
       />
 
       {/* Footer */}

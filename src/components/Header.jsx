@@ -10,7 +10,8 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
-  Settings
+  Settings,
+  LogOut
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -29,8 +30,20 @@ export const Header = ({
   onOpenOnboarding
 }) => {
   const scrollRef = useRef(null);
+  const dropdownRef = useRef(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Check scroll position to show/hide gradient indicators and arrows
   const checkScrollability = () => {
@@ -120,7 +133,7 @@ export const Header = ({
               title="Go to SnapSME Marketing Homepage"
             >
               <div className="w-8 h-8 bg-[#0075de] text-white flex items-center justify-center rounded-lg overflow-hidden shadow-xs group-hover:scale-105 transition-transform">
-                <img src="/logo.jpg" alt="SnapSME Logo" className="w-full h-full object-cover" />
+                <img src={workspace?.brand?.logoUrl || "/logo.jpg"} alt="SnapSME Logo" className="w-full h-full object-cover" />
               </div>
               <div>
                 <span className="font-display font-bold text-xl tracking-tight text-[#000000]">
@@ -167,38 +180,67 @@ export const Header = ({
               )}
             </button>
 
-            {/* User Profile Selector with Avatar Pill */}
+            {/* User Profile Avatar with Interactive Dropdown Menu Pane */}
             {currentUser ? (
-              <div className="relative flex items-center bg-white border border-black/10 rounded-lg p-1">
-                <div
-                  className={`w-6 h-6 rounded-md text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 ${
-                    currentUser.role === "owner" ? "bg-[#0075de]" : "bg-[#111111]"
-                  }`}
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
+                  className="w-8.5 h-8.5 rounded-full bg-[#e7f4ec] text-[#0f7a52] border border-[#d9d4c8] hover:border-[#0f7a52] font-display font-bold text-xs flex items-center justify-center cursor-pointer transition-all overflow-hidden select-none shadow-xs"
+                  title={currentUser.displayName || currentUser.email}
                 >
-                  {getInitials(currentUser.displayName || currentUser.email)}
-                </div>
-                <select
-                  value={currentUser.userId || ""}
-                  onChange={(e) => {
-                    if (members && members.length > 0) {
-                      const found = members.find((m) => m.userId === e.target.value);
-                      if (found && setCurrentUser) setCurrentUser(found);
-                    }
-                  }}
-                  className="bg-transparent border-none text-xs font-semibold text-[#000000] pr-1 pl-1.5 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[130px] truncate"
-                >
-                  {members && members.length > 0 ? (
-                    members.map((m) => (
-                      <option key={m.userId} value={m.userId}>
-                        {m.displayName} ({m.role === "owner" ? "Owner" : "Member"})
-                      </option>
-                    ))
+                  {currentUser.photoURL ? (
+                    <img src={currentUser.photoURL} alt={currentUser.displayName} className="w-full h-full object-cover" />
                   ) : (
-                    <option value={currentUser.userId || "user"}>
-                      {currentUser.displayName || "User"} ({currentUser.role === "owner" ? "Owner" : "Member"})
-                    </option>
+                    <span>{getInitials(currentUser.displayName || currentUser.email)}</span>
                   )}
-                </select>
+                </button>
+
+                {/* Dropdown Menu Pane */}
+                {isUserDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white border border-[#d9d4c8] rounded-xl shadow-xl z-50 py-1.5 font-sans text-xs">
+                    <div className="px-4 py-2.5 border-b border-[#d9d4c8]/60 space-y-0.5">
+                      <p className="font-display font-bold text-xs text-[#1c1b19] truncate">
+                        {currentUser.displayName || "User"}
+                      </p>
+                      {currentUser.email && (
+                        <p className="text-[11px] text-[#6b665c] truncate">
+                          {currentUser.email}
+                        </p>
+                      )}
+                      <span className="inline-block mt-1 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[#0f7a52]/10 text-[#0f7a52]">
+                        {currentUser.role === "owner" ? "Workspace Owner" : "Team Member"}
+                      </span>
+                    </div>
+
+                    <div className="py-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsUserDropdownOpen(false);
+                          setCurrentView("settings");
+                        }}
+                        className="w-full px-4 py-2 text-left font-medium text-[#1c1b19] hover:bg-[#f7f3ea] flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <Settings className="w-3.5 h-3.5 text-[#6b665c]" />
+                        <span>Settings</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setIsUserDropdownOpen(false);
+                          localStorage.removeItem("snapsme_current_user");
+                          window.location.href = "/home";
+                        }}
+                        className="w-full px-4 py-2 text-left font-medium text-[#e32d14] hover:bg-red-50 flex items-center gap-2 transition-colors cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5 text-[#e32d14]" />
+                        <span>Sign out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <button

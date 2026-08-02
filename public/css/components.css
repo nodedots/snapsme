@@ -2,6 +2,12 @@
 
 :root {
   /* Colors */
+  --color-brand-accent: #0f7a52;
+  --color-ledger-green: #0f7a52;
+  --color-mint-wash: #e7f4ec;
+  --color-fiber-gray: #d9d4c8;
+  --color-cloud-equivalent: #f7f3ea;
+  --color-amber-flag: #e0982a;
   --color-notion-blue: #0075de;
   --color-paper-warmth: #f6f5f4;
   --color-pure-white: #ffffff;
@@ -32,6 +38,7 @@
 
   /* Borders & Shadows */
   --border-hairline: 1px solid rgba(0, 0, 0, 0.08);
+  --shadow-card: 0px 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-mockup: 0px 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-nav: 0px 0.7px 1.46px 0px rgba(0, 0, 0, 0.015), 0px 3px 9px 0px rgba(0, 0, 0, 0.03);
 }
@@ -818,6 +825,176 @@ body {
 
 @keyframes authSpin {
   to { transform: rotate(360deg); }
+}
+
+/* Ledger Primary Button Style */
+.btn-ledger-primary {
+  background-color: var(--color-ledger-green, #0f7a52);
+  color: #ffffff !important;
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 10px;
+  padding: 8px 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.15s ease, opacity 0.15s ease, transform 0.1s ease;
+}
+
+.btn-ledger-primary:hover {
+  background-color: #0b5e3f;
+  color: #ffffff !important;
+}
+
+/* User Avatar Style (32-36px circle) */
+.snapsme-avatar-circle {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: var(--color-mint-wash, #e7f4ec);
+  color: var(--color-ledger-green, #0f7a52);
+  border: 1px solid var(--color-fiber-gray, #d9d4c8);
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  padding: 0;
+  transition: border-color 0.15s ease;
+}
+
+.snapsme-avatar-circle:hover {
+  border-color: var(--color-ledger-green, #0f7a52);
+}
+
+.snapsme-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Dropdown Menu Style */
+.hidden {
+  display: none !important;
+}
+
+.snapsme-user-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background-color: #ffffff;
+  border: 1px solid var(--color-fiber-gray, #d9d4c8);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card, 0px 4px 12px rgba(0, 0, 0, 0.1));
+  width: 220px;
+  z-index: 100;
+  padding: 6px 0;
+  font-family: var(--font-notioninter);
+}
+
+.snapsme-user-dropdown.hidden {
+  display: none !important;
+}
+
+.snapsme-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #1c1b19;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease;
+}
+
+.snapsme-dropdown-item:hover {
+  background-color: var(--color-cloud-equivalent, #f7f3ea);
+}
+
+/* ==========================================================================
+   SnapSME Detailed FAQs Page Styles
+   ========================================================================== */
+.faq-search-input {
+  width: 100%;
+  border: 1px solid var(--color-fiber-gray, #d9d4c8);
+  border-radius: 8px;
+  padding: 12px 16px 12px 42px;
+  font-family: var(--font-notioninter);
+  font-size: 15px;
+  color: var(--color-ink-black);
+  outline: none;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.faq-search-input:focus {
+  border-color: var(--color-ledger-green, #0f7a52);
+  box-shadow: 0 0 0 3px rgba(15, 122, 82, 0.1);
+}
+
+.faq-category-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.faq-category-link {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-ink-black);
+  background-color: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.faq-category-link:hover,
+.faq-category-link.active {
+  background-color: var(--color-ledger-green, #0f7a52);
+  color: #ffffff;
+  border-color: var(--color-ledger-green, #0f7a52);
+}
+
+.faq-category-section {
+  margin-bottom: 44px;
+  scroll-margin-top: 90px;
+}
+
+.faq-category-heading {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--color-ink-black);
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  letter-spacing: -0.01em;
 }
 
 

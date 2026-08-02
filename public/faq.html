@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frequently Asked Questions (FAQ) — SnapSME</title>
+
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="Find comprehensive answers about receipt scanning, voice notes, team budgets, offline mode, and workspace setup on SnapSME." />
+  <meta name="keywords" content="SnapSME FAQ, receipt tracking help, small business expense app, team spend questions" />
+
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/jpeg" href="/logo.jpg">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+</head>
+<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased">
+
+  <!-- Shared Reusable Nav Header -->
+  <div id="snapsme-header"></div>
+
+  <!-- Document Container (Max-width 800px, Centered) -->
+  <div class="document-container" style="max-width: 800px; margin: 0 auto; padding: 40px 20px;">
+    
+    <!-- Back to Home Link -->
+    <a href="/home" class="back-link">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+      <span>Back to home</span>
+    </a>
+
+    <!-- Page Title & Subtitle -->
+    <h1 class="document-title">Frequently Asked Questions</h1>
+    <p class="document-meta">Everything you need to know about setting up your workspace, capturing expenses, and tracking team spend with SnapSME.</p>
+
+    <!-- Client-Side Search Input -->
+    <div class="faq-search-box" style="position: relative; margin-top: 24px; margin-bottom: 24px;">
+      <svg style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--color-stone);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input
+        type="text"
+        id="faq-search-input"
+        class="faq-search-input"
+        placeholder="Search questions (e.g., receipt, offline, budget, logo)..."
+        aria-label="Search FAQ questions"
+      />
+    </div>
+
+    <!-- Sticky / In-Page Category Anchor Navigation -->
+    <nav class="faq-category-nav" aria-label="FAQ Categories Navigation">
+      <a href="#cat-getting-started" class="faq-category-link">Getting Started</a>
+      <a href="#cat-capturing-expenses" class="faq-category-link">Capturing Expenses</a>
+      <a href="#cat-team-roles" class="faq-category-link">Team & Roles</a>
+      <a href="#cat-offline-sync" class="faq-category-link">Offline & Sync</a>
+      <a href="#cat-dashboard-budgets" class="faq-category-link">Dashboard & Budgets</a>
+      <a href="#cat-branding" class="faq-category-link">Branding</a>
+      <a href="#cat-account-security" class="faq-category-link">Account & Security</a>
+      <a href="#cat-pricing" class="faq-category-link">Pricing</a>
+    </nav>
+
+    <!-- No Search Results Container -->
+    <div id="faq-no-results" class="hidden" style="text-align: center; padding: 36px 20px; background: #ffffff; border-radius: 12px; border: var(--border-hairline); margin-top: 24px;">
+      <p style="font-family: var(--font-notioninter); font-size: 16px; font-weight: 600; color: var(--color-ink-black); margin-bottom: 4px;">No matching questions found</p>
+      <p style="font-family: var(--font-notioninter); font-size: 14px; color: var(--color-graphite);">Try typing a different search term or browse the categories below.</p>
+    </div>
+
+    <!-- FAQ Categories List -->
+    <div id="faq-content-list" style="margin-top: 32px;">
+
+      <!-- Category 1: Getting Started -->
+      <section id="cat-getting-started" class="faq-category-section">
+        <h2 class="faq-category-heading">Getting Started</h2>
+        <div class="faq-list">
+          
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How do I create a workspace?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                When you sign up, you will be guided through a quick 3-step onboarding setup to name your business, choose default expense categories, and invite your team. Once finished, your team workspace is instantly created.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How do I invite my team?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Go to the <strong>Team</strong> view in your workspace, click <strong>Add Member</strong>, and enter their name and email address or phone number. Invited members receive an invite to join your workspace feed immediately.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">What if I run a business alone — do I need a team to use snapsme?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                No, you can use SnapSME as a solo business owner to snap receipts, record voice notes, and track your business expenses without adding team members.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can I choose default expense categories for my type of business?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes! During setup, you can select industry templates such as Retail, Services, Food & Beverage, Construction, or Freelance to pre-populate relevant expense categories and monthly budget limits.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Category 2: Capturing Expenses -->
+      <section id="cat-capturing-expenses" class="faq-category-section">
+        <h2 class="faq-category-heading">Capturing Expenses</h2>
+        <div class="faq-list">
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How does receipt scanning work?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Snap a photo of your paper receipt or upload an image file. SnapSME reads the receipt image automatically to detect the merchant name, date, total amount, and category for instant saving.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">What if I don't have a physical receipt?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                If you don't have a paper receipt, click <strong>Voice Note</strong> to speak what you spent (e.g., <em>"Paid $45 for fuel at Shell"</em>), or enter the vendor and amount manually in seconds.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can I submit expenses without opening the app?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes! Staff can send receipt photos or voice recordings directly via Telegram or WhatsApp bot integrations connected to your workspace.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">What happens if the AI gets a detail wrong?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                You can review and edit any extracted field (vendor, amount, date, category) before confirming, or edit the entry at any time from the feed.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How does snapsme know how money was spent (cash, card, etc.)?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                SnapSME detects payment method keywords (e.g. Visa, Cash, Debit) on receipt images or allows staff to select their payment method during manual or voice note entry.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Category 3: Team & Roles -->
+      <section id="cat-team-roles" class="faq-category-section">
+        <h2 class="faq-category-heading">Team & Roles</h2>
+        <div class="faq-list">
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">What's the difference between an owner and a staff member?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Workspace owners can manage settings, budgets, member invitations, and CSV data exports. Staff members can capture, view, and manage expenses across the team feed.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can I remove someone from my workspace?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes, workspace owners can remove team members at any time from the <strong>Team</strong> view by clicking the action menu next to their profile.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can staff see each other's submissions?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes, all submitted expenses appear in the shared workspace activity feed so team members and owners have real-time visibility into company spending.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Does snapsme require approval before an expense counts?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                By default, submitted expenses are logged immediately to keep bookkeeping frictionless. Flagged expenses (such as potential duplicates) can be reviewed by the owner.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Category 4: Offline & Sync -->
+      <section id="cat-offline-sync" class="faq-category-section">
+        <h2 class="faq-category-heading">Offline & Sync</h2>
+        <div class="faq-list">
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Does snapsme work without an internet connection?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes, SnapSME is built offline-first. You can snap receipts or record voice notes in remote areas or dead zones with no active signal.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">What happens to an expense I submit while offline?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Expenses submitted offline are stored securely on your device and automatically sync to your workspace feed once internet connection is restored.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Category 5: Dashboard & Budgets -->
+      <section id="cat-dashboard-budgets" class="faq-category-section">
+        <h2 class="faq-category-heading">Dashboard & Budgets</h2>
+        <div class="faq-list">
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How do I set a budget for a category?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Workspace owners can open <strong>Settings</strong> to assign monthly target budget limits for each expense category (e.g. Fuel, Office Supplies).
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">What happens when I go over budget?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                When category spending approaches or exceeds your monthly target, visual warning badges and budget cards on your dashboard highlight the over-budget categories.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can I customize what I see on my dashboard?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes! In <strong>Settings</strong> under <em>Dashboard Preferences</em>, you can toggle cards like Top Vendor, Team Leaderboard, Budget vs. Actual, and Spend by Day.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can I export my data?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes, workspace owners can click <strong>Export CSV</strong> at any time to download a complete spreadsheet of expenses for accounting or tax preparation.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Category 6: Branding -->
+      <section id="cat-branding" class="faq-category-section">
+        <h2 class="faq-category-heading">Branding</h2>
+        <div class="faq-list">
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can I add my business logo?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes! Under <em>Brand Basics</em> in <strong>Settings</strong>, owners can upload a custom logo image to display on their workspace header and reports.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can I change the app's colors to match my brand?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes, owners can enter a custom brand accent color hex code (default `#0f7a52`) in <strong>Settings</strong> to customize key action buttons across their app.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Category 7: Account & Security -->
+      <section id="cat-account-security" class="faq-category-section">
+        <h2 class="faq-category-heading">Account & Security</h2>
+        <div class="faq-list">
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How do I sign in?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Click <strong>Sign in</strong> on the header navigation bar to log in using your work email address and password or your Google account.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">I forgot my password — what do I do?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Click <strong>Forgot password?</strong> on the sign-in modal, enter your account email address, and follow the password reset link sent to your inbox.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Is my data secure?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes, all workspace data and uploaded receipt images are stored securely on Google Firebase cloud infrastructure with strict access controls.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How do I sign out?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Click your user avatar in the top right corner of the header navigation bar and select <strong>Sign out</strong> from the dropdown menu.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Category 8: Pricing -->
+      <section id="cat-pricing" class="faq-category-section">
+        <h2 class="faq-category-heading">Pricing</h2>
+        <div class="faq-list">
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Is snapsme free?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                <em>[Pricing Placeholder]</em> SnapSME currently offers a free tier for small teams. Paid plans and full tier details will be announced soon.
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Still Have Questions Banner -->
+    <div style="margin-top: 56px; text-align: center; background-color: var(--color-pure-white); border-radius: 12px; border: var(--border-hairline); padding: 32px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+      <h3 style="font-family: var(--font-notioninter); font-size: 18px; font-weight: 600; color: var(--color-ink-black); margin: 0 0 8px 0;">Still have questions?</h3>
+      <p style="font-family: var(--font-notioninter); font-size: 14px; color: var(--color-graphite); margin: 0 0 20px 0;">We're here to help you set up effortless expense tracking for your team.</p>
+      <a href="/contact.html" class="btn-ledger-primary" style="padding: 10px 22px; font-size: 15px;">Contact Support</a>
+    </div>
+
+  </div>
+
+  <!-- Reusable Header & Footer -->
+  <div id="snapsme-footer"></div>
+  <script type="module" src="/js/header.js"></script>
+  <script type="module" src="/js/faq.js"></script>
+  <script type="module" src="/js/footer.js"></script>
+
+</body>
+</html>

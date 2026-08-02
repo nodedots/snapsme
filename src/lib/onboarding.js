@@ -1,13 +1,97 @@
-/**
- * snapsme — Business Onboarding Flow ES Module
- * Deliverable: /public/js/onboarding.js
- * 
- * Handles multi-step onboarding flow logic (Auth signup, business workspace creation,
- * optional staff invitations, and handoff to main app).
- */
-
 import { createBusinessWorkspace, inviteMember } from "./workspace.js";
-import { recordActivityLog } from "../../src/lib/storage.js";
+import { recordActivityLog, saveCategories } from "../../src/lib/storage.js";
+
+export const BUSINESS_TYPES = [
+  {
+    id: "retail",
+    name: "Retail",
+    description: "Physical or online storefronts, inventory, and merchandise",
+    defaultCategories: [
+      { name: "Inventory & Stock", budget: 600 },
+      { name: "Fuel & Transport", budget: 400 },
+      { name: "Rent & Utilities", budget: 800 },
+      { name: "Marketing", budget: 300 },
+      { name: "Equipment & Supplies", budget: 500 }
+    ]
+  },
+  {
+    id: "services",
+    name: "Services",
+    description: "Agencies, professional service firms, and client work",
+    defaultCategories: [
+      { name: "Fuel & Transport", budget: 500 },
+      { name: "Office Supplies", budget: 300 },
+      { name: "Client Entertainment", budget: 400 },
+      { name: "Software & Subscriptions", budget: 350 },
+      { name: "Equipment", budget: 600 }
+    ]
+  },
+  {
+    id: "food_beverage",
+    name: "Food & Beverage",
+    description: "Restaurants, cafes, food trucks, and catering services",
+    defaultCategories: [
+      { name: "Ingredients & Supplies", budget: 1000 },
+      { name: "Fuel & Transport", budget: 350 },
+      { name: "Equipment & Maintenance", budget: 500 },
+      { name: "Utilities", budget: 600 },
+      { name: "Packaging", budget: 400 }
+    ]
+  },
+  {
+    id: "construction",
+    name: "Construction",
+    description: "Contractors, trade services, build projects, and sites",
+    defaultCategories: [
+      { name: "Materials", budget: 1200 },
+      { name: "Fuel & Transport", budget: 700 },
+      { name: "Equipment & Tools", budget: 800 },
+      { name: "Labor/Contractor Payments", budget: 1500 },
+      { name: "Permits & Fees", budget: 300 }
+    ]
+  },
+  {
+    id: "freelance",
+    name: "Freelance/Consulting",
+    description: "Solo operators, consultants, and independent contractors",
+    defaultCategories: [
+      { name: "Software & Subscriptions", budget: 300 },
+      { name: "Fuel & Transport", budget: 250 },
+      { name: "Office Supplies", budget: 200 },
+      { name: "Client Entertainment", budget: 350 },
+      { name: "Equipment", budget: 500 }
+    ]
+  },
+  {
+    id: "other",
+    name: "Other",
+    description: "General business operations or custom category setup",
+    defaultCategories: [
+      { name: "General Supplies", budget: 400 },
+      { name: "Fuel & Transport", budget: 400 },
+      { name: "Equipment", budget: 500 },
+      { name: "Utilities", budget: 400 },
+      { name: "Miscellaneous", budget: 300 }
+    ]
+  }
+];
+
+/**
+ * Returns pre-populated category records for a selected business type.
+ */
+export function getPresetCategoriesForBusinessType(businessTypeId, businessId = "biz_default") {
+  const matched = BUSINESS_TYPES.find((b) => b.id === businessTypeId);
+  if (!matched || !matched.defaultCategories) return [];
+
+  const now = new Date().toISOString();
+  return matched.defaultCategories.map((c, index) => ({
+    id: `cat_${businessTypeId}_${index + 1}_${Date.now()}`,
+    businessId,
+    name: c.name,
+    budget: c.budget,
+    createdAt: now
+  }));
+}
 
 /**
  * Validates Step 1 Signup Form inputs.
@@ -88,13 +172,14 @@ export function validateStaffInvite({ email, phone, displayName }) {
 /**
  * Executes full onboarding pipeline:
  * 1. Simulates/Creates Auth User
- * 2. Writes businesses/{businessId} & members/{userId} (role: owner)
- * 3. Writes optional staff members
- * 4. Records audit log
+ * 2. Writes businesses/{businessId} with brand, businessType, dashboardPreferences
+ * 3. Pre-populates category subcollection for selected businessType
+ * 4. Writes optional staff members
+ * 5. Records audit log
  */
 export function executeOnboardingPipeline(
-  { signUpData, workspaceData, staffInvites = [] },
-  { saveWorkspaceFn, saveMembersFn, saveCurrentUserFn }
+  { signUpData, workspaceData, businessType = null, staffInvites = [] },
+  { saveWorkspaceFn, saveMembersFn, saveCurrentUserFn, saveCategoriesFn }
 ) {
   // Step 1: Create Owner User
   const ownerUserId = `usr_owner_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
@@ -109,18 +194,45 @@ export function executeOnboardingPipeline(
     joinedAt: new Date().toISOString()
   };
 
+  // Attach brand, businessType, and default dashboardPreferences to workspace
+  const extendedWorkspaceData = {
+    ...workspaceData,
+    businessType,
+    brand: {
+      logoUrl: null,
+      accentColor: "#0f7a52"
+    },
+    dashboardPreferences: {
+      showTopVendor: true,
+      showTeamLeaderboard: true,
+      showBudgetVsActual: true,
+      showSpendByDay: false
+    }
+  };
+
   // Step 2: Create Business Workspace & Owner Member
   const { workspace, ownerMember } = createBusinessWorkspace(
     ownerUser,
-    workspaceData,
+    extendedWorkspaceData,
     saveWorkspaceFn,
     saveMembersFn,
     saveCurrentUserFn
   );
 
+  // Step 3: Pre-populate Categories if businessType selected
+  let createdCategories = [];
+  if (businessType) {
+    createdCategories = getPresetCategoriesForBusinessType(businessType, workspace.businessId || workspace.id);
+    if (saveCategoriesFn) {
+      saveCategoriesFn(createdCategories);
+    } else {
+      saveCategories(createdCategories);
+    }
+  }
+
   let currentMembers = [ownerMember];
 
-  // Step 3: Invite Staff Members if provided
+  // Step 4: Invite Staff Members if provided
   if (staffInvites && staffInvites.length > 0) {
     staffInvites.forEach((invite) => {
       try {
@@ -143,19 +255,20 @@ export function executeOnboardingPipeline(
     });
   }
 
-  // Step 4: Record Completion Log
+  // Step 5: Record Completion Log
   recordActivityLog({
     actorId: ownerMember.userId,
     actorName: ownerMember.displayName,
     actorRole: "owner",
     actionType: "ONBOARDING_COMPLETED",
-    description: `Completed business onboarding for "${workspace.name}" with ${currentMembers.length} initial team member(s)`,
+    description: `Completed business onboarding for "${workspace.name}" (${businessType || "Custom"}) with ${currentMembers.length} initial member(s) & ${createdCategories.length} category template(s)`,
     tag: "Workspace Config"
   });
 
   return {
     workspace,
     ownerMember,
-    members: currentMembers
+    members: currentMembers,
+    categories: createdCategories
   };
 }

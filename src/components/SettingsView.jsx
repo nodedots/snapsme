@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { TornCard } from "./TornCard.jsx";
 import { loadActivityLogs } from "../lib/storage.js";
 import { WORLD_CURRENCIES, getCurrencySymbol, getCurrencyLabel } from "../lib/currencies.js";
+import { applyBrandAccentColor, readLogoFile, DEFAULT_BRAND_ACCENT } from "../lib/brand.js";
 import {
   getProfile,
   updateProfile,
@@ -45,7 +46,11 @@ import {
   FileSpreadsheet,
   RefreshCw,
   Activity,
-  Tag
+  Tag,
+  Palette,
+  Upload,
+  Image as ImageIcon,
+  Layout
 } from "lucide-react";
 
 export const SettingsView = ({
@@ -65,6 +70,41 @@ export const SettingsView = ({
   const [profileEmail, setProfileEmail] = useState(currentUser?.email || "");
   const [profilePhone, setProfilePhone] = useState(currentUser?.phone || "");
   const [profileToast, setProfileToast] = useState("");
+
+  // Brand Basics state
+  const [brandLogoUrl, setBrandLogoUrl] = useState(workspace?.brand?.logoUrl || null);
+  const [brandAccentColor, setBrandAccentColor] = useState(workspace?.brand?.accentColor || DEFAULT_BRAND_ACCENT);
+  const [brandToast, setBrandToast] = useState("");
+
+  // Dashboard Preferences state
+  const [dashboardPrefs, setDashboardPrefs] = useState({
+    showTopVendor: true,
+    showTeamLeaderboard: true,
+    showBudgetVsActual: true,
+    showSpendByDay: false,
+    ...(workspace?.dashboardPreferences || {})
+  });
+  const [dashPrefsToast, setDashPrefsToast] = useState("");
+
+  // Sync state on workspace changes
+  useEffect(() => {
+    if (workspace) {
+      if (workspace.brand) {
+        setBrandLogoUrl(workspace.brand.logoUrl || null);
+        setBrandAccentColor(workspace.brand.accentColor || DEFAULT_BRAND_ACCENT);
+        applyBrandAccentColor(workspace.brand.accentColor || DEFAULT_BRAND_ACCENT);
+      }
+      if (workspace.dashboardPreferences) {
+        setDashboardPrefs({
+          showTopVendor: true,
+          showTeamLeaderboard: true,
+          showBudgetVsActual: true,
+          showSpendByDay: false,
+          ...workspace.dashboardPreferences
+        });
+      }
+    }
+  }, [workspace]);
 
   // Sync profile state on currentUser change
   useEffect(() => {
@@ -174,6 +214,77 @@ export const SettingsView = ({
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     return `${hrs}h ${mins}m ${secs}s`;
+  };
+
+  // Handle Brand Logo Upload
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const url = await readLogoFile(file);
+      setBrandLogoUrl(url);
+      const updatedWs = {
+        ...workspace,
+        brand: {
+          logoUrl: url,
+          accentColor: brandAccentColor
+        }
+      };
+      onUpdateWorkspace(updatedWs);
+      applyBrandAccentColor(brandAccentColor);
+      setBrandToast("Brand logo updated!");
+      setTimeout(() => setBrandToast(""), 3000);
+    } catch (err) {
+      alert(err.message || "Failed to upload logo.");
+    }
+  };
+
+  // Handle Remove Brand Logo
+  const handleRemoveLogo = () => {
+    setBrandLogoUrl(null);
+    const updatedWs = {
+      ...workspace,
+      brand: {
+        logoUrl: null,
+        accentColor: brandAccentColor
+      }
+    };
+    onUpdateWorkspace(updatedWs);
+    setBrandToast("Logo removed");
+    setTimeout(() => setBrandToast(""), 3000);
+  };
+
+  // Handle Accent Color Change
+  const handleAccentColorChange = (e) => {
+    const color = e.target.value;
+    setBrandAccentColor(color);
+    applyBrandAccentColor(color);
+    const updatedWs = {
+      ...workspace,
+      brand: {
+        logoUrl: brandLogoUrl,
+        accentColor: color
+      }
+    };
+    onUpdateWorkspace(updatedWs);
+    setBrandToast("Accent color saved!");
+    setTimeout(() => setBrandToast(""), 2000);
+  };
+
+  // Handle Toggle Dashboard Preferences
+  const handleToggleDashPref = (key) => {
+    const updated = {
+      ...dashboardPrefs,
+      [key]: !dashboardPrefs[key]
+    };
+    setDashboardPrefs(updated);
+    const updatedWs = {
+      ...workspace,
+      dashboardPreferences: updated
+    };
+    onUpdateWorkspace(updatedWs);
+    setDashPrefsToast("Preferences saved!");
+    setTimeout(() => setDashPrefsToast(""), 2000);
   };
 
   // Handle Profile Update
@@ -769,6 +880,188 @@ export const SettingsView = ({
                 )}
               </div>
             ))}
+          </div>
+        </TornCard>
+
+        {/* CARD 5: Brand Basics (Owner Only) */}
+        <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
+          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold">
+                <Palette className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                  Brand Basics
+                </h2>
+                <p className="text-[11px] text-[#6b665c]">Workspace logo & primary accent color</p>
+              </div>
+            </div>
+            {brandToast && (
+              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {brandToast}
+              </span>
+            )}
+            {!userIsOwner && (
+              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Owner Gated
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {/* Logo Upload Section */}
+            <div>
+              <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1.5">
+                Business Logo
+              </label>
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 rounded-xl border border-[#d9d4c8] bg-[#f7f3ea] flex items-center justify-center overflow-hidden shrink-0 relative group">
+                  {brandLogoUrl ? (
+                    <img src={brandLogoUrl} alt="Workspace Logo Preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-[#6b665c]" />
+                  )}
+                </div>
+
+                {userIsOwner && (
+                  <div className="space-y-1.5">
+                    <label className="bg-white hover:bg-gray-50 border border-[#d9d4c8] text-[#1c1b19] text-xs font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 cursor-pointer transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-[#0f7a52]" />
+                      <span>{brandLogoUrl ? "Replace Logo" : "Upload Logo"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    {brandLogoUrl && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveLogo}
+                        className="text-xs text-red-600 hover:underline block font-medium cursor-pointer"
+                      >
+                        Remove Logo
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Accent Color Picker */}
+            <div>
+              <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                Brand Accent Color
+              </label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={brandAccentColor}
+                  disabled={!userIsOwner}
+                  onChange={handleAccentColorChange}
+                  className="w-10 h-10 rounded-lg border border-[#d9d4c8] p-0.5 bg-white cursor-pointer disabled:opacity-60"
+                />
+                <div>
+                  <span className="font-mono text-xs font-bold text-[#1c1b19] block">
+                    {brandAccentColor}
+                  </span>
+                  <span className="text-[10px] text-[#6b665c] block">
+                    Controls primary buttons & active nav highlights
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-lg text-[11px] text-[#6b665c]">
+              <strong>Note:</strong> Status alerts, confidence dots, and budget flags remain fixed to carry standard operational meanings.
+            </div>
+          </div>
+        </TornCard>
+
+        {/* CARD 6: Dashboard Card Preferences (Owner Only) */}
+        <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
+          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold">
+                <Layout className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                  Dashboard Card Preferences
+                </h2>
+                <p className="text-[11px] text-[#6b665c]">Toggle visibility of spend dashboard modules</p>
+              </div>
+            </div>
+            {dashPrefsToast && (
+              <span className="text-xs font-mono text-[#0075de] bg-[#e6f3fe] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {dashPrefsToast}
+              </span>
+            )}
+            {!userIsOwner && (
+              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Owner Gated
+              </span>
+            )}
+          </div>
+
+          <div className="space-y-2.5">
+            <label className="flex items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer">
+              <div className="pr-2">
+                <span className="font-display font-bold text-xs text-[#1c1b19] block">Top Vendor Stat</span>
+                <span className="text-[11px] text-[#6b665c] block">Show top vendor and spend category summary</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={dashboardPrefs.showTopVendor}
+                disabled={!userIsOwner}
+                onChange={() => handleToggleDashPref("showTopVendor")}
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer">
+              <div className="pr-2">
+                <span className="font-display font-bold text-xs text-[#1c1b19] block">Team Leaderboard</span>
+                <span className="text-[11px] text-[#6b665c] block">Show spend ranking by team member</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={dashboardPrefs.showTeamLeaderboard}
+                disabled={!userIsOwner}
+                onChange={() => handleToggleDashPref("showTeamLeaderboard")}
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer">
+              <div className="pr-2">
+                <span className="font-display font-bold text-xs text-[#1c1b19] block">Budget vs. Actual</span>
+                <span className="text-[11px] text-[#6b665c] block">Show workspace monthly budget & ceiling progress bar</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={dashboardPrefs.showBudgetVsActual}
+                disabled={!userIsOwner}
+                onChange={() => handleToggleDashPref("showBudgetVsActual")}
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer"
+              />
+            </label>
+
+            <label className="flex items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer">
+              <div className="pr-2">
+                <span className="font-display font-bold text-xs text-[#1c1b19] block">Spend by Day of Week</span>
+                <span className="text-[11px] text-[#6b665c] block">Show daily spending distribution chart card</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={dashboardPrefs.showSpendByDay}
+                disabled={!userIsOwner}
+                onChange={() => handleToggleDashPref("showSpendByDay")}
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer"
+              />
+            </label>
           </div>
         </TornCard>
 
