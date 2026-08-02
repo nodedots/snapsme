@@ -99,10 +99,15 @@ html, body {
 
 /* Hero Section */
 .hero-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding-top: 48px;
-  padding-bottom: 56px;
-  max-width: 860px;
+  padding-top: 54px;
+  padding-bottom: 64px;
+  max-width: 900px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
@@ -116,7 +121,93 @@ html, body {
   line-height: 1.08;
   letter-spacing: -2.016px;
   color: var(--color-ink-black);
-  margin-bottom: 20px;
+  margin: 0 auto 20px auto;
+  text-align: center;
+  max-width: 780px;
+  width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-subtext {
+  font-family: var(--font-lyon-text);
+  font-weight: 400;
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--color-graphite);
+  max-width: 620px;
+  width: 100%;
+  margin: 0 auto 32px auto;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.hero-cta-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+  z-index: 2;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ==========================================================================
+   Hero Scattered Visual Decorations System
+   ========================================================================== */
+.hero-decorations-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.hero-decor-item {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.92;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hero-svg-decor {
+  display: block;
+  filter: drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.04));
+}
+
+/* Symmetrical Margin Positioning (Left & Right Flanks) */
+.decor-top-left-1  { left: 10px; top: 10px; }
+.decor-top-left-2  { left: 65px; top: 65px; }
+.decor-mid-left     { left: 20px; top: 155px; }
+.decor-bottom-left  { left: 75px; top: 225px; }
+
+.decor-top-right-1 { right: 10px; top: 10px; }
+.decor-top-right-2 { right: 65px; top: 65px; }
+.decor-mid-right    { right: 20px; top: 155px; }
+.decor-bottom-right { right: 75px; top: 225px; }
+
+/* Subtle floating animations */
+@keyframes heroSubtleFloat {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+.float-anim-1 { animation: heroSubtleFloat 4.2s ease-in-out infinite; }
+.float-anim-2 { animation: heroSubtleFloat 5.1s ease-in-out 0.8s infinite; }
+.float-anim-3 { animation: heroSubtleFloat 4.6s ease-in-out 1.6s infinite; }
+
+@media (max-width: 860px) {
+  .decor-top-left-2,
+  .decor-bottom-left,
+  .decor-top-right-2,
+  .decor-bottom-right {
+    display: none !important;
+  }
 }
 
 @media (max-width: 640px) {
@@ -146,6 +237,14 @@ html, body {
     justify-content: center !important;
     box-sizing: border-box !important;
   }
+  
+  /* On mobile: Hide distracting side items to prioritize legibility & tap targets */
+  .decor-mid-left,
+  .decor-mid-right {
+    display: none !important;
+  }
+  .decor-top-left-1 { left: 8px; top: 6px; }
+  .decor-top-right-1 { right: 8px; top: 6px; }
 }
 
 @media (min-width: 641px) and (max-width: 1024px) {

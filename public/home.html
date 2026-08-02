@@ -33,30 +33,65 @@
   <div class="snapsme-landing-container">
 
     <!-- Hero Section -->
-    <section class="hero-section" style="position: relative; text-align: center; max-width: 860px; margin: 0 auto; padding-top: 54px; padding-bottom: 64px;">
-      <!-- Decorative Sparkle & Character Mark Punctuation -->
-      <div style="position: absolute; left: 10px; top: 10px;" class="desktop-only">
-        <div class="char-mark char-mark-blue" title="Receipt Snap">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
-            <circle cx="12" cy="13" r="3"/>
-          </svg>
+    <section class="hero-section">
+      <!-- Scattered Decorative Elements Container -->
+      <div class="hero-decorations-wrapper">
+        <!-- 1. Existing Camera Icon (Top Left Margin) -->
+        <div class="hero-decor-item decor-top-left-1 float-anim-1">
+          <div class="char-mark char-mark-blue" title="Receipt Snap">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+              <circle cx="12" cy="13" r="3"/>
+            </svg>
+          </div>
         </div>
-      </div>
-      <div style="position: absolute; right: 10px; top: 10px;" class="desktop-only">
-        <div class="char-mark char-mark-coral" title="Voice Note">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="22"/>
-          </svg>
+
+        <!-- 2. Thermal Receipt (Upper Left Margin) -->
+        <div class="hero-decor-item decor-top-left-2 float-anim-2">
+          <img src="/assets/hero-illustrations/receipt_thermal.svg" alt="" class="hero-svg-decor" style="transform: rotate(-6deg); width: 44px; height: auto;" />
+        </div>
+
+        <!-- 3. Folded Receipt (Mid Left Margin) -->
+        <div class="hero-decor-item decor-mid-left float-anim-3">
+          <img src="/assets/hero-illustrations/receipt_folded.svg" alt="" class="hero-svg-decor" style="transform: rotate(5deg); width: 40px; height: auto;" />
+        </div>
+
+        <!-- 4. Coin 1 (Lower Left Margin) -->
+        <div class="hero-decor-item decor-bottom-left float-anim-1">
+          <img src="/assets/hero-illustrations/coin.svg" alt="" class="hero-svg-decor" style="transform: rotate(-4deg); width: 30px; height: auto;" />
+        </div>
+
+        <!-- 5. Existing Voice Note Icon (Top Right Margin) -->
+        <div class="hero-decor-item decor-top-right-1 float-anim-2">
+          <div class="char-mark char-mark-coral" title="Voice Note">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 6. Itemized Receipt (Upper Right Margin) -->
+        <div class="hero-decor-item decor-top-right-2 float-anim-3">
+          <img src="/assets/hero-illustrations/receipt_itemized.svg" alt="" class="hero-svg-decor" style="transform: rotate(7deg); width: 44px; height: auto;" />
+        </div>
+
+        <!-- 7. Wallet & Curled Receipt (Mid Right Margin) -->
+        <div class="hero-decor-item decor-mid-right float-anim-1">
+          <img src="/assets/hero-illustrations/wallet.svg" alt="" class="hero-svg-decor" style="transform: rotate(-5deg); width: 38px; height: auto;" />
+        </div>
+
+        <!-- 8. Price Tag (Lower Right Margin) -->
+        <div class="hero-decor-item decor-bottom-right float-anim-2">
+          <img src="/assets/hero-illustrations/pricetag.svg" alt="" class="hero-svg-decor" style="transform: rotate(4deg); width: 34px; height: auto;" />
         </div>
       </div>
 
-      <h1 class="hero-headline" style="text-align: center; margin: 0 auto 20px auto;">
+      <h1 class="hero-headline">
         Never lose track of <span class="hero-highlight-pill">team spend</span> again
       </h1>
-      <p class="hero-subtext" style="text-align: center; margin: 0 auto 32px auto; max-width: 620px;">
+      <p class="hero-subtext">
         No more chasing receipts. Your team snaps a photo or sends a quick voice note — we handle the rest, and you see
         it all as it happens.
       </p>

@@ -669,22 +669,24 @@ body {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: transparent;
-  border: none;
-  color: #757575;
+  width: 36px;
+  height: 36px;
+  background-color: var(--color-paper-warmth, #f6f5f4);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: var(--color-graphite, #615d59);
   cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.15s ease, color 0.15s ease;
-  z-index: 10;
+  transition: all 0.15s ease;
+  z-index: 20;
 }
 
 .auth-modal-close-btn:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-  color: #000000;
+  background-color: var(--color-sky-tint, #e6f3fe);
+  color: var(--color-notion-blue, #0075de);
+  border-color: var(--color-notion-blue, #0075de);
 }
 
 .auth-modal-title {
