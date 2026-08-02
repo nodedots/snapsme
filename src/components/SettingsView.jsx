@@ -502,9 +502,9 @@ export const SettingsView = ({
         
         {/* CARD 1: User Profile & Identity */}
         <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
-          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
                 <User className="w-4 h-4" />
               </div>
               <div>
@@ -515,7 +515,7 @@ export const SettingsView = ({
               </div>
             </div>
             {profileToast && (
-              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 animate-fade-in">
+              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 animate-fade-in shrink-0">
                 <CheckCircle2 className="w-3.5 h-3.5" /> {profileToast}
               </span>
             )}
@@ -531,7 +531,7 @@ export const SettingsView = ({
                 value={profileName}
                 onChange={(e) => setProfileName(e.target.value)}
                 required
-                className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors"
+                className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
                 placeholder="e.g. Alex Rivera"
               />
             </div>
@@ -545,7 +545,7 @@ export const SettingsView = ({
                   type="email"
                   value={profileEmail}
                   onChange={(e) => setProfileEmail(e.target.value)}
-                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors"
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
                   placeholder="alex@acme.com"
                 />
               </div>
@@ -557,19 +557,19 @@ export const SettingsView = ({
                   type="text"
                   value={profilePhone}
                   onChange={(e) => setProfilePhone(e.target.value)}
-                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors"
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
                   placeholder="+1 555-019-2834"
                 />
               </div>
             </div>
 
-            <div className="pt-2 flex items-center justify-between">
-              <span className="text-[11px] text-[#6b665c] font-mono">
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <span className="text-[11px] text-[#6b665c] font-mono truncate">
                 User ID: <span className="font-semibold text-[#1c1b19]">{currentUser?.userId || "Unassigned"}</span>
               </span>
               <button
                 type="submit"
-                className="bg-[#0f7a52] hover:bg-[#0b5e3f] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                className="w-full sm:w-auto bg-[#0f7a52] hover:bg-[#0b5e3f] text-white font-display font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>Save Profile</span>
@@ -580,9 +580,9 @@ export const SettingsView = ({
 
         {/* CARD 2: Chat Bot Integrations (Telegram & WhatsApp) */}
         <TornCard headerColor="bg-[#ff5a3c]" tornBottom={true}>
-          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#ff5a3c]/10 text-[#ff5a3c] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-[#ff5a3c]/10 text-[#ff5a3c] flex items-center justify-center font-bold shrink-0">
                 <MessageSquare className="w-4 h-4" />
               </div>
               <div>
@@ -596,13 +596,13 @@ export const SettingsView = ({
 
           <div className="space-y-4">
             {/* Telegram Channel Status */}
-            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex items-center justify-between gap-3">
+            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#0088cc]/10 text-[#0088cc] flex items-center justify-center font-bold text-xs">
+                <div className="w-7 h-7 rounded-full bg-[#0088cc]/10 text-[#0088cc] flex items-center justify-center font-bold text-xs shrink-0">
                   TG
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-display font-bold text-xs text-[#1c1b19]">Telegram Bot</span>
                     {currentUser?.telegramUserId ? (
                       <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
@@ -624,7 +624,7 @@ export const SettingsView = ({
                 <button
                   type="button"
                   onClick={() => handleUnlinkChannel("telegram")}
-                  className="text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-2.5 py-1.5 rounded-lg cursor-pointer"
+                  className="w-full sm:w-auto text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-3 py-2 rounded-lg cursor-pointer text-center min-h-[40px] sm:min-h-0"
                 >
                   Unlink
                 </button>
@@ -632,7 +632,7 @@ export const SettingsView = ({
                 <button
                   type="button"
                   onClick={() => handleGenerateLink("telegram")}
-                  className="text-xs font-semibold text-[#0088cc] bg-white border border-[#0088cc]/30 hover:border-[#0088cc] px-2.5 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"
+                  className="w-full sm:w-auto text-xs font-semibold text-[#0088cc] bg-white border border-[#0088cc]/30 hover:border-[#0088cc] px-3 py-2 rounded-lg cursor-pointer flex items-center justify-center gap-1 min-h-[40px] sm:min-h-0"
                 >
                   <QrCode className="w-3.5 h-3.5" />
                   <span>Connect</span>
@@ -641,13 +641,13 @@ export const SettingsView = ({
             </div>
 
             {/* WhatsApp Channel Status */}
-            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex items-center justify-between gap-3">
+            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center font-bold text-xs">
+                <div className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center font-bold text-xs shrink-0">
                   WA
                 </div>
                 <div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="font-display font-bold text-xs text-[#1c1b19]">WhatsApp Bot</span>
                     {currentUser?.whatsappUserId ? (
                       <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
@@ -669,7 +669,7 @@ export const SettingsView = ({
                 <button
                   type="button"
                   onClick={() => handleUnlinkChannel("whatsapp")}
-                  className="text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-2.5 py-1.5 rounded-lg cursor-pointer"
+                  className="w-full sm:w-auto text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-3 py-2 rounded-lg cursor-pointer text-center min-h-[40px] sm:min-h-0"
                 >
                   Unlink
                 </button>
@@ -677,7 +677,7 @@ export const SettingsView = ({
                 <button
                   type="button"
                   onClick={() => handleGenerateLink("whatsapp")}
-                  className="text-xs font-semibold text-[#0f7a52] bg-white border border-[#0f7a52]/30 hover:border-[#0f7a52] px-2.5 py-1.5 rounded-lg cursor-pointer flex items-center gap-1"
+                  className="w-full sm:w-auto text-xs font-semibold text-[#0f7a52] bg-white border border-[#0f7a52]/30 hover:border-[#0f7a52] px-3 py-2 rounded-lg cursor-pointer flex items-center justify-center gap-1 min-h-[40px] sm:min-h-0"
                 >
                   <QrCode className="w-3.5 h-3.5" />
                   <span>Connect</span>
@@ -688,9 +688,9 @@ export const SettingsView = ({
             {/* Active Link Code Display with Countdown Timer */}
             {chatLink && (
               <div className="bg-[#fff9f0] border-2 border-[#e0982a]/50 rounded-xl p-4 space-y-3 animate-fade-in">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5">
                   <div className="flex items-center gap-1.5 text-xs font-display font-bold text-[#e0982a]">
-                    <Sparkles className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4 shrink-0" />
                     <span>Active {activeChannel === 'telegram' ? 'Telegram' : 'WhatsApp'} Link Code</span>
                   </div>
                   <div className="flex items-center gap-1 text-[11px] font-mono text-[#6b665c]">
@@ -699,7 +699,7 @@ export const SettingsView = ({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between bg-white border border-[#d9d4c8] rounded-xl px-4 py-3">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-white border border-[#d9d4c8] rounded-xl p-3 sm:px-4 sm:py-3 gap-2">
                   <div>
                     <span className="text-[10px] uppercase font-mono tracking-widest text-[#6b665c] block">
                       Pairing Code
@@ -711,7 +711,7 @@ export const SettingsView = ({
                   <button
                     type="button"
                     onClick={() => handleCopyCode(chatLink.linkCode)}
-                    className="bg-[#1c1b19] hover:bg-[#ff5a3c] text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                    className="w-full sm:w-auto bg-[#1c1b19] hover:bg-[#ff5a3c] text-white text-xs font-semibold px-3.5 py-2.5 sm:py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
                   >
                     {copiedCode ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copiedCode ? "Copied!" : "Copy Code"}</span>
@@ -728,9 +728,9 @@ export const SettingsView = ({
 
         {/* CARD 3: Workspace & Default Currency Settings (Owner Only) */}
         <TornCard headerColor="bg-[#e0982a]" tornBottom={true}>
-          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#e0982a]/10 text-[#e0982a] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-[#e0982a]/10 text-[#e0982a] flex items-center justify-center font-bold shrink-0">
                 <Building2 className="w-4 h-4" />
               </div>
               <div>
@@ -741,12 +741,12 @@ export const SettingsView = ({
               </div>
             </div>
             {!userIsOwner && (
-              <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                 <Lock className="w-3 h-3" /> Owner Gated
               </span>
             )}
             {wsToast && (
-              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
                 <CheckCircle2 className="w-3.5 h-3.5" /> {wsToast}
               </span>
             )}
@@ -779,7 +779,7 @@ export const SettingsView = ({
                   value={wsName}
                   onChange={(e) => setWsName(e.target.value)}
                   required
-                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors"
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
                   placeholder="e.g. Acme Agency"
                 />
               </div>
@@ -791,7 +791,7 @@ export const SettingsView = ({
                 <select
                   value={wsCurrency}
                   onChange={(e) => setWsCurrency(e.target.value)}
-                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-semibold text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors cursor-pointer"
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-semibold text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors cursor-pointer min-h-[44px] sm:min-h-0"
                 >
                   {WORLD_CURRENCIES.map((c) => (
                     <option key={c.code} value={c.code}>
@@ -804,7 +804,7 @@ export const SettingsView = ({
               <div className="pt-2 flex justify-end">
                 <button
                   type="submit"
-                  className="bg-[#1c1b19] hover:bg-[#ff5a3c] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+                  className="w-full sm:w-auto bg-[#1c1b19] hover:bg-[#ff5a3c] text-white font-display font-semibold text-xs px-4 py-2.5 sm:py-2 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>Update Workspace Settings</span>
@@ -816,9 +816,9 @@ export const SettingsView = ({
 
         {/* CARD 4: Category & Budget Limits (Owner Only) */}
         <TornCard headerColor="bg-[#1c1b19]" tornBottom={true}>
-          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#1c1b19]/10 text-[#1c1b19] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-[#1c1b19]/10 text-[#1c1b19] flex items-center justify-center font-bold shrink-0">
                 <DollarSign className="w-4 h-4" />
               </div>
               <div>
@@ -833,22 +833,22 @@ export const SettingsView = ({
               <button
                 type="button"
                 onClick={() => handleOpenCatModal(null)}
-                className="bg-[#0f7a52] hover:bg-[#0b5e3f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer"
+                className="w-full sm:w-auto bg-[#0f7a52] hover:bg-[#0b5e3f] text-white text-xs font-semibold px-3 py-2 sm:py-1.5 rounded-lg flex items-center justify-center gap-1 cursor-pointer min-h-[40px] sm:min-h-0"
               >
-                <Plus className="w-3.5 h-3.5" /> Add
+                <Plus className="w-3.5 h-3.5" /> Add Category
               </button>
             ) : (
-              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                 <Lock className="w-3 h-3" /> Owner Gated
               </span>
             )}
           </div>
 
-          <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-2.5 flex items-center justify-between gap-2"
+                className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 sm:p-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2"
               >
                 <div>
                   <span className="font-display font-bold text-xs text-[#1c1b19] block">
@@ -860,18 +860,18 @@ export const SettingsView = ({
                 </div>
 
                 {userIsOwner && (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-1 sm:pt-0 border-t sm:border-0 border-[#d9d4c8]/50">
                     <button
                       type="button"
                       onClick={() => handleOpenCatModal(cat)}
-                      className="text-[11px] font-semibold text-[#0f7a52] hover:underline px-2 py-1 bg-white border border-[#d9d4c8] rounded-lg cursor-pointer"
+                      className="text-[11px] font-semibold text-[#0f7a52] hover:underline px-2.5 py-1 bg-white border border-[#d9d4c8] rounded-lg cursor-pointer"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDeleteCategory(cat.id)}
-                      className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                      className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                       title="Delete category"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -885,9 +885,9 @@ export const SettingsView = ({
 
         {/* CARD 5: Brand Basics (Owner Only) */}
         <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
-          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
                 <Palette className="w-4 h-4" />
               </div>
               <div>
@@ -898,12 +898,12 @@ export const SettingsView = ({
               </div>
             </div>
             {brandToast && (
-              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
                 <CheckCircle2 className="w-3.5 h-3.5" /> {brandToast}
               </span>
             )}
             {!userIsOwner && (
-              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                 <Lock className="w-3 h-3" /> Owner Gated
               </span>
             )}
@@ -915,7 +915,7 @@ export const SettingsView = ({
               <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1.5">
                 Business Logo
               </label>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                 <div className="w-14 h-14 rounded-xl border border-[#d9d4c8] bg-[#f7f3ea] flex items-center justify-center overflow-hidden shrink-0 relative group">
                   {brandLogoUrl ? (
                     <img src={brandLogoUrl} alt="Workspace Logo Preview" className="w-full h-full object-cover" />
@@ -925,8 +925,8 @@ export const SettingsView = ({
                 </div>
 
                 {userIsOwner && (
-                  <div className="space-y-1.5">
-                    <label className="bg-white hover:bg-gray-50 border border-[#d9d4c8] text-[#1c1b19] text-xs font-semibold px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 cursor-pointer transition-colors">
+                  <div className="space-y-1.5 w-full sm:w-auto">
+                    <label className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-[#d9d4c8] text-[#1c1b19] text-xs font-semibold px-3 py-2.5 sm:py-1.5 rounded-lg inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors min-h-[44px] sm:min-h-0">
                       <Upload className="w-3.5 h-3.5 text-[#0f7a52]" />
                       <span>{brandLogoUrl ? "Replace Logo" : "Upload Logo"}</span>
                       <input
@@ -961,7 +961,7 @@ export const SettingsView = ({
                   value={brandAccentColor}
                   disabled={!userIsOwner}
                   onChange={handleAccentColorChange}
-                  className="w-10 h-10 rounded-lg border border-[#d9d4c8] p-0.5 bg-white cursor-pointer disabled:opacity-60"
+                  className="w-10 h-10 rounded-lg border border-[#d9d4c8] p-0.5 bg-white cursor-pointer disabled:opacity-60 shrink-0"
                 />
                 <div>
                   <span className="font-mono text-xs font-bold text-[#1c1b19] block">
@@ -982,9 +982,9 @@ export const SettingsView = ({
 
         {/* CARD 6: Dashboard Card Preferences (Owner Only) */}
         <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
-          <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold shrink-0">
                 <Layout className="w-4 h-4" />
               </div>
               <div>
@@ -995,19 +995,19 @@ export const SettingsView = ({
               </div>
             </div>
             {dashPrefsToast && (
-              <span className="text-xs font-mono text-[#0075de] bg-[#e6f3fe] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1">
+              <span className="text-xs font-mono text-[#0075de] bg-[#e6f3fe] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
                 <CheckCircle2 className="w-3.5 h-3.5" /> {dashPrefsToast}
               </span>
             )}
             {!userIsOwner && (
-              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                 <Lock className="w-3 h-3" /> Owner Gated
               </span>
             )}
           </div>
 
           <div className="space-y-2.5">
-            <label className="flex items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer">
+            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
               <div className="pr-2">
                 <span className="font-display font-bold text-xs text-[#1c1b19] block">Top Vendor Stat</span>
                 <span className="text-[11px] text-[#6b665c] block">Show top vendor and spend category summary</span>
@@ -1017,11 +1017,11 @@ export const SettingsView = ({
                 checked={dashboardPrefs.showTopVendor}
                 disabled={!userIsOwner}
                 onChange={() => handleToggleDashPref("showTopVendor")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer"
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
               />
             </label>
 
-            <label className="flex items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer">
+            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
               <div className="pr-2">
                 <span className="font-display font-bold text-xs text-[#1c1b19] block">Team Leaderboard</span>
                 <span className="text-[11px] text-[#6b665c] block">Show spend ranking by team member</span>
@@ -1031,11 +1031,11 @@ export const SettingsView = ({
                 checked={dashboardPrefs.showTeamLeaderboard}
                 disabled={!userIsOwner}
                 onChange={() => handleToggleDashPref("showTeamLeaderboard")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer"
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
               />
             </label>
 
-            <label className="flex items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer">
+            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
               <div className="pr-2">
                 <span className="font-display font-bold text-xs text-[#1c1b19] block">Budget vs. Actual</span>
                 <span className="text-[11px] text-[#6b665c] block">Show workspace monthly budget & ceiling progress bar</span>
@@ -1045,11 +1045,11 @@ export const SettingsView = ({
                 checked={dashboardPrefs.showBudgetVsActual}
                 disabled={!userIsOwner}
                 onChange={() => handleToggleDashPref("showBudgetVsActual")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer"
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
               />
             </label>
 
-            <label className="flex items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer">
+            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
               <div className="pr-2">
                 <span className="font-display font-bold text-xs text-[#1c1b19] block">Spend by Day of Week</span>
                 <span className="text-[11px] text-[#6b665c] block">Show daily spending distribution chart card</span>
@@ -1059,7 +1059,7 @@ export const SettingsView = ({
                 checked={dashboardPrefs.showSpendByDay}
                 disabled={!userIsOwner}
                 onChange={() => handleToggleDashPref("showSpendByDay")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer"
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
               />
             </label>
           </div>
@@ -1069,9 +1069,9 @@ export const SettingsView = ({
 
       {/* FULL WIDTH CARD: Team Members & Role Management (Owner Only) */}
       <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
-        <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]/60 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
               <UserPlus className="w-4 h-4" />
             </div>
             <div>
@@ -1091,20 +1091,20 @@ export const SettingsView = ({
                 setInviteError("");
                 setShowInviteModal(true);
               }}
-              className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="w-full sm:w-auto bg-[#ff5a3c] hover:bg-[#e0482c] text-white text-xs font-semibold px-3.5 py-2.5 sm:py-2 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-h-[44px] sm:min-h-0"
             >
               <UserPlus className="w-4 h-4" />
               <span>Invite Staff Member</span>
             </button>
           ) : (
-            <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
               <Lock className="w-3 h-3" /> Owner Gated
             </span>
           )}
         </div>
 
-        {/* Members Roster Table */}
-        <div className="overflow-x-auto">
+        {/* Desktop Members Roster Table (>= 768px) */}
+        <div className="hidden md:block overflow-x-auto min-w-0">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-[#d9d4c8] text-[11px] font-mono uppercase tracking-wider text-[#6b665c]">
@@ -1127,7 +1127,7 @@ export const SettingsView = ({
                     <td className="py-3 font-semibold text-[#1c1b19]">
                       <div className="flex items-center gap-2">
                         <div
-                          className={`w-7 h-7 rounded-lg text-white font-mono font-bold text-[10px] flex items-center justify-center ${
+                          className={`w-7 h-7 rounded-lg text-white font-mono font-bold text-[10px] flex items-center justify-center shrink-0 ${
                             m.role === "owner" ? "bg-[#0f7a52]" : "bg-[#1c1b19]"
                           }`}
                         >
@@ -1216,6 +1216,84 @@ export const SettingsView = ({
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Members Card List (< 768px) */}
+        <div className="md:hidden space-y-2.5">
+          {members.map((m) => {
+            const initials = m.displayName
+              ? m.displayName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+              : "U";
+
+            return (
+              <div key={m.userId} className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className={`w-8 h-8 rounded-lg text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 ${
+                        m.role === "owner" ? "bg-[#0f7a52]" : "bg-[#1c1b19]"
+                      }`}
+                    >
+                      {initials}
+                    </div>
+                    <div>
+                      <span className="font-display font-bold text-xs text-[#1c1b19] block">{m.displayName}</span>
+                      <span className="text-[10px] font-mono text-[#6b665c] block">{m.email || "No email"}</span>
+                    </div>
+                  </div>
+
+                  {m.role === "owner" ? (
+                    <span className="text-[10px] font-mono font-bold bg-[#0f7a52]/10 text-[#0f7a52] border border-[#0f7a52]/20 px-2 py-0.5 rounded-md">
+                      OWNER
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-mono font-bold bg-gray-100 text-[#1c1b19] border border-gray-200 px-2 py-0.5 rounded-md">
+                      STAFF
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-[#d9d4c8]/60 text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold ${
+                        m.telegramUserId
+                          ? "bg-[#0088cc]/10 text-[#0088cc]"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      TG: {m.telegramUserId ? `@${m.telegramUserId}` : "Off"}
+                    </span>
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold ${
+                        m.whatsappUserId
+                          ? "bg-[#25D366]/10 text-[#25D366]"
+                          : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      WA: {m.whatsappUserId ? "On" : "Off"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-full">
+                      {m.joinedAt ? "Joined" : "Invited"}
+                    </span>
+                    {userIsOwner && m.role !== "owner" && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveMember(m.userId)}
+                        className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
+                        title="Remove member"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </TornCard>
 
       {/* FULL WIDTH CARD: Activity Log & Audit Trail (Owner Only) */}
@@ -1240,14 +1318,14 @@ export const SettingsView = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
               onClick={refreshLogs}
-              className="p-1.5 text-[#6b665c] hover:text-[#1c1b19] bg-[#f7f3ea] hover:bg-white border border-[#d9d4c8] rounded-lg transition-colors cursor-pointer"
+              className="p-2.5 sm:p-1.5 text-[#6b665c] hover:text-[#1c1b19] bg-[#f7f3ea] hover:bg-white border border-[#d9d4c8] rounded-lg transition-colors cursor-pointer shrink-0 min-h-[44px] sm:min-h-0 flex items-center justify-center"
               title="Refresh activity logs"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
             </button>
 
             {userIsOwner ? (
@@ -1255,7 +1333,7 @@ export const SettingsView = ({
                 type="button"
                 onClick={handleExportActivityCSV}
                 disabled={filteredLogs.length === 0}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display font-semibold transition-all shadow-2xs whitespace-nowrap cursor-pointer ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-1.5 rounded-lg text-xs font-display font-semibold transition-all shadow-2xs whitespace-nowrap cursor-pointer min-h-[44px] sm:min-h-0 ${
                   filteredLogs.length > 0
                     ? "bg-[#0f7a52] hover:bg-[#0b5f40] text-white"
                     : "bg-[#d9d4c8]/50 text-[#6b665c] cursor-not-allowed"

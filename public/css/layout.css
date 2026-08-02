@@ -1,4 +1,18 @@
-/* SnapSME — Notion Layout Stylesheet */
+/* ==========================================================================
+   SnapSME Mobile-First Breakpoint Architecture
+   --------------------------------------------------------------------------
+   Base Styles: Mobile Viewports (< 640px)
+   Small Tablet: min-width: 640px (reflows 2-column cards, adjusted margins)
+   Desktop/Tablet: min-width: 768px (collapsible mobile menu toggles to full nav)
+   Desktop: min-width: 1024px (full multi-column grids, sidebar layouts)
+   ========================================================================== */
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+  -webkit-text-size-adjust: 100%;
+}
 
 .snapsme-landing-container {
   max-width: 1280px;
@@ -6,6 +20,8 @@
   margin-right: auto;
   padding-left: 32px;
   padding-right: 32px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 640px) {
@@ -25,6 +41,7 @@
   background-color: var(--color-paper-warmth);
   border: none;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .snapsme-wordmark {
@@ -71,6 +88,9 @@
   color: rgba(0, 0, 0, 0.6);
   text-decoration: none;
   transition: color 0.15s ease;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .snapsme-nav-link:hover {
@@ -80,11 +100,13 @@
 /* Hero Section */
 .hero-section {
   text-align: center;
-  padding-top: 54px;
-  padding-bottom: 64px;
+  padding-top: 48px;
+  padding-bottom: 56px;
   max-width: 860px;
   margin-left: auto;
   margin-right: auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .hero-headline {
@@ -97,10 +119,39 @@
   margin-bottom: 20px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
+  .hero-section {
+    padding-top: 28px;
+    padding-bottom: 36px;
+  }
   .hero-headline {
-    font-size: 42px;
-    letter-spacing: -1.2px;
+    font-size: 34px;
+    letter-spacing: -0.8px;
+    line-height: 1.15;
+  }
+  .hero-subtext {
+    font-size: 16px !important;
+    line-height: 1.45 !important;
+    margin-bottom: 24px !important;
+  }
+  .hero-cta-wrapper {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+  .hero-cta-wrapper > a,
+  .hero-cta-wrapper > button {
+    width: 100% !important;
+    min-height: 48px !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .hero-headline {
+    font-size: 48px;
+    letter-spacing: -1.4px;
   }
 }
 
@@ -343,4 +394,163 @@
   font-size: 16px;
   color: var(--color-ink-black);
   text-decoration: none;
+}
+
+/* ==========================================================================
+   Notion-Inspired Decorative Elements & Card System
+   ========================================================================== */
+
+/* Hero Highlight Pill */
+.hero-highlight-pill {
+  background-color: var(--color-marigold, #ffb110);
+  color: #000000;
+  border-radius: 9999px;
+  padding: 4px 20px;
+  display: inline-block;
+  font-weight: 700;
+}
+
+/* Character Marks (40-48px circles with 2px colored borders) */
+.char-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+.char-mark-blue { border: 2px solid var(--color-notion-blue, #0075de); color: var(--color-notion-blue, #0075de); }
+.char-mark-coral { border: 2px solid var(--color-coral, #f64932); color: var(--color-coral, #f64932); }
+.char-mark-marigold { border: 2px solid var(--color-marigold, #ffb110); color: var(--color-marigold, #ffb110); }
+.char-mark-skywash { border: 2px solid var(--color-sky-wash, #62aef0); color: var(--color-sky-wash, #62aef0); }
+
+/* Accent Feature Card System */
+.notion-card-white {
+  background-color: var(--color-pure-white, #ffffff);
+  border: var(--border-hairline, 1px solid rgba(0,0,0,0.08));
+  border-radius: var(--radius-cards, 12px);
+  padding: 28px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.notion-card-white:hover {
+  border-color: rgba(0, 0, 0, 0.16);
+}
+
+.notion-card-marigold {
+  background-color: var(--color-marigold, #ffb110);
+  color: #000000;
+  border-radius: var(--radius-cards, 12px);
+  padding: 28px;
+  border: none;
+}
+.notion-card-marigold .feature-title,
+.notion-card-marigold .feature-desc { color: #000000; }
+
+.notion-card-coral {
+  background-color: var(--color-coral, #f64932);
+  color: #ffffff;
+  border-radius: var(--radius-cards, 12px);
+  padding: 28px;
+  border: none;
+}
+.notion-card-coral .feature-title,
+.notion-card-coral .feature-desc { color: #ffffff; }
+
+.notion-card-skywash {
+  background-color: var(--color-sky-wash, #62aef0);
+  color: #000000;
+  border-radius: var(--radius-cards, 12px);
+  padding: 28px;
+  border: none;
+}
+.notion-card-skywash .feature-title,
+.notion-card-skywash .feature-desc { color: #000000; }
+
+.notion-card-midnight {
+  background-color: var(--color-midnight-ink, #02093a);
+  color: #ffffff;
+  border-radius: var(--radius-cards, 12px);
+  padding: 28px;
+  border: none;
+}
+.notion-card-midnight .feature-title,
+.notion-card-midnight .feature-desc { color: #ffffff; }
+
+/* How It Works Diagram Flow */
+.diagram-flow-container {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 36px;
+  position: relative;
+}
+
+@media (max-width: 840px) {
+  .diagram-flow-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.diagram-step-card {
+  flex: 1;
+  background-color: #ffffff;
+  border: var(--border-hairline);
+  border-radius: var(--radius-cards);
+  padding: 28px 24px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.diagram-arrow-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-stone);
+  padding-top: 40px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 840px) {
+  .diagram-arrow-connector {
+    padding-top: 0;
+    transform: rotate(90deg);
+    align-self: center;
+  }
+}
+
+/* Functional Data Status Pills (Green & Amber) */
+.status-pill-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background-color: rgba(26, 156, 107, 0.1);
+  color: var(--color-confirmed-green, #1a9c6b);
+  border: 1px solid rgba(26, 156, 107, 0.25);
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-pill-amber {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background-color: rgba(224, 152, 42, 0.1);
+  color: var(--color-review-amber, #e0982a);
+  border: 1px solid rgba(224, 152, 42, 0.25);
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  font-weight: 600;
 }

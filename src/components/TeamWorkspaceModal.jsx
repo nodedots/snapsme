@@ -131,32 +131,32 @@ export const TeamWorkspaceModal = ({
       <div className="bg-white p-5 rounded-xl border border-[#d9d4c8] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#d9d4c8] pb-3">
           <div>
-            <h2 className="font-display font-bold text-lg text-[#1c1b19] flex items-center gap-2">
-              <Award className="w-5 h-5 text-[#ff5a3c]" /> Team Expense Leaderboard & Spend Summary
+            <h2 className="font-display font-bold text-base sm:text-lg text-[#1c1b19] flex items-center gap-2">
+              <Award className="w-5 h-5 text-[#ff5a3c] shrink-0" /> Team Expense Leaderboard & Spend Summary
             </h2>
             <p className="text-xs text-[#6b665c]">
               See who has submitted the most expenses and total spend ranking across the workspace
             </p>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#f7f3ea] p-1 rounded-lg border border-[#d9d4c8] text-xs font-semibold">
+          <div className="flex items-center gap-1 bg-[#f7f3ea] p-1 rounded-lg border border-[#d9d4c8] text-xs font-semibold w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setLeaderboardFilter("month")}
-              className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+              className={`flex-1 sm:flex-none px-3 py-2 sm:py-1 rounded-md transition-colors cursor-pointer text-center min-h-[40px] sm:min-h-0 ${
                 leaderboardFilter === "month"
-                  ? "bg-[#0f7a52] text-white shadow-2xs"
+                  ? "bg-[#0f7a52] text-white shadow-2xs font-bold"
                   : "text-[#6b665c] hover:text-[#1c1b19]"
               }`}
             >
-              This Month ({currentMonthStr})
+              This Month
             </button>
             <button
               type="button"
               onClick={() => setLeaderboardFilter("all")}
-              className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+              className={`flex-1 sm:flex-none px-3 py-2 sm:py-1 rounded-md transition-colors cursor-pointer text-center min-h-[40px] sm:min-h-0 ${
                 leaderboardFilter === "all"
-                  ? "bg-[#0f7a52] text-white shadow-2xs"
+                  ? "bg-[#0f7a52] text-white shadow-2xs font-bold"
                   : "text-[#6b665c] hover:text-[#1c1b19]"
               }`}
             >

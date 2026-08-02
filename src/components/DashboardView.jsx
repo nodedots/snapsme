@@ -239,27 +239,27 @@ export const DashboardView = ({
   return (
     <div className="space-y-6">
       {/* Top Header & Export */}
-      <div className="bg-white p-5 rounded-xl border border-black/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-xl border border-black/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display font-bold text-xl text-[#000000]">Owner & Team Spend Dashboard</h2>
+          <h2 className="font-display font-bold text-lg sm:text-xl text-[#000000]">Owner & Team Spend Dashboard</h2>
           <p className="text-xs text-[#615d59]">Real-time visibility into team expenses, category budgets, and money movement</p>
         </div>
 
         <button
           onClick={handleExportCSV}
-          className="bg-[#0075de] hover:bg-[#0060b8] text-white font-medium text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
+          className="w-full sm:w-auto bg-[#0075de] hover:bg-[#0060b8] text-white font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer min-h-[44px] sm:min-h-0"
         >
-          <Download className="w-4 h-4" />
-          Export CSV for Accountant
+          <Download className="w-4 h-4 shrink-0" />
+          <span>Export CSV for Accountant</span>
         </button>
       </div>
 
       {/* Workspace Monthly Budget Overview Card */}
       {prefs.showBudgetVsActual && (
-        <div className="bg-white p-5 sm:p-6 rounded-xl border border-black/10 space-y-4">
+        <div className="bg-white p-4 sm:p-6 rounded-xl border border-black/10 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-black/10 pb-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-lg bg-[#e6f3fe] border border-black/10 flex items-center justify-center text-[#0075de]">
+              <div className="w-10 h-10 rounded-lg bg-[#e6f3fe] border border-black/10 flex items-center justify-center text-[#0075de] shrink-0">
                 <Target className="w-5 h-5" />
               </div>
               <div>
@@ -269,8 +269,8 @@ export const DashboardView = ({
             </div>
 
             {/* Monthly Budget Input Form */}
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-44">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+              <div className="relative w-full sm:w-44">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-[#6b665c]">
                   {getCurrencySymbol(currency)}
                 </span>
@@ -282,13 +282,13 @@ export const DashboardView = ({
                   onChange={(e) => setMonthlyBudgetInput(e.target.value === "" ? "" : Number(e.target.value))}
                   placeholder="Monthly Budget"
                   disabled={!isOwner}
-                  className="w-full bg-[#f7f3ea] border border-[#d9d4c8] font-mono text-sm font-bold text-[#1c1b19] rounded-lg pl-7 pr-3 py-2 focus:outline-none focus:border-[#0f7a52] disabled:opacity-60"
+                  className="w-full bg-[#f7f3ea] border border-[#d9d4c8] font-mono text-sm font-bold text-[#1c1b19] rounded-lg pl-7 pr-3 py-2.5 sm:py-2 focus:outline-none focus:border-[#0f7a52] disabled:opacity-60 min-h-[44px] sm:min-h-0"
                 />
               </div>
               {isOwner && (
                 <button
                   onClick={handleSaveMonthlyBudget}
-                  className="bg-[#0f7a52] hover:bg-[#0b5f40] text-white text-xs font-semibold px-3.5 py-2.5 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0"
+                  className="w-full sm:w-auto bg-[#0f7a52] hover:bg-[#0b5f40] text-white text-xs font-semibold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer shadow-sm transition-transform active:scale-95 shrink-0 min-h-[44px] sm:min-h-0"
                 >
                   {isSavedNotice ? <Check className="w-4 h-4 text-emerald-300" /> : <Save className="w-4 h-4" />}
                   <span>{isSavedNotice ? "Saved!" : "Set Budget"}</span>

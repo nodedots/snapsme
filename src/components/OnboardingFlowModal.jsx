@@ -184,31 +184,49 @@ export function OnboardingFlowModal({
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
       <div className="w-full max-w-lg my-8 relative bg-white border border-black/10 rounded-xl p-6 shadow-lg">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between pb-3 border-b border-black/10 mb-5">
-          <div className="flex items-center gap-2.5">
-            <a href="/home" className="flex items-center gap-2 font-display font-bold text-lg text-[#000000] tracking-tight hover:opacity-80 transition-opacity no-underline">
-              <img src="/logo.jpg" alt="SnapSME Logo" className="w-7 h-7 rounded-lg object-cover border border-black/10" />
+        {/* Header Bar: Stacks gracefully into 2 rows on mobile to prevent overlapping */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-3.5 border-b border-black/10 mb-4">
+          {/* Row 1 (Mobile) / Left Group (Desktop): Logo & Mobile Close Button */}
+          <div className="flex items-center justify-between w-full sm:w-auto">
+            <a href="/home" className="flex items-center gap-2 font-display font-bold text-lg text-[#000000] tracking-tight hover:opacity-80 transition-opacity no-underline shrink-0">
+              <img src="/logo.jpg" alt="SnapSME Logo" className="w-7 h-7 rounded-lg object-cover border border-black/10 shrink-0" />
               <span>Snap<span className="text-[#0075de]">SME</span></span>
             </a>
-            <span className="text-[11px] font-mono bg-[#e6f3fe] text-[#0075de] px-2.5 py-0.5 rounded-full font-bold">
-              {currentStep === 0 ? "Sign In" : "Owner Onboarding"}
-            </span>
-          </div>
 
-          <div className="flex items-center gap-3">
-            {currentStep <= 4 && (
-              <span className="text-xs text-[#757575]">
-                Step {currentStep} of 4
-              </span>
-            )}
+            {/* Close Button on Mobile */}
             <button
               type="button"
               onClick={onClose}
-              className="text-[#757575] hover:text-[#000000] p-1 rounded-lg hover:bg-black/5 transition-colors cursor-pointer"
+              className="sm:hidden text-[#757575] hover:text-[#000000] p-1.5 rounded-lg hover:bg-black/5 transition-colors cursor-pointer shrink-0"
+              aria-label="Close modal"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
+          </div>
+
+          {/* Row 2 (Mobile) / Right Group (Desktop): Badge & Step Indicator */}
+          <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+            <span className="text-[11px] font-mono bg-[#e6f3fe] text-[#0075de] px-2.5 py-0.5 rounded-full font-bold shrink-0">
+              {currentStep === 0 ? "Sign In" : "Owner Onboarding"}
+            </span>
+
+            <div className="flex items-center gap-3">
+              {currentStep <= 4 && (
+                <span className="text-xs font-semibold text-[#757575] shrink-0">
+                  Step {currentStep} of 4
+                </span>
+              )}
+
+              {/* Close Button on Desktop */}
+              <button
+                type="button"
+                onClick={onClose}
+                className="hidden sm:flex text-[#757575] hover:text-[#000000] p-1.5 rounded-lg hover:bg-black/5 transition-colors cursor-pointer shrink-0"
+                aria-label="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 

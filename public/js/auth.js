@@ -416,9 +416,9 @@ export function mountAuthModal() {
 
             ${!isReset ? `
               <div class="auth-form-group">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px;" class="sm:flex-row sm:items-center sm:justify-between">
                   <label class="auth-label" for="auth-password-input" style="margin: 0;">Password</label>
-                  ${isSignIn ? `<button type="button" id="auth-forgot-btn" class="auth-ghost-link" style="font-size: 13px;">Forgot password?</button>` : ""}
+                  ${isSignIn ? `<button type="button" id="auth-forgot-btn" class="auth-ghost-link" style="font-size: 13px; text-align: left; padding: 0;">Forgot password?</button>` : ""}
                 </div>
                 <input
                   type="password"

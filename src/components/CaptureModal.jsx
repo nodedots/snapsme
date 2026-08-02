@@ -467,6 +467,7 @@ export const CaptureModal = ({
                   <input
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     required
                     value={amount}
                     onChange={(e) => handleFieldEdit("amount", e.target.value)}

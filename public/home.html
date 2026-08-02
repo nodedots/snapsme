@@ -33,16 +33,35 @@
   <div class="snapsme-landing-container">
 
     <!-- Hero Section -->
-    <section class="hero-section">
-      <h1 class="hero-headline">
+    <section class="hero-section" style="position: relative; text-align: center; max-width: 860px; margin: 0 auto; padding-top: 54px; padding-bottom: 64px;">
+      <!-- Decorative Sparkle & Character Mark Punctuation -->
+      <div style="position: absolute; left: 10px; top: 10px;" class="desktop-only">
+        <div class="char-mark char-mark-blue" title="Receipt Snap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+            <circle cx="12" cy="13" r="3"/>
+          </svg>
+        </div>
+      </div>
+      <div style="position: absolute; right: 10px; top: 10px;" class="desktop-only">
+        <div class="char-mark char-mark-coral" title="Voice Note">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+          </svg>
+        </div>
+      </div>
+
+      <h1 class="hero-headline" style="text-align: center; margin: 0 auto 20px auto;">
         Never lose track of <span class="hero-highlight-pill">team spend</span> again
       </h1>
-      <p class="hero-subtext">
+      <p class="hero-subtext" style="text-align: center; margin: 0 auto 32px auto; max-width: 620px;">
         No more chasing receipts. Your team snaps a photo or sends a quick voice note — we handle the rest, and you see
         it all as it happens.
       </p>
       <div class="hero-cta-wrapper">
-        <a href="/?onboarding=true" class="btn-notion-primary" style="padding: 10px 24px; font-size: 15px;">
+        <a href="/?onboarding=true" class="btn-ledger-primary" style="padding: 12px 28px; font-size: 16px;">
           <!-- Inline Camera Icon -->
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round">
@@ -57,156 +76,201 @@
       </div>
     </section>
 
-    <!-- Product Preview Section (Visual Anchor directly below Hero) -->
+    <!-- Product Preview Section (Realistic UI Mockup directly below Hero) -->
     <section class="product-preview-section">
-      <div class="product-preview-card notion-card-white">
-        <!-- Mock Feed Header -->
-        <div
-          style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid rgba(0,0,0,0.08); flex-wrap: wrap; gap: 8px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span
-              style="font-family: var(--font-notioninter); font-weight: 700; font-size: 18px; color: var(--color-ink-black);">Acme
-              Services Co.</span>
-            <span class="pill-tag pill-tag-blue">LIVE FEED</span>
+      <div class="product-preview-card notion-card-white" style="box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1); padding: 20px;">
+        <!-- Mock Feed Header: Responsive Row Stacking on Mobile -->
+        <div class="preview-card-header">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+            <span style="font-family: var(--font-notioninter); font-weight: 700; font-size: 18px; color: var(--color-ink-black);">Acme Services Co.</span>
+            <span style="background-color: var(--color-sky-tint); color: var(--color-notion-blue); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; font-family: monospace;">LIVE FEED</span>
           </div>
-          <span style="font-family: var(--font-notioninter); font-size: 13px; color: var(--color-stone);">4 Team Members
-            Active</span>
+          <div style="display: flex; align-items: center; gap: 6px; font-family: var(--font-notioninter); font-size: 12px; color: var(--color-stone); font-weight: 500;">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #1a9c6b; display: inline-block;"></span>
+            <span>4 Team Members Active</span>
+          </div>
         </div>
 
-        <!-- Mock Expense Feed Items -->
+        <!-- Mock Expense Feed Items (Kanban Rows with Responsive Mobile Stacking) -->
         <div style="display: flex; flex-direction: column; gap: 12px;">
+          
           <!-- Feed Item 1: Fuel Photo Snap -->
-          <div
-            style="background-color: var(--color-paper-warmth); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-              <div
-                style="width: 36px; height: 36px; border-radius: 6px; background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-black)"
-                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path
-                    d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-                  <circle cx="12" cy="13" r="3" />
-                </svg>
+          <div class="preview-feed-item">
+            <!-- Row 1: Icon + Vendor Title + Amount -->
+            <div class="preview-feed-row-top">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                <div class="char-mark char-mark-blue" style="width: 36px; height: 36px; flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
+                    <circle cx="12" cy="13" r="3" />
+                  </svg>
+                </div>
+                <div style="font-family: var(--font-notioninter); font-weight: 700; font-size: 15px; color: var(--color-ink-black);" class="truncate">
+                  Fuel Stop
+                </div>
               </div>
-              <div style="min-width: 0;">
-                <div
-                  style="font-family: var(--font-notioninter); font-weight: 600; font-size: 15px; color: var(--color-ink-black);"
-                  class="truncate">Fuel Stop</div>
-                <div style="font-family: var(--font-notioninter); font-size: 13px; color: var(--color-graphite);"
-                  class="truncate">Submitted by Marcus Vance • Fuel & Transport</div>
+              <div style="font-family: var(--font-notioninter); font-weight: 700; font-size: 16px; color: var(--color-ink-black); flex-shrink: 0;">
+                $88.50
               </div>
             </div>
-            <div style="text-align: right; flex-shrink: 0;">
-              <div
-                style="font-family: var(--font-notioninter); font-weight: 600; font-size: 16px; color: var(--color-ink-black);">
-                $88.50</div>
-              <span class="pill-tag pill-tag-green">Saved</span>
+
+            <!-- Row 2: Submitter Info + Status Pill -->
+            <div class="preview-feed-row-bottom">
+              <div style="font-family: var(--font-notioninter); font-size: 12px; color: var(--color-graphite);" class="truncate">
+                Submitted by <strong>Marcus Vance</strong> • Fuel & Transport
+              </div>
+              <span class="status-pill-green" style="flex-shrink: 0;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Confirmed</span>
+              </span>
             </div>
           </div>
 
           <!-- Feed Item 2: Voice Note Expense -->
-          <div
-            style="background-color: var(--color-paper-warmth); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-              <div
-                style="width: 36px; height: 36px; border-radius: 6px; background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-black)"
-                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                  <line x1="12" y1="19" x2="12" y2="22" />
-                </svg>
+          <div class="preview-feed-item">
+            <!-- Row 1: Icon + Vendor Title + Amount -->
+            <div class="preview-feed-row-top">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                <div class="char-mark char-mark-coral" style="width: 36px; height: 36px; flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="22" />
+                  </svg>
+                </div>
+                <div style="font-family: var(--font-notioninter); font-weight: 700; font-size: 15px; color: var(--color-ink-black);" class="truncate">
+                  Hardware Depot
+                </div>
               </div>
-              <div style="min-width: 0;">
-                <div
-                  style="font-family: var(--font-notioninter); font-weight: 600; font-size: 15px; color: var(--color-ink-black);"
-                  class="truncate">Hardware Depot</div>
-                <div style="font-family: var(--font-notioninter); font-size: 13px; color: var(--color-graphite);"
-                  class="truncate">Voice note by Sarah Connor • Equipment & Tools</div>
+              <div style="font-family: var(--font-notioninter); font-weight: 700; font-size: 16px; color: var(--color-ink-black); flex-shrink: 0;">
+                $142.10
               </div>
             </div>
-            <div style="text-align: right; flex-shrink: 0;">
-              <div
-                style="font-family: var(--font-notioninter); font-weight: 600; font-size: 16px; color: var(--color-ink-black);">
-                $142.10</div>
-              <span class="pill-tag pill-tag-green">Saved</span>
+
+            <!-- Row 2: Submitter Info + Status Pill -->
+            <div class="preview-feed-row-bottom">
+              <div style="font-family: var(--font-notioninter); font-size: 12px; color: var(--color-graphite);" class="truncate">
+                Voice note by <strong>Sarah Connor</strong> • Equipment & Tools
+              </div>
+              <span class="status-pill-amber" style="flex-shrink: 0;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                <span>Needs Review</span>
+              </span>
             </div>
           </div>
 
           <!-- Feed Item 3: Chat Message Snap -->
-          <div
-            style="background-color: var(--color-paper-warmth); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px; padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
-              <div
-                style="width: 36px; height: 36px; border-radius: 6px; background-color: #ffffff; border: 1px solid rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-ink-black)"
-                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" />
-                </svg>
+          <div class="preview-feed-item">
+            <!-- Row 1: Icon + Vendor Title + Amount -->
+            <div class="preview-feed-row-top">
+              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                <div class="char-mark char-mark-skywash" style="width: 36px; height: 36px; flex-shrink: 0;">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z" />
+                  </svg>
+                </div>
+                <div style="font-family: var(--font-notioninter); font-weight: 700; font-size: 15px; color: var(--color-ink-black);" class="truncate">
+                  City Office Supply
+                </div>
               </div>
-              <div style="min-width: 0;">
-                <div
-                  style="font-family: var(--font-notioninter); font-weight: 600; font-size: 15px; color: var(--color-ink-black);"
-                  class="truncate">City Office Supply</div>
-                <div style="font-family: var(--font-notioninter); font-size: 13px; color: var(--color-graphite);"
-                  class="truncate">Telegram snap by Alex Chen • Office Supplies</div>
+              <div style="font-family: var(--font-notioninter); font-weight: 700; font-size: 16px; color: var(--color-ink-black); flex-shrink: 0;">
+                $64.20
               </div>
             </div>
-            <div style="text-align: right; flex-shrink: 0;">
-              <div
-                style="font-family: var(--font-notioninter); font-weight: 600; font-size: 16px; color: var(--color-ink-black);">
-                $64.20</div>
-              <span class="pill-tag pill-tag-green">Saved</span>
+
+            <!-- Row 2: Submitter Info + Status Pill -->
+            <div class="preview-feed-row-bottom">
+              <div style="font-family: var(--font-notioninter); font-size: 12px; color: var(--color-graphite);" class="truncate">
+                Telegram snap by <strong>Alex Chen</strong> • Office Supplies
+              </div>
+              <span class="status-pill-green" style="flex-shrink: 0;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>Confirmed</span>
+              </span>
             </div>
           </div>
+
         </div>
       </div>
     </section>
 
-    <!-- How It Works Section -->
+    <!-- How It Works Diagram Section -->
     <section id="how-it-works" class="how-it-works-section">
       <h2 class="section-heading">How it works</h2>
       <p class="section-subheading">
         Three simple steps to eliminate lost paper receipts and manual bookkeeping for your business.
       </p>
 
-      <div class="steps-grid">
+      <!-- 3-Step Visual Diagram Flow -->
+      <div class="diagram-flow-container">
         <!-- Step 1 -->
-        <div class="notion-card-white">
-          <div class="step-card-content">
-            <div class="step-number-badge">01</div>
-            <h3 class="step-title">Snap a receipt or send a voice note</h3>
-            <p class="step-desc">
-              Staff snap a quick receipt photo or record a 5-second voice note directly on mobile or chat.
-            </p>
+        <div class="diagram-step-card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div class="char-mark char-mark-blue">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+              </svg>
+            </div>
+            <span class="step-number-badge">STEP 01</span>
           </div>
+          <h3 class="step-title">Snap a receipt or send a voice note</h3>
+          <p class="step-desc">
+            Staff snap a quick receipt photo or record a 5-second voice note directly on mobile or chat.
+          </p>
+        </div>
+
+        <div class="diagram-arrow-connector">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
         </div>
 
         <!-- Step 2 -->
-        <div class="notion-card-white">
-          <div class="step-card-content">
-            <div class="step-number-badge">02</div>
-            <h3 class="step-title">Automatic receipt details reading</h3>
-            <p class="step-desc">
-              SnapSME reads the receipt for you — vendor, amount, and category — no typing required.
-            </p>
+        <div class="diagram-step-card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div class="char-mark char-mark-marigold">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <span class="step-number-badge">STEP 02</span>
           </div>
+          <h3 class="step-title">Automatic details reading</h3>
+          <p class="step-desc">
+            SnapSME reads the receipt for you — vendor, amount, and category — no typing required.
+          </p>
+        </div>
+
+        <div class="diagram-arrow-connector">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
         </div>
 
         <!-- Step 3 -->
-        <div class="notion-card-white">
-          <div class="step-card-content">
-            <div class="step-number-badge">03</div>
-            <h3 class="step-title">Lands in your team's shared list</h3>
-            <p class="step-desc">
-              It shows up in your team's shared list right away, so you always know what's been spent.
-            </p>
+        <div class="diagram-step-card">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div class="char-mark char-mark-skywash">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                <line x1="8" y1="21" x2="16" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </div>
+            <span class="step-number-badge">STEP 03</span>
           </div>
+          <h3 class="step-title">Lands in shared team list</h3>
+          <p class="step-desc">
+            It shows up in your team's shared list right away, so you always know what's been spent.
+          </p>
         </div>
       </div>
     </section>
 
-    <!-- Features Grid Section -->
+    <!-- Accent Features Grid Section (Alternating White & Full-Bleed Accent Cards) -->
     <section id="features" class="features-section">
       <div style="text-align: center;">
         <h2 class="section-heading">Features built for small teams</h2>
@@ -216,9 +280,15 @@
       </div>
 
       <div class="features-grid">
-        <!-- Feature 1: Receipt Photo Capture -->
+        <!-- Feature 1: Receipt Photo Capture (White Card) -->
         <div class="notion-card-white">
           <div class="feature-card-content">
+            <div class="char-mark char-mark-blue" style="margin-bottom: 6px;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+              </svg>
+            </div>
             <h3 class="feature-title">Receipt photo capture</h3>
             <p class="feature-desc">
               Snap a photo. We read the vendor, the total, and the category for you.
@@ -226,9 +296,16 @@
           </div>
         </div>
 
-        <!-- Feature 2: Voice-Note Entry -->
-        <div class="notion-card-white">
+        <!-- Feature 2: Voice-Note Entry (Accent Marigold Card) -->
+        <div class="notion-card-marigold">
           <div class="feature-card-content">
+            <div class="char-mark" style="margin-bottom: 6px; border: 2px solid #000000; color: #000000;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="22"/>
+              </svg>
+            </div>
             <h3 class="feature-title">Voice-note entry</h3>
             <p class="feature-desc">
               No receipt on hand? Just say what you spent — SnapSME turns it into a logged expense.
@@ -236,9 +313,14 @@
           </div>
         </div>
 
-        <!-- Feature 3: Telegram & WhatsApp Intake -->
-        <div class="notion-card-white">
+        <!-- Feature 3: Telegram & WhatsApp Intake (Accent Sky-Wash Card) -->
+        <div class="notion-card-skywash">
           <div class="feature-card-content">
+            <div class="char-mark" style="margin-bottom: 6px; border: 2px solid #000000; color: #000000;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>
+              </svg>
+            </div>
             <h3 class="feature-title">Send via Telegram & WhatsApp</h3>
             <p class="feature-desc">
               Staff can text receipt photos or voice notes in the chat apps they already use — no new apps to install.
@@ -246,20 +328,34 @@
           </div>
         </div>
 
-        <!-- Feature 4: Works Without Internet -->
+        <!-- Feature 4: Works Without Internet (White Card) -->
         <div class="notion-card-white">
           <div class="feature-card-content">
+            <div class="char-mark char-mark-blue" style="margin-bottom: 6px;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="1" y1="1" x2="23" y2="23"/>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+                <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+              </svg>
+            </div>
             <h3 class="feature-title">Works without internet</h3>
             <p class="feature-desc">
-              Snap receipts even with no cell signal. Everything saves on your phone and updates automatically once
-              you're back online.
+              Snap receipts even with no cell signal. Everything saves on your phone and updates automatically once you're back online.
             </p>
           </div>
         </div>
 
-        <!-- Feature 5: Budgets & Alerts -->
-        <div class="notion-card-white">
+        <!-- Feature 5: Budgets & Alerts (Accent Coral Card) -->
+        <div class="notion-card-coral">
           <div class="feature-card-content">
+            <div class="char-mark" style="margin-bottom: 6px; border: 2px solid #ffffff; color: #ffffff; background: transparent;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </div>
             <h3 class="feature-title">Budgets & alerts</h3>
             <p class="feature-desc">
               Set spend limits per category and receive notifications before team budgets are exceeded.
@@ -267,14 +363,20 @@
           </div>
         </div>
 
-        <!-- Feature 6: CSV Export -->
-        <div class="notion-card-white">
+        <!-- Feature 6: CSV Export (Accent Midnight Ink Card) -->
+        <div class="notion-card-midnight">
           <div class="feature-card-content">
+            <div class="char-mark" style="margin-bottom: 6px; border: 2px solid #ffffff; color: #ffffff; background: transparent;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
             <h3 class="feature-title">CSV export</h3>
             <p class="feature-desc">
               Download a clean spreadsheet of everything, ready to hand to your accountant.
             </p>
-          </div>
         </div>
       </div>
     </section>

@@ -189,66 +189,84 @@ export const ExpenseFeed = ({
           </div>
         </div>
 
-        {/* Category & Member Filter Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs no-scrollbar">
-          <span className="text-[#6b665c] font-medium flex items-center gap-1 shrink-0">
-            <Filter className="w-3.5 h-3.5" /> Filters:
-          </span>
+        {/* Category, Member & Money Movement Filter Controls */}
+        <div className="pt-2.5 border-t border-black/10 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-[#1c1b19] flex items-center gap-1.5">
+              <Filter className="w-3.5 h-3.5 text-[#0075de]" /> Filter Feed:
+            </span>
 
-          {/* Category Selector */}
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-2.5 py-1 focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Categories ({categories.length})</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
+            {(selectedCategory !== "all" || selectedMember !== "all" || selectedMoneyMovement !== "all" || searchQuery) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory("all");
+                  setSelectedMember("all");
+                  setSelectedMoneyMovement("all");
+                  setSearchQuery("");
+                }}
+                className="text-[#f64932] hover:underline text-xs font-bold shrink-0 cursor-pointer"
+              >
+                Reset Filters
+              </button>
+            )}
+          </div>
 
-          {/* Member Selector */}
-          <select
-            value={selectedMember}
-            onChange={(e) => setSelectedMember(e.target.value)}
-            className="bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-2.5 py-1 focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Submitters ({members.length})</option>
-            {members.map((m) => (
-              <option key={m.userId} value={m.userId}>
-                {m.displayName}
-              </option>
-            ))}
-          </select>
+          {/* Responsive Filter Selectors (1 Column on Mobile < 640px, 3 Columns on Tablet/Desktop >= 640px) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full text-xs">
+            {/* Category Selector */}
+            <div className="w-full min-w-0">
+              <label htmlFor="feed-filter-category" className="sr-only">Filter by Category</label>
+              <select
+                id="feed-filter-category"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:border-[#0075de] cursor-pointer box-border min-h-[44px] sm:min-h-0"
+              >
+                <option value="all">All Categories ({categories.length})</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {/* Money Movement Selector */}
-          <select
-            value={selectedMoneyMovement}
-            onChange={(e) => setSelectedMoneyMovement(e.target.value)}
-            className="bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-2.5 py-1 focus:outline-none cursor-pointer"
-          >
-            <option value="all">All Money Movements</option>
-            <option value="company_card">Company Card</option>
-            <option value="personal_reimbursement">Personal Reimbursement</option>
-            <option value="petty_cash">Petty Cash</option>
-            <option value="supplier_payment">Supplier Direct</option>
-          </select>
+            {/* Member Selector */}
+            <div className="w-full min-w-0">
+              <label htmlFor="feed-filter-member" className="sr-only">Filter by Submitter</label>
+              <select
+                id="feed-filter-member"
+                value={selectedMember}
+                onChange={(e) => setSelectedMember(e.target.value)}
+                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:border-[#0075de] cursor-pointer box-border min-h-[44px] sm:min-h-0"
+              >
+                <option value="all">All Submitters ({members.length})</option>
+                {members.map((m) => (
+                  <option key={m.userId} value={m.userId}>
+                    {m.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {(selectedCategory !== "all" || selectedMember !== "all" || selectedMoneyMovement !== "all" || searchQuery) && (
-            <button
-              onClick={() => {
-                setSelectedCategory("all");
-                setSelectedMember("all");
-                setSelectedMoneyMovement("all");
-                setSearchQuery("");
-              }}
-              className="text-[#ff5a3c] hover:underline text-xs font-semibold shrink-0 cursor-pointer ml-auto"
-            >
-              Reset Filters
-            </button>
-          )}
+            {/* Money Movement Selector */}
+            <div className="w-full min-w-0">
+              <label htmlFor="feed-filter-money" className="sr-only">Filter by Money Movement</label>
+              <select
+                id="feed-filter-money"
+                value={selectedMoneyMovement}
+                onChange={(e) => setSelectedMoneyMovement(e.target.value)}
+                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:border-[#0075de] cursor-pointer box-border min-h-[44px] sm:min-h-0"
+              >
+                <option value="all">All Money Movements</option>
+                <option value="company_card">Company Card</option>
+                <option value="personal_reimbursement">Personal Reimbursement</option>
+                <option value="petty_cash">Petty Cash</option>
+                <option value="supplier_payment">Supplier Direct</option>
+              </select>
+            </div>
+          </div>
         </div>
       </div>
 
