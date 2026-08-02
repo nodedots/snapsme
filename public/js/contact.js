@@ -72,7 +72,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       // Direct Firestore Write (or local fallback storage)
-      if (window.db && typeof window.db.collection === "function") {
+      if (window.firestoreDb && window.firestoreHelpers) {
+        const { doc, setDoc, collection } = window.firestoreHelpers;
+        const docRef = doc(collection(window.firestoreDb, "supportRequests"), requestId);
+        await setDoc(docRef, payload);
+      } else if (window.db && typeof window.db.collection === "function") {
         await window.db.collection("supportRequests").doc(requestId).set(payload);
       } else {
         // Fallback for local storage persistence if offline or unconfigured

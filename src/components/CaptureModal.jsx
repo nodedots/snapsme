@@ -238,8 +238,8 @@ export const CaptureModal = ({
         {/* Header */}
         <div className="bg-[#f6f5f4] px-5 py-4 border-b border-black/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#0075de] text-white flex items-center justify-center font-bold">
-              <Camera className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-lg overflow-hidden border border-black/10 flex items-center justify-center shrink-0">
+              <img src="/logo.jpg" alt="SnapSME Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <h2 className="font-display font-bold text-lg text-[#000000]">Snap New Expense</h2>

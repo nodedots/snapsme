@@ -144,7 +144,7 @@ export function OnboardingFlowModal({
               <span>Snap<span className="text-[#0075de]">SME</span></span>
             </a>
             <span className="text-[11px] font-mono bg-[#e6f3fe] text-[#0075de] px-2.5 py-0.5 rounded-full font-bold">
-              {isSignIn ? "Authentication" : "Owner Onboarding"}
+              {currentStep === 0 ? "Sign In" : "Owner Onboarding"}
             </span>
           </div>
 

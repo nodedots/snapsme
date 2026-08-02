@@ -65,7 +65,7 @@ export function saveExpenses(expenses) {
 export function loadCurrentUser() {
   const data = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   if (!data) {
-    const defaultUser = INITIAL_MEMBERS[0]; // Alex Rivera (Owner)
+    const defaultUser = INITIAL_MEMBERS[0];
     localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(defaultUser));
     return defaultUser;
   }
@@ -112,6 +112,18 @@ export function recordActivityLog({ actorId, actorName, actorRole, actionType, d
   const updatedLogs = [newLog, ...currentLogs];
   saveActivityLogs(updatedLogs);
   return updatedLogs;
+}
+
+export function clearAllWorkspaceData() {
+  Object.values(STORAGE_KEYS).forEach((key) => {
+    localStorage.removeItem(key);
+  });
+  localStorage.setItem(STORAGE_KEYS.WORKSPACE, JSON.stringify(INITIAL_WORKSPACE));
+  localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+  localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(INITIAL_MEMBERS));
+  localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(INITIAL_EXPENSES));
+  localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_MEMBERS[0]));
+  localStorage.setItem(STORAGE_KEYS.ACTIVITY_LOGS, JSON.stringify(INITIAL_ACTIVITY_LOGS));
 }
 
 // Check for potential duplicate expense within 48h (matching amount + vendor)

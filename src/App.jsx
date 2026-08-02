@@ -63,6 +63,14 @@ export function App() {
     saveOfflineSimMode(isOfflineMode);
   }, [isOfflineMode]);
 
+  // Purge any legacy sample/dummy data from previous sessions to start with a clean slate
+  useEffect(() => {
+    if (expenses && expenses.length > 0 && expenses.some(e => e.id === "exp_101" || e.vendor === "Shell Petroleum" || e.vendor === "Staples Business Center")) {
+      setExpenses([]);
+      saveExpenses([]);
+    }
+  }, [expenses]);
+
   // Check URL parameters and hash on load to launch onboarding / signin directly from landing page CTAs
   useEffect(() => {
     try {
@@ -235,10 +243,10 @@ export function App() {
                 Zero-Friction Team Expense Capture
               </span>
               <h1 className="font-display font-bold text-2xl sm:text-3xl text-[#1c1b19] leading-tight">
-                Know where every dollar went.
+                Never lose track of team spend again
               </h1>
               <p className="text-xs sm:text-sm text-[#6b665c] leading-relaxed">
-                Without chasing anyone for a receipt. Snap photos, record voice notes, or submit straight from Telegram & WhatsApp.
+                No more chasing receipts. Your team snaps a photo or sends a quick voice note — we handle the rest, and you see it all as it happens.
               </p>
             </div>
 

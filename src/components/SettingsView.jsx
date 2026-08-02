@@ -358,8 +358,23 @@ export const SettingsView = ({
           </p>
         </div>
 
-        {/* User Switcher / Sign Out */}
+        {/* User Switcher / Reset / Sign Out */}
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("Are you sure you want to clear all workspace data and start fresh with a clean slate?")) {
+                localStorage.clear();
+                window.location.reload();
+              }
+            }}
+            className="flex items-center gap-1.5 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-2 rounded-xl transition-colors cursor-pointer"
+            title="Wipe all local data and start fresh"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Reset & Start Fresh</span>
+          </button>
+
           <button
             type="button"
             onClick={() => signOutUser(setCurrentUser)}
