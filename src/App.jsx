@@ -656,6 +656,7 @@ export function App() {
             isOwner={currentUser?.role === "owner"}
             workspace={workspace}
             onUpdateWorkspace={handleUpdateWorkspace}
+            onOpenSettings={() => setCurrentView("settings")}
           />
         )}
 
@@ -693,6 +694,7 @@ export function App() {
             setMembers={setMembers}
             categories={categories}
             setCategories={setCategories}
+            onBackToDashboard={() => setCurrentView("dashboard")}
           />
         )}
       </main>

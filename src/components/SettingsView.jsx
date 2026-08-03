@@ -50,7 +50,8 @@ import {
   Palette,
   Upload,
   Image as ImageIcon,
-  Layout
+  Layout,
+  LayoutDashboard
 } from "lucide-react";
 
 export const SettingsView = ({
@@ -61,7 +62,8 @@ export const SettingsView = ({
   members,
   setMembers,
   categories,
-  setCategories
+  setCategories,
+  onBackToDashboard
 }) => {
   const userIsOwner = isOwner(currentUser);
 
@@ -471,6 +473,17 @@ export const SettingsView = ({
 
         {/* User Switcher / Reset / Sign Out */}
         <div className="flex items-center gap-2 shrink-0">
+          {onBackToDashboard && (
+            <button
+              type="button"
+              onClick={onBackToDashboard}
+              className="flex items-center gap-1.5 text-xs font-semibold text-[#0f7a52] hover:text-[#0b5f40] bg-[#e7f4ec] hover:bg-[#d5efe0] border border-[#0f7a52]/30 px-3 py-2 rounded-xl transition-colors cursor-pointer"
+              title="Return to the main dashboard"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Back to Dashboard</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => {

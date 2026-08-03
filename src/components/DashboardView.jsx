@@ -15,7 +15,8 @@ import {
   Bell,
   BellRing,
   Mail,
-  Globe
+  Globe,
+  Settings
 } from "lucide-react";
 
 export const DashboardView = ({
@@ -25,7 +26,8 @@ export const DashboardView = ({
   currency,
   isOwner,
   workspace,
-  onUpdateWorkspace
+  onUpdateWorkspace,
+  onOpenSettings
 }) => {
   const [monthlyBudgetInput, setMonthlyBudgetInput] = useState(
     workspace.monthlyBudget ?? 3000
@@ -245,13 +247,24 @@ export const DashboardView = ({
           <p className="text-xs text-[#615d59]">Real-time visibility into team expenses, category budgets, and money movement</p>
         </div>
 
-        <button
-          onClick={handleExportCSV}
-          className="w-full sm:w-auto bg-[#0075de] hover:bg-[#0060b8] text-white font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer min-h-[44px] sm:min-h-0"
-        >
-          <Download className="w-4 h-4 shrink-0" />
-          <span>Export CSV for Accountant</span>
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {isOwner && onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="w-full sm:w-auto bg-[#1c1b19] hover:bg-[#ff5a3c] text-white font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer min-h-[44px] sm:min-h-0"
+            >
+              <Settings className="w-4 h-4 shrink-0" />
+              <span>App Settings</span>
+            </button>
+          )}
+          <button
+            onClick={handleExportCSV}
+            className="w-full sm:w-auto bg-[#0075de] hover:bg-[#0060b8] text-white font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer min-h-[44px] sm:min-h-0"
+          >
+            <Download className="w-4 h-4 shrink-0" />
+            <span>Export CSV for Accountant</span>
+          </button>
+        </div>
       </div>
 
       {/* Workspace Monthly Budget Overview Card */}
@@ -507,7 +520,7 @@ export const DashboardView = ({
             <Wallet className="w-4 h-4 text-[#0f7a52]" />
           </div>
           <p className="font-mono text-2xl font-bold text-[#1c1b19]">
-            ${totalWorkspaceSpend.toFixed(2)} <span className="text-xs text-[#6b665c] font-normal">{currency}</span>
+            {getCurrencySymbol(currency)}{totalWorkspaceSpend.toFixed(2)} <span className="text-xs text-[#6b665c] font-normal">{currency}</span>
           </p>
           <p className="text-[11px] text-[#0f7a52] mt-1 font-medium">{expenses.length} total logged transactions</p>
         </div>
@@ -533,7 +546,7 @@ export const DashboardView = ({
               return (
                 <>
                   <p className="font-display font-bold text-lg text-[#1c1b19] truncate">{top?.category.name || "N/A"}</p>
-                  <p className="font-mono text-xs text-[#ff5a3c] font-bold mt-1">${top?.spent.toFixed(2) || "0.00"}</p>
+                  <p className="font-mono text-xs text-[#ff5a3c] font-bold mt-1">{getCurrencySymbol(currency)}{top?.spent.toFixed(2) || "0.00"}</p>
                 </>
               );
             })()}
@@ -551,7 +564,7 @@ export const DashboardView = ({
               .reduce((s, e) => s + e.amount, 0);
             return (
               <>
-                <p className="font-mono text-2xl font-bold text-[#e0982a]">${reim.toFixed(2)}</p>
+                <p className="font-mono text-2xl font-bold text-[#e0982a]">{getCurrencySymbol(currency)}{reim.toFixed(2)}</p>
                 <p className="text-[11px] text-[#6b665c] mt-1 font-medium">Personal funds spent by staff</p>
               </>
             );
@@ -589,9 +602,9 @@ export const DashboardView = ({
                     {item.category.name}
                   </span>
                   <span className="font-mono text-xs font-bold text-[#1c1b19]">
-                    ${item.spent.toFixed(2)}{" "}
+                    {getCurrencySymbol(currency)}{item.spent.toFixed(2)}{" "}
                     <span className="text-[#6b665c] font-normal">
-                      / {item.budget ? `$${item.budget}` : "No Limit"}
+                      / {item.budget ? `${getCurrencySymbol(currency)}${item.budget}` : "No Limit"}
                     </span>
                   </span>
                 </div>
@@ -641,7 +654,7 @@ export const DashboardView = ({
                     <span className="text-[10px] text-[#6b665c] font-mono">{m.count} submissions</span>
                   </div>
                   <span className="font-mono text-sm font-bold text-[#1c1b19]">
-                    ${m.spent.toFixed(2)}
+                    {getCurrencySymbol(currency)}{m.spent.toFixed(2)}
                   </span>
                 </div>
               ))}
@@ -662,7 +675,7 @@ export const DashboardView = ({
                   <span className="text-[10px] text-[#6b665c] font-mono">{mm.count} transactions</span>
                 </div>
                 <span className="font-mono text-sm font-bold text-[#1c1b19]">
-                  ${mm.spent.toFixed(2)}
+                  {getCurrencySymbol(currency)}{mm.spent.toFixed(2)}
                 </span>
               </div>
             ))}
@@ -680,7 +693,7 @@ export const DashboardView = ({
             {spendByDayMap.map((d) => (
               <div key={d.day} className="bg-[#f7f3ea] p-3 rounded-xl border border-[#d9d4c8] space-y-1">
                 <span className="text-[11px] font-bold text-[#6b665c] uppercase tracking-wider block">{d.short}</span>
-                <span className="font-mono text-sm font-bold text-[#1c1b19] block">${d.total.toFixed(2)}</span>
+                <span className="font-mono text-sm font-bold text-[#1c1b19] block">{getCurrencySymbol(currency)}{d.total.toFixed(2)}</span>
                 <span className="text-[10px] text-[#6b665c] font-mono block">{d.count} txns</span>
               </div>
             ))}
