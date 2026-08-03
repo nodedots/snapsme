@@ -28,7 +28,8 @@ import {
   Check
 } from "lucide-react";
 import { auth, googleProvider } from "../lib/firebase.js";
-import { signInWithPopup, signInWithRedirect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { signInWithPopup, signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { findUserBusinesses } from "../lib/firestore.js";
 
 export function OnboardingFlowModal({
   isOpen,
@@ -42,6 +43,8 @@ export function OnboardingFlowModal({
   const [currentStep, setCurrentStep] = useState(1); // 1: Signup, 2: Workspace, 3: Business Type, 4: Staff Invites, 5: Confirmation
   const [errorMsg, setErrorMsg] = useState("");
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [authMode, setAuthMode] = useState("signup"); // 'signup' or 'signin'
 
   // Step 1: Signup form state
   const [signUpForm, setSignUpForm] = useState({
@@ -71,6 +74,23 @@ export function OnboardingFlowModal({
         password: "google_oauth_authenticated",
         isGoogleAuth: true
       });
+
+      // Check if the user already has a workspace (returning owner or invited member)
+      const businesses = await findUserBusinesses(user.uid, user.email);
+      if (businesses && businesses.length > 0) {
+        const first = businesses[0];
+        if (onCompleteOnboarding) {
+          onCompleteOnboarding({
+            workspace: { id: first.businessId, businessId: first.businessId, name: "My Workspace" },
+            members: [first.member],
+            ownerMember: first.member,
+            categories: []
+          });
+        }
+        onClose();
+        return;
+      }
+
       setCurrentStep(2);
     } catch (err) {
       if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
@@ -102,15 +122,73 @@ export function OnboardingFlowModal({
 
   if (!isOpen) return null;
 
-  // Step 1 Submission
-  const handleSignUpSubmit = (e) => {
+  // Step 1 Submission — creates a real Firebase Auth user
+  const handleSignUpSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+    setIsEmailLoading(true);
     try {
       validateSignUp(signUpForm);
+
+      if (authMode === "signup") {
+        // Create a real Firebase Auth account
+        const email = signUpForm.emailOrPhone.includes("@")
+          ? signUpForm.emailOrPhone.trim()
+          : null;
+        if (!email) {
+          throw new Error("Please use a valid email address to create an account.");
+        }
+        const res = await createUserWithEmailAndPassword(auth, email, signUpForm.password);
+        const user = res.user;
+        setSignUpForm((prev) => ({
+          ...prev,
+          displayName: prev.displayName || user.displayName || "Owner",
+          emailOrPhone: user.email || prev.emailOrPhone,
+          isGoogleAuth: false
+        }));
+      } else {
+        // Sign in to an existing account
+        const email = signUpForm.emailOrPhone.includes("@")
+          ? signUpForm.emailOrPhone.trim()
+          : null;
+        if (!email) {
+          throw new Error("Please use a valid email address to sign in.");
+        }
+        const res = await signInWithEmailAndPassword(auth, email, signUpForm.password);
+        const user = res.user;
+        setSignUpForm((prev) => ({
+          ...prev,
+          displayName: prev.displayName || user.displayName || "Owner",
+          emailOrPhone: user.email || prev.emailOrPhone,
+          isGoogleAuth: false
+        }));
+      }
+
+      // After auth, check if the user already has a workspace
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        const businesses = await findUserBusinesses(currentUser.uid, currentUser.email);
+        if (businesses && businesses.length > 0) {
+          // User already has a workspace — skip onboarding
+          const first = businesses[0];
+          if (onCompleteOnboarding) {
+            onCompleteOnboarding({
+              workspace: { id: first.businessId, businessId: first.businessId, name: "My Workspace" },
+              members: [first.member],
+              ownerMember: first.member,
+              categories: []
+            });
+          }
+          onClose();
+          return;
+        }
+      }
+
       setCurrentStep(2);
     } catch (err) {
-      setErrorMsg(err.message);
+      setErrorMsg(err.message || "Authentication failed. Please try again.");
+    } finally {
+      setIsEmailLoading(false);
     }
   };
 
@@ -238,7 +316,7 @@ export function OnboardingFlowModal({
           </div>
         )}
 
-        {/* STEP 1: Owner Signup */}
+        {/* STEP 1: Owner Signup / Sign In */}
         {currentStep === 1 && (
           <form onSubmit={handleSignUpSubmit} className="space-y-4">
             <div className="text-center space-y-1 mb-2">
@@ -246,11 +324,39 @@ export function OnboardingFlowModal({
                 <User className="w-5 h-5" />
               </div>
               <h2 className="font-display font-bold text-xl text-[#000000]">
-                Create Your Owner Account
+                {authMode === "signup" ? "Create Your Owner Account" : "Sign In to SnapSME"}
               </h2>
               <p className="text-xs text-[#615d59]">
-                Get started managing team expenses with real-time receipt capture
+                {authMode === "signup"
+                  ? "Get started managing team expenses with real-time receipt capture"
+                  : "Welcome back — never lose track of team spend again"}
               </p>
+            </div>
+
+            {/* Auth Mode Toggle */}
+            <div className="grid grid-cols-2 bg-[#f6f5f4] p-1 rounded-lg border border-black/10 text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setAuthMode("signup")}
+                className={`py-2 rounded-md transition-colors cursor-pointer ${
+                  authMode === "signup"
+                    ? "bg-white text-[#0075de] shadow-2xs border border-black/10"
+                    : "text-[#615d59] hover:text-[#000000]"
+                }`}
+              >
+                Create Account
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode("signin")}
+                className={`py-2 rounded-md transition-colors cursor-pointer ${
+                  authMode === "signin"
+                    ? "bg-white text-[#0075de] shadow-2xs border border-black/10"
+                    : "text-[#615d59] hover:text-[#000000]"
+                }`}
+              >
+                Sign In
+              </button>
             </div>
 
             {/* Google Sign In Option */}
@@ -284,11 +390,11 @@ export function OnboardingFlowModal({
 
             <div>
               <label className="block text-xs font-bold text-[#000000] mb-1">
-                Full Name <span className="text-[#f64932]">*</span>
+                Full Name {authMode === "signup" && <span className="text-[#f64932]">*</span>}
               </label>
               <input
                 type="text"
-                required
+                required={authMode === "signup"}
                 value={signUpForm.displayName}
                 onChange={(e) => setSignUpForm({ ...signUpForm, displayName: e.target.value })}
                 placeholder="e.g. Sarah Jenkins"
@@ -328,10 +434,20 @@ export function OnboardingFlowModal({
             <div className="pt-2">
               <button
                 type="submit"
-                className="bg-[#0075de] hover:bg-[#0060b8] text-white w-full py-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 cursor-pointer transition-all"
+                disabled={isEmailLoading}
+                className="bg-[#0075de] hover:bg-[#0060b8] text-white w-full py-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
               >
-                <span>Continue to Business Setup</span>
-                <ArrowRight className="w-4 h-4" />
+                {isEmailLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{authMode === "signup" ? "Creating Account..." : "Signing In..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <span>{authMode === "signup" ? "Create Account & Continue" : "Sign In & Continue"}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -605,8 +721,8 @@ export function OnboardingFlowModal({
           </div>
         )}
 
-        {/* STEP 4: Confirmation & Handoff */}
-        {currentStep === 4 && createdResult && (
+        {/* STEP 5: Confirmation & Handoff */}
+        {currentStep === 5 && createdResult && (
           <div className="text-center space-y-4 py-2">
             <div className="w-12 h-12 rounded-full bg-[#0075de]/10 text-[#0075de] flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-7 h-7" />

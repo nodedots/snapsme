@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { WORLD_CURRENCIES, convertCurrency, getCurrencySymbol, fetchLiveExchangeRates } from "../lib/currencies.js";
+import { compressImage } from "../lib/imageCompression.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-functions.js";
 import {
   Camera,
   Mic,
@@ -28,7 +30,8 @@ export const CaptureModal = ({
   currentUser,
   workspaceCurrency,
   isOfflineMode,
-  onSaveExpense
+  onSaveExpense,
+  businessId
 }) => {
   const [activeTab, setActiveTab] = useState("photo");
   const [fileInputKey, setFileInputKey] = useState(0);
@@ -105,16 +108,47 @@ export const CaptureModal = ({
       isDocument: isDoc
     });
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64Str = e.target?.result;
-      if (!isDoc) {
-        setPreviewImage(base64Str);
-      }
-      setIsProcessingAI(true);
-      setNoticeMessage(null);
+    setIsProcessingAI(true);
+    setNoticeMessage(null);
 
+    try {
+      let base64Str;
+      let compressedBlob = null;
+
+      if (isDoc) {
+        // Documents (PDF/DOCX) are not compressed — read as-is
+        const reader = new FileReader();
+        base64Str = await new Promise((resolve, reject) => {
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("Failed to read document."));
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // Compress image client-side before upload (NFR: compressed images)
+        const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1600, quality: 0.7, maxSizeMB: 2 });
+        base64Str = compressed.dataUrl;
+        compressedBlob = compressed.blob;
+        setPreviewImage(compressed.dataUrl);
+        if (compressed.compressedSize < compressed.originalSize) {
+          setNoticeMessage(`Image compressed: ${(compressed.originalSize / 1024).toFixed(0)} KB → ${(compressed.compressedSize / 1024).toFixed(0)} KB`);
+        }
+      }
+
+      // Try Cloud Function first (authenticated), fall back to Express API
+      let resData = null;
       try {
+        const functions = getFunctions();
+        const extractReceiptFn = httpsCallable(functions, "extractReceipt");
+        const result = await extractReceiptFn({
+          imageBase64: base64Str,
+          mimeType: file.type || (file.name.endsWith(".pdf") ? "application/pdf" : "image/jpeg"),
+          fileName: file.name,
+          businessId: currentUser?.businessId || undefined
+        });
+        resData = result.data;
+      } catch (fnErr) {
+        console.warn("Cloud Function extractReceipt failed, falling back to Express API:", fnErr.message);
+        // Fallback to Express server API
         const response = await fetch("/api/extract-receipt", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -124,38 +158,41 @@ export const CaptureModal = ({
             fileName: file.name
           })
         });
-
-        const resData = await response.json();
-
-        if (resData.success && resData.data) {
-          const d = resData.data;
-          setVendor(d.vendor || "");
-          setAmount(d.amount ? String(d.amount) : "");
-          setCurrency(d.currency || workspaceCurrency);
-          setDate(d.date || new Date().toISOString().split("T")[0]);
-
-          // Match category
-          const matchedCat = categories.find(
-            (c) => c.name.toLowerCase() === (d.suggestedCategory || "").toLowerCase()
-          );
-          if (matchedCat) {
-            setCategoryId(matchedCat.id);
-            setCategoryName(matchedCat.name);
-          }
-
-          setAiConfidence(d.confidence || { vendor: 0.9, amount: 0.95, date: 0.85, category: 0.88 });
-          if (resData.notice) {
-            setNoticeMessage(resData.notice);
-          }
-        }
-      } catch (err) {
-        console.error("AI photo/document extraction error:", err);
-      } finally {
-        setIsProcessingAI(false);
+        resData = await response.json();
       }
-    };
 
-    reader.readAsDataURL(file);
+      if (resData && resData.success && resData.data) {
+        const d = resData.data;
+        setVendor(d.vendor || "");
+        setAmount(d.amount ? String(d.amount) : "");
+        setCurrency(d.currency || workspaceCurrency);
+        setDate(d.date || new Date().toISOString().split("T")[0]);
+
+        // Match category
+        const matchedCat = categories.find(
+          (c) => c.name.toLowerCase() === (d.suggestedCategory || "").toLowerCase()
+        );
+        if (matchedCat) {
+          setCategoryId(matchedCat.id);
+          setCategoryName(matchedCat.name);
+        }
+
+        setAiConfidence(d.confidence || { vendor: 0.9, amount: 0.95, date: 0.85, category: 0.88 });
+        if (resData.notice) {
+          setNoticeMessage(resData.notice);
+        }
+      }
+
+      // Store the compressed blob for upload on save
+      if (compressedBlob) {
+        setUploadedDocInfo((prev) => ({ ...prev, compressedBlob }));
+      }
+    } catch (err) {
+      console.error("AI photo/document extraction error:", err);
+      setNoticeMessage(`Extraction error: ${err.message}`);
+    } finally {
+      setIsProcessingAI(false);
+    }
   };
 
   // Voice note simulation / API call
@@ -227,9 +264,16 @@ export const CaptureModal = ({
     }
 
     const defaultCurrency = workspaceCurrency || "USD";
+    const expenseId = `exp_${Date.now()}`;
+
+    // Store the compressed image as a base64 data URL directly in the expense
+    // record. This avoids the need for Firebase Storage (free-tier friendly).
+    // The client-side compression keeps the data URL small (typically 100-500KB).
+    const receiptImageUrl = previewImage || undefined;
 
     onSaveExpense({
-      businessId: currentUser?.businessId || "biz_default",
+      id: expenseId,
+      businessId: businessId || currentUser?.businessId || "biz_default",
       submittedBy: currentUser?.userId || "usr_guest",
       submittedByName: currentUser?.displayName || "Guest User",
       submittedByRole: currentUser?.role || "owner",
@@ -245,7 +289,7 @@ export const CaptureModal = ({
       moneyMovement,
       date,
       source: activeTab,
-      receiptImageUrl: previewImage || undefined,
+      receiptImageUrl,
       voiceTranscript: voiceTranscript || undefined,
       aiConfidence,
       correctedFields,

@@ -1,11 +1,13 @@
 import React, { useState } from "react";
+import { convertCurrency, getCurrencySymbol } from "../lib/currencies.js";
 import { Send, Bot, MessageSquare, ExternalLink, Check, Copy, Camera, ShieldCheck, Sparkles } from "lucide-react";
 
 export const ChatIntakeModal = ({
   currentUser,
   categories,
   onSaveExpense,
-  currency
+  currency,
+  workspaceCurrency
 }) => {
   const [activeChannel, setActiveChannel] = useState("telegram");
   const [linkCode, setLinkCode] = useState(null);

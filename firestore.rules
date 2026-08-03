@@ -51,6 +51,16 @@ service cloud.firestore {
         allow read: if isBusinessMember(businessId) || isBusinessOwner(businessId);
         allow create, update, delete: if isBusinessOwner(businessId);
       }
+
+      // Expenses Subcollection
+      // Any member of the business can read all expenses (shared feed, FR15)
+      // and create their own expense submissions. Only the owner can update/delete.
+      match /expenses/{expenseId} {
+        allow read: if isBusinessMember(businessId) || isBusinessOwner(businessId);
+        allow create: if isBusinessMember(businessId) || isBusinessOwner(businessId);
+        allow update: if isBusinessOwner(businessId);
+        allow delete: if isBusinessOwner(businessId);
+      }
     }
 
     // Chat Links Collection (for Telegram / WhatsApp auth pairing)

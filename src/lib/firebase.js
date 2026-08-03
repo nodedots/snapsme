@@ -3,7 +3,7 @@
  * Environment Variable Driven Configuration
  */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, enableIndexedDbPersistence, enableMultiTabIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 
 // Helper to safely fetch environment variables in Vite & browser environments
@@ -34,6 +34,35 @@ export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// Enable Firestore offline persistence (Phase 4 — Offline-First Capture)
+// Uses multi-tab persistence when available so multiple tabs share the cache.
+if (typeof window !== "undefined") {
+  try {
+    enableMultiTabIndexedDbPersistence(db)
+      .then(() => {
+        console.info("[snapsme] Firestore multi-tab offline persistence enabled.");
+      })
+      .catch((err) => {
+        if (err.code === "failed-precondition") {
+          // Multi-tab not available (e.g. another tab already enabled it) — fall back to single-tab.
+          enableIndexedDbPersistence(db)
+            .then(() => {
+              console.info("[snapsme] Firestore single-tab offline persistence enabled.");
+            })
+            .catch((persistErr) => {
+              if (persistErr.code !== "already-exists") {
+                console.warn("[snapsme] Firestore offline persistence unavailable:", persistErr.message);
+              }
+            });
+        } else if (err.code !== "already-exists") {
+          console.warn("[snapsme] Firestore offline persistence unavailable:", err.message);
+        }
+      });
+  } catch (e) {
+    console.warn("[snapsme] Firestore offline persistence setup failed:", e.message);
+  }
+}
 
 export let analytics = null;
 if (typeof window !== "undefined") {

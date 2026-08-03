@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { convertCurrency } from "./lib/currencies.js";
 import { applyBrandAccentColor } from "./lib/brand.js";
 import {
@@ -16,6 +16,20 @@ import {
   saveOfflineSimMode,
   checkForDuplicate
 } from "./lib/storage.js";
+import {
+  subscribeToAuth,
+  subscribeToBusiness,
+  createBusinessWorkspaceFirestore,
+  updateWorkspaceFirestore,
+  addMemberFirestore,
+  removeMemberFirestore,
+  addCategoryFirestore,
+  updateCategoryFirestore,
+  deleteCategoryFirestore,
+  addExpenseFirestore,
+  updateExpenseFirestore,
+  findUserBusinesses
+} from "./lib/firestore.js";
 import { Header } from "./components/Header.jsx";
 import { OfflineBanner } from "./components/OfflineBanner.jsx";
 import { ExpenseFeed } from "./components/ExpenseFeed.jsx";
@@ -25,9 +39,10 @@ import { TeamWorkspaceModal } from "./components/TeamWorkspaceModal.jsx";
 import { SettingsView } from "./components/SettingsView.jsx";
 import { CaptureModal } from "./components/CaptureModal.jsx";
 import { OnboardingFlowModal } from "./components/OnboardingFlowModal.jsx";
-import { Camera, Sparkles, Receipt, CheckCircle, ShieldCheck, Building2, ArrowRight } from "lucide-react";
+import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle } from "lucide-react";
 
 export function App() {
+  // Demo (localStorage) state — used when not signed in
   const [workspace, setWorkspace] = useState(loadWorkspace);
   const [categories, setCategories] = useState(loadCategories);
   const [members, setMembers] = useState(loadMembers);
@@ -35,33 +50,44 @@ export function App() {
   const [currentUser, setCurrentUser] = useState(loadCurrentUser);
   const [isOfflineMode, setIsOfflineMode] = useState(loadOfflineSimMode);
 
+  // Firebase auth / Firestore mode state
+  const [firebaseUser, setFirebaseUser] = useState(null);
+  const [businessId, setBusinessId] = useState(null);
+  const [isFirestoreMode, setIsFirestoreMode] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [firestoreError, setFirestoreError] = useState(null);
+
   const [currentView, setCurrentView] = useState("feed");
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
-  // Sync state changes to storage and apply brand accent color
+  // -------------------------------------------------------------------------
+  // Demo-mode persistence (localStorage) — only used when NOT in Firestore mode
+  // -------------------------------------------------------------------------
   useEffect(() => {
-    saveWorkspace(workspace);
-    if (workspace?.brand?.accentColor) {
-      applyBrandAccentColor(workspace.brand.accentColor);
+    if (!isFirestoreMode) {
+      saveWorkspace(workspace);
+      if (workspace?.brand?.accentColor) {
+        applyBrandAccentColor(workspace.brand.accentColor);
+      }
     }
-  }, [workspace]);
+  }, [workspace, isFirestoreMode]);
 
   useEffect(() => {
-    saveCategories(categories);
-  }, [categories]);
+    if (!isFirestoreMode) saveCategories(categories);
+  }, [categories, isFirestoreMode]);
 
   useEffect(() => {
-    saveMembers(members);
-  }, [members]);
+    if (!isFirestoreMode) saveMembers(members);
+  }, [members, isFirestoreMode]);
 
   useEffect(() => {
-    saveExpenses(expenses);
-  }, [expenses]);
+    if (!isFirestoreMode) saveExpenses(expenses);
+  }, [expenses, isFirestoreMode]);
 
   useEffect(() => {
-    saveCurrentUser(currentUser);
-  }, [currentUser]);
+    if (!isFirestoreMode) saveCurrentUser(currentUser);
+  }, [currentUser, isFirestoreMode]);
 
   useEffect(() => {
     saveOfflineSimMode(isOfflineMode);
@@ -69,19 +95,99 @@ export function App() {
 
   // Purge any legacy sample/dummy data from previous sessions to start with a clean slate
   useEffect(() => {
-    if (expenses && expenses.length > 0 && expenses.some(e => e.id === "exp_101" || e.vendor === "Shell Petroleum" || e.vendor === "Staples Business Center")) {
+    if (!isFirestoreMode && expenses && expenses.length > 0 && expenses.some(e => e.id === "exp_101" || e.vendor === "Shell Petroleum" || e.vendor === "Staples Business Center")) {
       setExpenses([]);
       saveExpenses([]);
     }
-  }, [expenses]);
+  }, [expenses, isFirestoreMode]);
+
+  // -------------------------------------------------------------------------
+  // Firebase Auth session restore
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    const unsubscribe = subscribeToAuth(async (user) => {
+      setFirebaseUser(user);
+
+      if (user) {
+        // Signed in — try to resolve their business workspace
+        try {
+          const businesses = await findUserBusinesses(user.uid, user.email);
+          if (businesses && businesses.length > 0) {
+            const first = businesses[0];
+            setBusinessId(first.businessId);
+            setCurrentUser(first.member);
+            setIsFirestoreMode(true);
+          } else {
+            // Signed in but no workspace yet — show onboarding
+            setIsFirestoreMode(false);
+            setBusinessId(null);
+            setCurrentUser(null);
+            setIsOnboardingOpen(true);
+          }
+        } catch (err) {
+          console.warn("Failed to resolve user business:", err.message);
+          setFirestoreError(err.message);
+          setIsFirestoreMode(false);
+        }
+      } else {
+        // Signed out — fall back to demo mode
+        setBusinessId(null);
+        setIsFirestoreMode(false);
+        setCurrentUser(loadCurrentUser());
+      }
+
+      setIsAuthLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // -------------------------------------------------------------------------
+  // Firestore real-time subscriptions (when in Firestore mode)
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (!isFirestoreMode || !businessId) return;
+
+    const unsubscribe = subscribeToBusiness(
+      businessId,
+      {
+        onWorkspace: (ws) => {
+          if (ws) {
+            setWorkspace(ws);
+            if (ws.brand?.accentColor) {
+              applyBrandAccentColor(ws.brand.accentColor);
+            }
+          }
+        },
+        onMembers: (list) => {
+          setMembers(list);
+          // Keep currentUser in sync with the member list
+          setCurrentUser((prev) => {
+            if (!prev) return prev;
+            const updated = list.find((m) => m.userId === prev.userId);
+            return updated || prev;
+          });
+        },
+        onCategories: (list) => setCategories(list),
+        onExpenses: (list) => setExpenses(list),
+        onError: (err) => {
+          console.warn("Firestore subscription error:", err.message);
+          setFirestoreError(err.message);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, [isFirestoreMode, businessId]);
 
   // Check URL parameters or uninitialized workspace status on load to launch onboarding
   useEffect(() => {
+    if (isAuthLoading) return;
     try {
       const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
 
-      if (!workspace || !workspace.id) {
+      if (!isFirestoreMode && (!workspace || !workspace.id)) {
         setIsOnboardingOpen(true);
       } else if (
         params.get("onboarding") === "true" ||
@@ -104,23 +210,86 @@ export function App() {
     } catch (e) {
       console.warn("Could not parse URL params for auth/onboarding launch:", e);
     }
-  }, [workspace?.id]);
+  }, [workspace?.id, isAuthLoading, isFirestoreMode]);
 
-  // Handle onboarding completion
-  const handleCompleteOnboarding = (result) => {
-    if (result) {
-      if (result.workspace) setWorkspace(result.workspace);
-      if (result.members) setMembers(result.members);
-      if (result.ownerMember) setCurrentUser(result.ownerMember);
-      if (result.categories && result.categories.length > 0) {
-        setCategories(result.categories);
+  // -------------------------------------------------------------------------
+  // Onboarding completion — creates workspace in Firestore (if signed in)
+  // or localStorage (demo mode)
+  // -------------------------------------------------------------------------
+  const handleCompleteOnboarding = useCallback(async (result) => {
+    if (!result) return;
+
+    // If signed in with Firebase, create the workspace in Firestore
+    if (firebaseUser) {
+      try {
+        const ownerUser = {
+          uid: firebaseUser.uid,
+          displayName: result.ownerMember?.displayName || firebaseUser.displayName || "Owner",
+          email: result.ownerMember?.email || firebaseUser.email || null,
+          phone: result.ownerMember?.phone || null
+        };
+
+        const defaultCategories = (result.categories || []).map((c) => ({
+          name: c.name,
+          budget: c.budget
+        }));
+
+        const newBusinessId = await createBusinessWorkspaceFirestore(
+          ownerUser,
+          {
+            name: result.workspace?.name || "My Workspace",
+            currency: result.workspace?.currency || "USD",
+            businessType: result.workspace?.businessType || null
+          },
+          defaultCategories
+        );
+
+        setBusinessId(newBusinessId);
+        setIsFirestoreMode(true);
+
+        // Invite staff members if provided
+        if (result.members && result.members.length > 1) {
+          const staff = result.members.filter((m) => m.role !== "owner");
+          for (const s of staff) {
+            try {
+              await addMemberFirestore(newBusinessId, {
+                userId: s.userId,
+                role: "staff",
+                displayName: s.displayName,
+                email: s.email || null,
+                phone: s.phone || null,
+                telegramUserId: null,
+                whatsappUserId: null
+              });
+            } catch (err) {
+              console.warn("Failed to invite staff member:", err.message);
+            }
+          }
+        }
+
+        setCurrentView("dashboard");
+        return;
+      } catch (err) {
+        console.error("Failed to create Firestore workspace:", err);
+        setFirestoreError(err.message);
+        // Fall through to demo mode so the user isn't stuck
       }
-      setCurrentView("dashboard");
     }
-  };
 
-  // Handle adding a new expense
-  const handleSaveExpense = (newExpData) => {
+    // Demo mode (localStorage)
+    if (result.workspace) setWorkspace(result.workspace);
+    if (result.members) setMembers(result.members);
+    if (result.ownerMember) setCurrentUser(result.ownerMember);
+    if (result.categories && result.categories.length > 0) {
+      setCategories(result.categories);
+    }
+    setCurrentView("dashboard");
+  }, [firebaseUser]);
+
+  // -------------------------------------------------------------------------
+  // Expense save — writes to Firestore when in Firestore mode
+  // -------------------------------------------------------------------------
+  const handleSaveExpense = useCallback(async (newExpData) => {
     const id = `exp_${Date.now()}`;
     const createdAt = new Date().toISOString();
 
@@ -160,7 +329,6 @@ export function App() {
             h.categoryKeywords.some((ck) => c.name.toLowerCase().includes(ck))
           );
           if (matchedCategory) {
-            // Auto-assign if unassigned, generic, or default General
             if (
               !finalCategoryId ||
               finalCategoryName === "General" ||
@@ -202,22 +370,172 @@ export function App() {
     const duplicateId = checkForDuplicate(candidate, expenses);
     candidate.duplicateOf = duplicateId;
 
+    // Firestore mode: write to the business expenses subcollection
+    if (isFirestoreMode && businessId) {
+      try {
+        const expensePayload = {
+          ...candidate,
+          businessId,
+          submittedBy: currentUser?.userId || firebaseUser?.uid || "usr_guest",
+          submittedByName: currentUser?.displayName || firebaseUser?.displayName || "Guest User",
+          submittedByRole: currentUser?.role || "owner",
+          syncStatus: isOfflineMode ? "pending" : "synced"
+        };
+        await addExpenseFirestore(businessId, expensePayload);
+        // The onSnapshot listener will update the feed automatically
+        return;
+      } catch (err) {
+        console.error("Failed to save expense to Firestore:", err);
+        // Fall back to local optimistic write so the user doesn't lose the entry
+        const updated = [candidate, ...expenses];
+        setExpenses(updated);
+        return;
+      }
+    }
+
+    // Demo mode: local optimistic write
     const updated = [candidate, ...expenses];
     setExpenses(updated);
-  };
+  }, [workspace, categories, expenses, isFirestoreMode, businessId, currentUser, firebaseUser, isOfflineMode]);
 
+  // -------------------------------------------------------------------------
+  // Workspace update — Firestore or localStorage
+  // -------------------------------------------------------------------------
+  const handleUpdateWorkspace = useCallback(async (updates) => {
+    if (isFirestoreMode && businessId) {
+      try {
+        await updateWorkspaceFirestore(businessId, updates);
+        // Snapshot will update state
+        return;
+      } catch (err) {
+        console.error("Failed to update workspace in Firestore:", err);
+      }
+    }
+    setWorkspace(updates);
+  }, [isFirestoreMode, businessId]);
 
+  // -------------------------------------------------------------------------
+  // Member add/remove — Firestore or localStorage
+  // -------------------------------------------------------------------------
+  const handleAddMember = useCallback(async (member) => {
+    if (isFirestoreMode && businessId) {
+      try {
+        await addMemberFirestore(businessId, member);
+        return;
+      } catch (err) {
+        console.error("Failed to add member to Firestore:", err);
+      }
+    }
+    setMembers((prev) => [...prev, member]);
+  }, [isFirestoreMode, businessId]);
+
+  const handleRemoveMember = useCallback(async (userId) => {
+    if (isFirestoreMode && businessId) {
+      try {
+        await removeMemberFirestore(businessId, userId);
+        return;
+      } catch (err) {
+        console.error("Failed to remove member from Firestore:", err);
+      }
+    }
+    setMembers((prev) => prev.filter((m) => m.userId !== userId));
+  }, [isFirestoreMode, businessId]);
+
+  // -------------------------------------------------------------------------
+  // Category add/update/delete — Firestore or localStorage
+  // -------------------------------------------------------------------------
+  const handleAddCategory = useCallback(async (category) => {
+    if (isFirestoreMode && businessId) {
+      try {
+        await addCategoryFirestore(businessId, category);
+        return;
+      } catch (err) {
+        console.error("Failed to add category to Firestore:", err);
+      }
+    }
+    setCategories((prev) => [...prev, category]);
+  }, [isFirestoreMode, businessId]);
+
+  const handleUpdateCategory = useCallback(async (categoryId, updates) => {
+    if (isFirestoreMode && businessId) {
+      try {
+        await updateCategoryFirestore(businessId, categoryId, updates);
+        return;
+      } catch (err) {
+        console.error("Failed to update category in Firestore:", err);
+      }
+    }
+    setCategories((prev) => prev.map((c) => (c.id === categoryId ? { ...c, ...updates } : c)));
+  }, [isFirestoreMode, businessId]);
+
+  const handleDeleteCategory = useCallback(async (categoryId) => {
+    if (isFirestoreMode && businessId) {
+      try {
+        await deleteCategoryFirestore(businessId, categoryId);
+        return;
+      } catch (err) {
+        console.error("Failed to delete category from Firestore:", err);
+      }
+    }
+    setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+  }, [isFirestoreMode, businessId]);
 
   // Sync all pending offline items to online
-  const handleForceSync = () => {
+  const handleForceSync = useCallback(async () => {
+    if (isFirestoreMode && businessId) {
+      const pending = expenses.filter((e) => e.syncStatus === "pending");
+      for (const exp of pending) {
+        try {
+          await updateExpenseFirestore(businessId, exp.id, { syncStatus: "synced" });
+        } catch (err) {
+          console.warn("Failed to sync expense:", exp.id, err.message);
+        }
+      }
+      return;
+    }
     const updated = expenses.map((exp) =>
       exp.syncStatus === "pending" ? { ...exp, syncStatus: "synced" } : exp
     );
     setExpenses(updated);
     setIsOfflineMode(false);
-  };
+  }, [isFirestoreMode, businessId, expenses]);
+
+  // Auto-sync on reconnect (Phase 4 — Offline-First Capture)
+  // When the browser regains connectivity, automatically reconcile any
+  // pending-sync expenses in Firestore mode.
+  useEffect(() => {
+    if (!isFirestoreMode || !businessId) return;
+
+    const handleOnline = () => {
+      console.info("[snapsme] Network reconnected — auto-syncing pending expenses.");
+      handleForceSync();
+    };
+
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [isFirestoreMode, businessId, handleForceSync]);
 
   const pendingSyncCount = expenses.filter((e) => e.syncStatus === "pending").length;
+
+  // Loading state while auth resolves
+  if (isAuthLoading) {
+    return (
+      <div className="min-h-screen bg-[#f7f3ea] text-[#1c1b19] font-body flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl overflow-hidden border border-[#d9d4c8] shadow-sm mx-auto animate-pulse">
+            <img src="/logo.jpg" alt="SnapSME Logo" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <p className="font-display font-bold text-lg text-[#1c1b19]">
+              Snap<span className="text-[#0075de]">SME</span>
+            </p>
+            <p className="text-xs text-[#6b665c] font-mono mt-1">Loading SnapSME...</p>
+            <p className="text-[11px] text-[#6b665c] font-mono">Restoring session</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f3ea] text-[#1c1b19] font-body flex flex-col">
@@ -236,6 +554,23 @@ export function App() {
         onOpenCapture={() => setIsCaptureOpen(true)}
         onOpenOnboarding={() => setIsOnboardingOpen(true)}
       />
+
+      {/* Firestore Mode Badge */}
+      {isFirestoreMode && (
+        <div className="bg-[#e7f4ec] border-b border-[#0f7a52]/20 text-[#0f7a52] text-[11px] font-mono px-4 py-1.5 text-center">
+          <ShieldCheck className="w-3 h-3 inline mr-1" />
+          Connected to Firestore — real-time shared workspace
+          {businessId && <span className="opacity-60 ml-1">({businessId})</span>}
+        </div>
+      )}
+
+      {/* Firestore Error Banner */}
+      {firestoreError && (
+        <div className="bg-[#fbf1de] border-b border-[#e0982a]/40 text-[#1c1b19] text-[11px] font-mono px-4 py-1.5 text-center">
+          <AlertTriangle className="w-3 h-3 inline mr-1 text-[#e0982a]" />
+          Firestore sync issue: {firestoreError}
+        </div>
+      )}
 
       {/* Offline Simulator Warning Banner */}
       <OfflineBanner
@@ -299,7 +634,7 @@ export function App() {
             currency={workspace?.currency || "USD"}
             isOwner={currentUser?.role === "owner"}
             workspace={workspace}
-            onUpdateWorkspace={setWorkspace}
+            onUpdateWorkspace={handleUpdateWorkspace}
           />
         )}
 
@@ -320,10 +655,10 @@ export function App() {
             categories={categories}
             expenses={expenses}
             currentUser={currentUser}
-            onUpdateWorkspace={setWorkspace}
-            onAddMember={(m) => setMembers([...members, m])}
-            onRemoveMember={(id) => setMembers(members.filter((m) => m.userId !== id))}
-            onUpdateCategories={setCategories}
+            onUpdateWorkspace={handleUpdateWorkspace}
+            onAddMember={handleAddMember}
+            onRemoveMember={handleRemoveMember}
+            onUpdateCategories={handleAddCategory}
           />
         )}
 
@@ -332,7 +667,7 @@ export function App() {
             currentUser={currentUser}
             setCurrentUser={setCurrentUser}
             workspace={workspace}
-            onUpdateWorkspace={setWorkspace}
+            onUpdateWorkspace={handleUpdateWorkspace}
             members={members}
             setMembers={setMembers}
             categories={categories}
@@ -350,6 +685,7 @@ export function App() {
         workspaceCurrency={workspace?.currency || "USD"}
         isOfflineMode={isOfflineMode}
         onSaveExpense={handleSaveExpense}
+        businessId={businessId}
       />
 
       {/* Onboarding Flow Modal */}
@@ -367,6 +703,7 @@ export function App() {
       <footer className="border-t border-[#d9d4c8] bg-[#f7f3ea] py-4 text-center text-xs text-[#6b665c]">
         <p className="font-mono text-[11px]">
           SnapSME v1.0 — Receipt & Voice AI Expense Capture · Scoped to <span className="font-bold text-[#1c1b19]">{workspace?.name || "My Workspace"}</span>
+          {isFirestoreMode && <span className="text-[#0f7a52]"> · Firestore Sync</span>}
         </p>
       </footer>
     </div>

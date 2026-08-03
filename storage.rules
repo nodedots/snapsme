@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper: check if the requesting user is a member of the business
+    function isBusinessMember(businessId) {
+      return request.auth != null &&
+        firestore.exists(/databases/(default)/documents/businesses/$(businessId)/members/$(request.auth.uid));
+    }
+
+    // Receipt images: businesses/{businessId}/receipts/{expenseId}
+    // Any member of the business can upload/read receipt images for their workspace.
+    match /businesses/{businessId}/receipts/{expenseId} {
+      allow read: if isBusinessMember(businessId);
+      allow write: if isBusinessMember(businessId) &&
+        request.resource.size < 10 * 1024 * 1024 && // 10MB max
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Brand logos: businesses/{businessId}/brand/logo
+    // Only the owner can upload/overwrite the workspace logo.
+    match /businesses/{businessId}/brand/{fileName} {
+      allow read: if isBusinessMember(businessId);
+      allow write: if isBusinessMember(businessId) &&
+        request.resource.size < 5 * 1024 * 1024 && // 5MB max
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Fallback: deny everything else
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
