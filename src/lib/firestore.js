@@ -4,21 +4,21 @@
  * Centralizes all Firestore reads/writes for the React app.
  * - Subscribes to real-time snapshots (onSnapshot) for workspace, members,
  *   categories, and expenses scoped to the signed-in user's business.
- * - Provides write helpers that mirror the existing localStorage API so the
- *   app can swap between Firestore (authenticated) and localStorage (demo).
+ * - Session restore uses the users/{uid} indirection pattern (single doc read,
+ *   no composite index / collection-group query required).
  *
  * Data model (matches firestore.rules):
- *   businesses/{businessId}                          -> workspace doc
- *   businesses/{businessId}/members/{userId}         -> member doc
- *   businesses/{businessId}/categories/{categoryId}  -> category doc
- *   businesses/{businessId}/expenses/{expenseId}     -> expense doc
+ *   users/{uid}                                   -> { businessId, role, displayName, email }
+ *   businesses/{businessId}                       -> workspace doc
+ *   businesses/{businessId}/members/{userId}      -> member doc (doc ID == userId, also stores userId field)
+ *   businesses/{businessId}/categories/{categoryId} -> category doc
+ *   businesses/{businessId}/expenses/{expenseId}  -> expense doc
  */
 import { db, auth } from "./firebase.js";
 import {
   collection,
   doc,
   onSnapshot,
-  addDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -57,6 +57,7 @@ export function getCurrentFirebaseUser() {
 // Path helpers
 // ---------------------------------------------------------------------------
 
+const userDoc = (uid) => doc(db, "users", uid);
 const businessDoc = (businessId) => doc(db, "businesses", businessId);
 const membersCol = (businessId) => collection(db, "businesses", businessId, "members");
 const memberDoc = (businessId, userId) => doc(db, "businesses", businessId, "members", userId);
@@ -64,6 +65,39 @@ const categoriesCol = (businessId) => collection(db, "businesses", businessId, "
 const categoryDoc = (businessId, categoryId) => doc(db, "businesses", businessId, "categories", categoryId);
 const expensesCol = (businessId) => collection(db, "businesses", businessId, "expenses");
 const expenseDoc = (businessId, expenseId) => doc(db, "businesses", businessId, "expenses", expenseId);
+
+// ---------------------------------------------------------------------------
+// User workspace reference (users/{uid} indirection)
+// ---------------------------------------------------------------------------
+
+/**
+ * Writes (or updates) the users/{uid} reference document.
+ * This is the single source of truth for "which business does this user belong to?"
+ * @param {string} uid - Firebase Auth UID
+ * @param {{ businessId: string, role: string, displayName: string, email?: string|null }} data
+ */
+export async function upsertUserReference(uid, data) {
+  if (!uid || !data || !data.businessId) {
+    throw new Error("Missing uid or businessId for user reference.");
+  }
+  await setDoc(userDoc(uid), {
+    businessId: data.businessId,
+    role: data.role || "staff",
+    displayName: data.displayName || "User",
+    email: data.email || null,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+}
+
+/**
+ * Reads the users/{uid} reference document.
+ * @returns {Promise<{businessId: string, role: string, displayName: string, email: string|null}|null>}
+ */
+export async function getUserReference(uid) {
+  if (!uid) return null;
+  const snap = await getDoc(userDoc(uid));
+  return snap.exists() ? { uid, ...snap.data() } : null;
+}
 
 // ---------------------------------------------------------------------------
 // Snapshot subscription
@@ -168,8 +202,13 @@ export function subscribeToBusiness(businessId, handlers = {}) {
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a new business workspace + owner member + default categories in a
- * single batched write. Returns the created businessId.
+ * Creates a new business workspace + owner member + default categories.
+ *
+ * IMPORTANT: Uses SEQUENTIAL writes (not one batch) so Firestore security
+ * rules can evaluate each write independently. A batch that creates the
+ * business doc AND categories atomically can fail rule evaluation because
+ * categories require isBusinessOwner, which requires reading the business doc
+ * that only exists in the same batch.
  *
  * @param {object} ownerUser  { uid, displayName, email, phone }
  * @param {{ name: string, currency: string, businessType?: string|null }} data
@@ -185,12 +224,9 @@ export async function createBusinessWorkspaceFirestore(ownerUser, data, defaultC
   }
 
   const businessId = `biz_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const now = serverTimestamp();
 
-  const batch = writeBatch(db);
-
-  // Workspace doc
-  batch.set(businessDoc(businessId), {
+  // Step 1: Create the business doc (rule: allow create if authenticated)
+  await setDoc(businessDoc(businessId), {
     name: data.name.trim(),
     currency: (data.currency || "USD").toUpperCase(),
     ownerUid: ownerUser.uid,
@@ -209,22 +245,32 @@ export async function createBusinessWorkspaceFirestore(ownerUser, data, defaultC
     notifyAt80: true,
     notifyAt95: true,
     notificationChannel: "both",
-    createdAt: now
+    createdAt: new Date().toISOString()
   });
 
-  // Owner member doc
-  batch.set(memberDoc(businessId, ownerUser.uid), {
+  // Step 2: Create the owner member doc (rule: allow create if isUser(userId))
+  // NOTE: doc ID == ownerUid, AND we store userId as a field for query-ability.
+  await setDoc(memberDoc(businessId, ownerUser.uid), {
+    userId: ownerUser.uid,
     role: "owner",
     displayName: ownerUser.displayName || ownerUser.name || "Owner",
     email: ownerUser.email || null,
     phone: ownerUser.phone || null,
     telegramUserId: null,
     whatsappUserId: null,
-    invitedAt: now,
-    joinedAt: now
+    invitedAt: new Date().toISOString(),
+    joinedAt: new Date().toISOString()
   });
 
-  // Default categories
+  // Step 3: Write the users/{uid} reference doc (owns the workspace now)
+  await upsertUserReference(ownerUser.uid, {
+    businessId,
+    role: "owner",
+    displayName: ownerUser.displayName || ownerUser.name || "Owner",
+    email: ownerUser.email || null
+  });
+
+  // Step 4: Create default categories sequentially (rule: owner only)
   const cats = Array.isArray(defaultCategories) && defaultCategories.length > 0
     ? defaultCategories
     : [
@@ -238,16 +284,16 @@ export async function createBusinessWorkspaceFirestore(ownerUser, data, defaultC
         { name: "Other Expenses", budget: 200 }
       ];
 
-  cats.forEach((c, i) => {
+  for (let i = 0; i < cats.length; i++) {
+    const cat = cats[i];
     const catId = `cat_${businessId}_${i + 1}`;
-    batch.set(categoryDoc(businessId, catId), {
-      name: c.name,
-      budget: typeof c.budget === "number" ? c.budget : null,
-      createdAt: now
+    await setDoc(categoryDoc(businessId, catId), {
+      name: cat.name,
+      budget: typeof cat.budget === "number" ? cat.budget : null,
+      createdAt: new Date().toISOString()
     });
-  });
+  }
 
-  await batch.commit();
   return businessId;
 }
 
@@ -268,6 +314,7 @@ export async function updateWorkspaceFirestore(businessId, updates) {
 
 /**
  * Adds a staff member to the business (invite).
+ * Also stores the userId field inside the member doc (doc ID == userId too).
  */
 export async function addMemberFirestore(businessId, member) {
   if (!businessId || !member || !member.userId) {
@@ -276,7 +323,8 @@ export async function addMemberFirestore(businessId, member) {
   const { userId, ...rest } = member;
   await setDoc(memberDoc(businessId, userId), {
     ...rest,
-    invitedAt: rest.invitedAt || serverTimestamp(),
+    userId,
+    invitedAt: rest.invitedAt || new Date().toISOString(),
     joinedAt: rest.joinedAt || null
   });
 }
@@ -300,6 +348,31 @@ export async function updateProfileFirestore(businessId, userId, updates) {
   await updateDoc(memberDoc(businessId, userId), clean);
 }
 
+/**
+ * Accepts a pending staff invite: sets joinedAt + userId on the member doc,
+ * and writes the users/{uid} reference so the invited user can resolve their workspace.
+ */
+export async function acceptInviteFirestore(uid, businessId, memberData = {}) {
+  if (!uid || !businessId) {
+    throw new Error("Missing uid or businessId for invite acceptance.");
+  }
+  const now = new Date().toISOString();
+
+  // 1. Update the member doc: mark joined + ensure userId field is set
+  await updateDoc(memberDoc(businessId, uid), {
+    userId: uid,
+    joinedAt: now
+  });
+
+  // 2. Write the users/{uid} reference so session restore is a single doc read
+  await upsertUserReference(uid, {
+    businessId,
+    role: memberData.role || "staff",
+    displayName: memberData.displayName || "Team Member",
+    email: memberData.email || null
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Category writes
 // ---------------------------------------------------------------------------
@@ -312,7 +385,7 @@ export async function addCategoryFirestore(businessId, category) {
   await setDoc(categoryDoc(businessId, catId), {
     name: category.name.trim(),
     budget: typeof category.budget === "number" ? category.budget : null,
-    createdAt: serverTimestamp()
+    createdAt: new Date().toISOString()
   });
   return catId;
 }
@@ -344,14 +417,14 @@ export async function addExpenseFirestore(businessId, expense) {
   const ref = id ? expenseDoc(businessId, id) : doc(expensesCol(businessId));
   const payload = {
     ...rest,
-    createdAt: rest.createdAt || serverTimestamp()
+    createdAt: rest.createdAt || new Date().toISOString()
   };
   if (id) {
     await setDoc(ref, payload);
     return id;
   }
-  const added = await addDoc(expensesCol(businessId), payload);
-  return added.id;
+  const added = await setDoc(ref, payload);
+  return ref.id;
 }
 
 /**
@@ -414,60 +487,129 @@ export async function getExpensesOnce(businessId) {
   return list;
 }
 
+// ---------------------------------------------------------------------------
+// Session restore — users/{uid} indirection (no composite index needed)
+// ---------------------------------------------------------------------------
+
 /**
- * Finds the business(es) a user belongs to by scanning members subcollections.
- * First tries by userId (Firebase UID), then falls back to email matching
- * for pending invites (where the member doc has an email but no userId yet).
+ * Finds the business(es) a user belongs to.
  *
- * NOTE: This requires a collection-group query on "members" which needs a
- * matching index/rule. We use it as a best-effort helper for session restore.
+ * Strategy (robust, no composite index required):
+ *   1. Read users/{uid} reference doc (single doc read — always allowed by rules)
+ *   2. If it exists, resolve the business id + role and return immediately.
+ *   3. Fallback: collection-group query on members by userId field (best-effort)
+ *   4. Fallback: collection-group query on members by email (pending invite),
+ *      auto-accept the invite and write the users/{uid} reference.
+ *
+ * @param {string} uid - Firebase Auth UID
+ * @param {string|null} [email] - User's email (for invite matching)
+ * @returns {Promise<Array<{businessId: string, member: object}>>}
  */
 export async function findUserBusinesses(uid, email = null) {
+  const results = [];
+
+  if (!uid) return results;
+
+  // ---- Stage 1: users/{uid} indirection (single doc read) ----
   try {
-    const { collectionGroup, query, where, getDocs, updateDoc } = await import(
+    const ref = await getUserReference(uid);
+    if (ref && ref.businessId) {
+      // Fetch the member doc so we return the current member record
+      try {
+        const memberSnap = await getDoc(memberDoc(ref.businessId, uid));
+        if (memberSnap.exists()) {
+          results.push({ businessId: ref.businessId, member: { userId: uid, ...memberSnap.data() } });
+          return results;
+        }
+      } catch (memberErr) {
+        console.warn("Could not fetch member doc for user reference:", memberErr.message);
+      }
+      // Member doc missing but user reference exists — return minimal member data
+      results.push({
+        businessId: ref.businessId,
+        member: { userId: uid, role: ref.role || "staff", displayName: ref.displayName || "User", email: ref.email || email || null }
+      });
+      return results;
+    }
+  } catch (err) {
+    console.warn("users/{uid} read failed:", err.message);
+  }
+
+  // ---- Stage 2: collection-group by userId field (member docs store userId) ----
+  try {
+    const { collectionGroup, query, where } = await import(
       "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
     );
-    const results = [];
-
-    // 1. Query by userId (Firebase UID)
     const q = query(collectionGroup(db, "members"), where("userId", "==", uid));
     const snap = await getDocs(q);
     snap.forEach((s) => {
       const businessId = s.ref.parent.parent?.id;
       if (businessId) {
-        results.push({ businessId, member: { userId: s.id, ...s.data() } });
+        results.push({ businessId, member: { userId: uid, ...s.data() } });
       }
     });
+    if (results.length > 0) {
+      // Cache into users/{uid} for future fast restores
+      const first = results[0];
+      try {
+        await upsertUserReference(uid, {
+          businessId: first.businessId,
+          role: first.member.role || "staff",
+          displayName: first.member.displayName || "User",
+          email: first.member.email || email || null
+        });
+      } catch (e) {
+        // non-fatal
+      }
+      return results;
+    }
+  } catch (err) {
+    console.warn("findUserBusinesses member query failed (may need index):", err.message);
+  }
 
-    // 2. Fallback: query by email for pending invites (joinedAt is null)
-    if (results.length === 0 && email) {
+  // ---- Stage 3: collection-group by email (pending invite) ----
+  if (email) {
+    try {
+      const { collectionGroup, query, where } = await import(
+        "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
+      );
       const qEmail = query(collectionGroup(db, "members"), where("email", "==", email.toLowerCase()));
       const snapEmail = await getDocs(qEmail);
       for (const s of snapEmail.docs) {
         const businessId = s.ref.parent.parent?.id;
         const data = s.data();
         if (businessId && !data.joinedAt) {
-          // Accept the invite: set userId to the Firebase UID and mark joined
+          // Accept the invite: mark joined + write users/{uid} reference
           try {
-            await updateDoc(s.ref, {
-              userId: uid,
-              joinedAt: new Date().toISOString()
-            });
-          } catch (err) {
-            console.warn("Failed to accept invite:", err.message);
+            await acceptInviteFirestore(uid, businessId, data);
+          } catch (acceptErr) {
+            console.warn("Failed to accept invite:", acceptErr.message);
           }
           results.push({
             businessId,
             member: { userId: uid, ...data, joinedAt: new Date().toISOString() }
           });
           break;
+        } else if (businessId && data.joinedAt) {
+          // Already joined but user reference missing — sync it
+          try {
+            await upsertUserReference(uid, {
+              businessId,
+              role: data.role || "staff",
+              displayName: data.displayName || "User",
+              email: data.email || email
+            });
+          } catch (e) {
+            // non-fatal
+          }
+          results.push({ businessId, member: { userId: uid, ...data } });
+          break;
         }
       }
+    } catch (err) {
+      console.warn("findUserBusinesses email query failed:", err.message);
     }
-
-    return results;
-  } catch (err) {
-    console.warn("findUserBusinesses failed (may need collection-group index):", err.message);
-    return [];
   }
+
+  return results;
 }

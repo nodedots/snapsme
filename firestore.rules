@@ -25,6 +25,29 @@ service cloud.firestore {
       );
     }
 
+    // User Workspace Reference Documents (users/{userId})
+    // Standard indirection pattern: on signup / invite acceptance we write a small
+    // document at users/{uid} containing { businessId, role, displayName, email }.
+    // Session restore reads this single doc instead of running collection-group queries
+    // (which require composite indexes and extra rules).
+    match /users/{userId} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if false;
+    }
+
+    // Collection-group rule for the members subcollection.
+    // Allows a signed-in user to look up their own member record (by UID or email)
+    // when resolving their workspace / accepting a pending invite.
+    match /{path=**}/members/{memberId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == memberId ||
+        (resource.data.email == request.auth.token.email) ||
+        (resource.data.userId == request.auth.uid)
+      );
+    }
+
     // Business Root Document
     // NOTE FOR ONBOARDING FLOW:
     // Firestore security rule allows an authenticated-but-not-yet-a-member user

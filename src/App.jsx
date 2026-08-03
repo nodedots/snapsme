@@ -187,17 +187,22 @@ export function App() {
       const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
 
-      if (!isFirestoreMode && (!workspace || !workspace.id)) {
-        setIsOnboardingOpen(true);
-      } else if (
+      // Respect the "Skip onboarding" flag unless the user explicitly requests it
+      const wasSkipped = localStorage.getItem("snapsme_onboarding_skipped") === "true";
+      const explicitRequest =
         params.get("onboarding") === "true" ||
         params.get("start") === "true" ||
         params.get("action") === "signup" ||
         hash === "#onboarding" ||
-        hash === "#signup"
-      ) {
+        hash === "#signup";
+
+      if (explicitRequest) {
+        // User explicitly requested onboarding — clear the skip flag and open it
+        localStorage.removeItem("snapsme_onboarding_skipped");
         setIsOnboardingOpen(true);
         window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (!isFirestoreMode && (!workspace || !workspace.id) && !wasSkipped) {
+        setIsOnboardingOpen(true);
       } else if (params.get("auth") === "signin" || hash === "#signin") {
         setIsOnboardingOpen(true);
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -218,6 +223,13 @@ export function App() {
   // -------------------------------------------------------------------------
   const handleCompleteOnboarding = useCallback(async (result) => {
     if (!result) return;
+
+    // Onboarding completed — clear the skip flag
+    try {
+      localStorage.removeItem("snapsme_onboarding_skipped");
+    } catch (e) {
+      // ignore
+    }
 
     // If signed in with Firebase, create the workspace in Firestore
     if (firebaseUser) {
@@ -552,23 +564,29 @@ export function App() {
         setIsOfflineMode={setIsOfflineMode}
         pendingSyncCount={pendingSyncCount}
         onOpenCapture={() => setIsCaptureOpen(true)}
-        onOpenOnboarding={() => setIsOnboardingOpen(true)}
+        onOpenOnboarding={() => {
+          localStorage.removeItem("snapsme_onboarding_skipped");
+          setIsOnboardingOpen(true);
+        }}
       />
 
-      {/* Firestore Mode Badge */}
+      {/* Welcome Banner (Firestore mode) */}
       {isFirestoreMode && (
-        <div className="bg-[#e7f4ec] border-b border-[#0f7a52]/20 text-[#0f7a52] text-[11px] font-mono px-4 py-1.5 text-center">
-          <ShieldCheck className="w-3 h-3 inline mr-1" />
-          Connected to Firestore — real-time shared workspace
-          {businessId && <span className="opacity-60 ml-1">({businessId})</span>}
+        <div className="bg-[#e7f4ec] border-b border-[#0f7a52]/20 text-[#0f7a52] text-xs px-4 py-2 text-center font-medium">
+          <ShieldCheck className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
+          {workspace?.name ? (
+            <>Welcome to <span className="font-bold">{workspace.name}</span> — your expenses stay in sync in real time. Happy tracking!</>
+          ) : (
+            <>You're all set — your team expenses stay in sync in real time. Happy tracking!</>
+          )}
         </div>
       )}
 
-      {/* Firestore Error Banner */}
+      {/* Sync Error Banner */}
       {firestoreError && (
         <div className="bg-[#fbf1de] border-b border-[#e0982a]/40 text-[#1c1b19] text-[11px] font-mono px-4 py-1.5 text-center">
           <AlertTriangle className="w-3 h-3 inline mr-1 text-[#e0982a]" />
-          Firestore sync issue: {firestoreError}
+          Something went wrong while syncing: {firestoreError}
         </div>
       )}
 
@@ -598,7 +616,10 @@ export function App() {
 
             <div className="flex items-center gap-3 shrink-0 z-10 flex-wrap">
               <button
-                onClick={() => setIsOnboardingOpen(true)}
+                onClick={() => {
+                  localStorage.removeItem("snapsme_onboarding_skipped");
+                  setIsOnboardingOpen(true);
+                }}
                 className="bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0f7a52] font-display font-semibold text-xs sm:text-sm px-4 py-3 rounded-[10px] shadow-2xs flex items-center gap-2 cursor-pointer transition-all"
               >
                 <Building2 className="w-4 h-4 text-[#0f7a52]" />
@@ -702,8 +723,7 @@ export function App() {
       {/* Footer */}
       <footer className="border-t border-[#d9d4c8] bg-[#f7f3ea] py-4 text-center text-xs text-[#6b665c]">
         <p className="font-mono text-[11px]">
-          SnapSME v1.0 — Receipt & Voice AI Expense Capture · Scoped to <span className="font-bold text-[#1c1b19]">{workspace?.name || "My Workspace"}</span>
-          {isFirestoreMode && <span className="text-[#0f7a52]"> · Firestore Sync</span>}
+          SnapSME v1.0 — Receipt & Voice AI Expense Capture · <span className="font-bold text-[#1c1b19]">{workspace?.name || "My Workspace"}</span>
         </p>
       </footer>
     </div>

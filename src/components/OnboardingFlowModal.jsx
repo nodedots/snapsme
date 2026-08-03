@@ -62,6 +62,16 @@ export function OnboardingFlowModal({
   // Step 3: Business type template selection state
   const [selectedBusinessType, setSelectedBusinessType] = useState("retail");
 
+  // Skip onboarding — persists a flag so the modal doesn't re-open immediately
+  const handleSkipOnboarding = () => {
+    try {
+      localStorage.setItem("snapsme_onboarding_skipped", "true");
+    } catch (e) {
+      // ignore
+    }
+    onClose();
+  };
+
   const handleGoogleSignIn = async () => {
     setErrorMsg("");
     setIsGoogleLoading(true);
@@ -289,6 +299,15 @@ export function OnboardingFlowModal({
             </span>
 
             <div className="flex items-center gap-3">
+              {/* Skip onboarding for now */}
+              <button
+                type="button"
+                onClick={handleSkipOnboarding}
+                className="text-xs font-medium text-[#615d59] hover:text-[#000000] underline cursor-pointer shrink-0"
+              >
+                Skip for now
+              </button>
+
               {currentStep <= 4 && (
                 <span className="text-xs font-semibold text-[#757575] shrink-0">
                   Step {currentStep} of 4
