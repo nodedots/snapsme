@@ -117,12 +117,18 @@ export function App() {
             setBusinessId(first.businessId);
             setCurrentUser(first.member);
             setIsFirestoreMode(true);
+            try {
+              localStorage.setItem("snapsme_onboarding_completed", "true");
+              localStorage.setItem("snapsme_onboarding_skipped", "true");
+            } catch (e) {}
           } else {
-            // Signed in but no workspace yet — show onboarding
+            // Signed in but no workspace yet — only show onboarding if not already completed
             setIsFirestoreMode(false);
             setBusinessId(null);
-            setCurrentUser(null);
-            setIsOnboardingOpen(true);
+            const wasCompleted = localStorage.getItem("snapsme_onboarding_completed") === "true";
+            if (!wasCompleted) {
+              setIsOnboardingOpen(true);
+            }
           }
         } catch (err) {
           console.warn("Failed to resolve user business:", err.message);
@@ -187,8 +193,11 @@ export function App() {
       const params = new URLSearchParams(window.location.search);
       const hash = window.location.hash;
 
-      // Respect the "Skip onboarding" flag unless the user explicitly requests it
-      const wasSkipped = localStorage.getItem("snapsme_onboarding_skipped") === "true";
+      // Respect the "Skip onboarding" or "Completed onboarding" flag unless explicitly requested
+      const wasCompleted =
+        localStorage.getItem("snapsme_onboarding_skipped") === "true" ||
+        localStorage.getItem("snapsme_onboarding_completed") === "true";
+
       const explicitRequest =
         params.get("onboarding") === "true" ||
         params.get("start") === "true" ||
@@ -197,11 +206,12 @@ export function App() {
         hash === "#signup";
 
       if (explicitRequest) {
-        // User explicitly requested onboarding — clear the skip flag and open it
+        // User explicitly requested onboarding — clear flags and open it
         localStorage.removeItem("snapsme_onboarding_skipped");
+        localStorage.removeItem("snapsme_onboarding_completed");
         setIsOnboardingOpen(true);
         window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (!isFirestoreMode && (!workspace || !workspace.id) && !wasSkipped) {
+      } else if (!isFirestoreMode && (!workspace || !workspace.id) && !wasCompleted) {
         setIsOnboardingOpen(true);
       } else if (params.get("auth") === "signin" || hash === "#signin") {
         setIsOnboardingOpen(true);
@@ -224,12 +234,15 @@ export function App() {
   const handleCompleteOnboarding = useCallback(async (result) => {
     if (!result) return;
 
-    // Onboarding completed — clear the skip flag
+    // Mark onboarding as completed in localStorage so it NEVER opens automatically again
     try {
-      localStorage.removeItem("snapsme_onboarding_skipped");
+      localStorage.setItem("snapsme_onboarding_completed", "true");
+      localStorage.setItem("snapsme_onboarding_skipped", "true");
     } catch (e) {
       // ignore
     }
+
+    setIsOnboardingOpen(false);
 
     // If signed in with Firebase, create the workspace in Firestore
     if (firebaseUser) {
@@ -616,14 +629,11 @@ export function App() {
 
             <div className="flex items-center gap-3 shrink-0 z-10 flex-wrap">
               <button
-                onClick={() => {
-                  localStorage.removeItem("snapsme_onboarding_skipped");
-                  setIsOnboardingOpen(true);
-                }}
+                onClick={() => setCurrentView("settings")}
                 className="bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0f7a52] font-display font-semibold text-xs sm:text-sm px-4 py-3 rounded-[10px] shadow-2xs flex items-center gap-2 cursor-pointer transition-all"
               >
                 <Building2 className="w-4 h-4 text-[#0f7a52]" />
-                Onboard Workspace
+                Workspace Settings
               </button>
               <button
                 onClick={() => setIsCaptureOpen(true)}
@@ -716,6 +726,7 @@ export function App() {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
         onCompleteOnboarding={handleCompleteOnboarding}
+        currentUser={currentUser}
         saveWorkspaceFn={setWorkspace}
         saveMembersFn={setMembers}
         saveCurrentUserFn={setCurrentUser}

@@ -46,7 +46,12 @@ export async function renderHeader(targetId = "snapsme-header") {
   }
 
   const isSignedIn = Boolean(user && (user.uid || user.userId || user.email));
-  const isFullyOnboarded = status.hasMemberDoc && status.hasWorkspace;
+  const wasOnboardedLocally =
+    localStorage.getItem("snapsme_onboarding_completed") === "true" ||
+    localStorage.getItem("snapsme_onboarding_skipped") === "true" ||
+    Boolean(localStorage.getItem("snapsme_workspace"));
+
+  const isFullyOnboarded = (status.hasMemberDoc && status.hasWorkspace) || wasOnboardedLocally;
 
   const primaryBtnText = isFullyOnboarded ? "Go to Workspace" : "Continue Setup";
   const primaryBtnHref = isFullyOnboarded ? "/" : "/?onboarding=true";
@@ -101,7 +106,7 @@ export async function renderHeader(targetId = "snapsme-header") {
                   </svg>
                   <span>Settings</span>
                 </a>
-                <button id="snapsme-signout-btn" class="snapsme-dropdown-item" style="color: #e32d14;">
+                <button type="button" id="snapsme-signout-btn" class="snapsme-dropdown-item" style="color: var(--color-vermillion);">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
                     <polyline points="16 17 21 12 16 7"></polyline>
@@ -112,20 +117,22 @@ export async function renderHeader(targetId = "snapsme-header") {
               </div>
             </div>
           ` : `
-            <!-- Signed-Out State Nav -->
-            <a href="/?auth=signin" class="snapsme-nav-link">Sign in</a>
-            <a href="/?onboarding=true" class="btn-notion-primary">
-              <span>Get Started free</span>
+            <!-- Logged-Out State Nav -->
+            <button type="button" class="btn-notion-ghost" id="snapsme-nav-login-btn">
+              <span>Sign in</span>
+            </button>
+            <a href="/?onboarding=true" class="btn-ledger-primary">
+              <span>Create Workspace</span>
             </a>
           `}
         </div>
 
         <!-- Mobile Menu Toggle Button -->
-        <button id="mobile-menu-toggle" class="mobile-menu-btn" aria-label="Toggle Navigation Menu">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" y1="7" x2="20" y2="7"/>
-            <line x1="4" y1="12" x2="20" y2="12"/>
-            <line x1="4" y1="17" x2="20" y2="17"/>
+        <button type="button" class="mobile-menu-btn" id="snapsme-mobile-menu-btn" aria-label="Toggle navigation menu">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
       </header>

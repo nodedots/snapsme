@@ -212,6 +212,34 @@ export async function checkUserMemberStatus(user) {
           };
         }
       }
+      // If workspace is set up locally and onboarding was marked completed/skipped, treat user as completed
+      const wasCompletedLocally =
+        localStorage.getItem("snapsme_onboarding_completed") === "true" ||
+        localStorage.getItem("snapsme_onboarding_skipped") === "true";
+
+      if (wasCompletedLocally) {
+        return {
+          hasMemberDoc: true,
+          hasWorkspace: true,
+          isCompleted: true,
+          businessId: localWs.id,
+          memberData: null
+        };
+      }
+    }
+
+    const wasCompletedLocally =
+      localStorage.getItem("snapsme_onboarding_completed") === "true" ||
+      localStorage.getItem("snapsme_onboarding_skipped") === "true";
+
+    if (wasCompletedLocally) {
+      return {
+        hasMemberDoc: true,
+        hasWorkspace: true,
+        isCompleted: true,
+        businessId: "biz_default_ws",
+        memberData: null
+      };
     }
   } catch (e) {
     console.warn("Local storage member status lookup error:", e);
@@ -235,13 +263,18 @@ export async function handlePostAuthRedirect(user) {
     displayName: user.displayName || status.memberData?.displayName || user.email?.split("@")[0] || "User",
     email: user.email || status.memberData?.email || "",
     photoURL: user.photoURL || null,
-    role: status.memberData?.role || "member",
+    role: status.memberData?.role || "owner",
     businessId: status.businessId || null
   };
   localStorage.setItem("snapsme_current_user", JSON.stringify(userPayload));
 
-  if (status.hasMemberDoc && status.hasWorkspace) {
-    // Returning member or accepted invite -> route to dashboard
+  const isSetupCompleted =
+    (status.hasMemberDoc && status.hasWorkspace) ||
+    localStorage.getItem("snapsme_onboarding_completed") === "true" ||
+    localStorage.getItem("snapsme_onboarding_skipped") === "true";
+
+  if (isSetupCompleted) {
+    // Returning member or completed setup -> route to workspace dashboard
     if (window.location.pathname.includes("home")) {
       window.location.href = "/";
     } else {

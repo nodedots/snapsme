@@ -1,9 +1,9 @@
 export const INITIAL_WORKSPACE = {
-  id: null,
+  id: "biz_default_ws",
   name: "My Workspace",
   ownerUid: null,
   currency: "USD",
-  monthlyBudget: 0,
+  monthlyBudget: 3000,
   notifyAt80: true,
   notifyAt95: true,
   notificationChannel: "both",

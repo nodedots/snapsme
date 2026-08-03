@@ -35,16 +35,30 @@ export function OnboardingFlowModal({
   isOpen,
   onClose,
   onCompleteOnboarding,
+  initialStep = 1,
+  currentUser = null,
   saveWorkspaceFn,
   saveMembersFn,
   saveCurrentUserFn,
   saveCategoriesFn
 }) {
-  const [currentStep, setCurrentStep] = useState(1); // 1: Signup, 2: Workspace, 3: Business Type, 4: Staff Invites, 5: Confirmation
+  const [currentStep, setCurrentStep] = useState(initialStep); // 1: Signup, 2: Workspace, 3: Business Type, 4: Staff Invites, 5: Confirmation
   const [errorMsg, setErrorMsg] = useState("");
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [authMode, setAuthMode] = useState("signup"); // 'signup' or 'signin'
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialStep && initialStep > 1) {
+        setCurrentStep(initialStep);
+      } else if (auth.currentUser || (currentUser && currentUser.userId)) {
+        setCurrentStep(2);
+      } else {
+        setCurrentStep(1);
+      }
+    }
+  }, [isOpen, initialStep, currentUser]);
 
   // Step 1: Signup form state
   const [signUpForm, setSignUpForm] = useState({

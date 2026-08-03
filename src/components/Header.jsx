@@ -127,19 +127,44 @@ export const Header = ({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 w-full">
           {/* Row 1 (Mobile) / Left Group (Desktop): App Logo & Network/User Controls */}
           <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 w-full sm:w-auto">
-            {/* Brand Logo & Wordmark */}
-            <a
-              href="/home"
-              className="flex items-center gap-1.5 cursor-pointer group no-underline shrink-0"
-              title="Go to SnapSME Marketing Homepage"
-            >
-              <div className="w-7.5 h-7.5 sm:w-8 sm:h-8 bg-[#0075de] text-white flex items-center justify-center rounded-lg overflow-hidden shadow-xs group-hover:scale-105 transition-transform shrink-0">
-                <img src={workspace?.brand?.logoUrl || "/logo.jpg"} alt="SnapSME Logo" className="w-full h-full object-cover" />
-              </div>
-              <span className="font-display font-bold text-lg sm:text-xl tracking-tight text-[#000000] shrink-0">
-                Snap<span className="text-[#0075de]">SME</span>
-              </span>
-            </a>
+            {/* Primary SnapSME App Brand Logo & Side-by-Side Business Brand */}
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href="/home"
+                className="flex items-center gap-1.5 cursor-pointer group no-underline shrink-0"
+                title="Go to SnapSME Marketing Homepage"
+              >
+                <div className="w-7.5 h-7.5 sm:w-8 sm:h-8 bg-[#0075de] text-white flex items-center justify-center rounded-lg overflow-hidden shadow-xs group-hover:scale-105 transition-transform shrink-0 border border-black/10">
+                  <img src="/logo.jpg" alt="SnapSME Logo" className="w-full h-full object-cover" />
+                </div>
+                <span className="font-display font-bold text-lg sm:text-xl tracking-tight text-[#000000] shrink-0">
+                  Snap<span className="text-[#0075de]">SME</span>
+                </span>
+              </a>
+
+              {/* Side-by-Side Business Brand Badge */}
+              {workspace?.name && (
+                <div className="flex items-center gap-1.5 border-l border-[#d9d4c8] pl-2 sm:pl-2.5 ml-0.5">
+                  {workspace.brand?.logoUrl ? (
+                    <img
+                      src={workspace.brand.logoUrl}
+                      alt={workspace.name}
+                      className="w-5.5 h-5.5 rounded-md object-cover border border-black/10 shadow-2xs shrink-0"
+                    />
+                  ) : (
+                    <div
+                      className="w-5.5 h-5.5 rounded-md text-white font-bold text-[10px] flex items-center justify-center shrink-0 shadow-2xs"
+                      style={{ backgroundColor: workspace.brand?.accentColor || "var(--color-brand-accent, #0f7a52)" }}
+                    >
+                      {workspace.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <span className="font-display font-semibold text-xs text-[#1c1b19] truncate max-w-[90px] sm:max-w-[150px]">
+                    {workspace.name}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Mobile Controls: Network Button & Profile Avatar (< 640px) */}
             <div className="flex sm:hidden items-center gap-2">
