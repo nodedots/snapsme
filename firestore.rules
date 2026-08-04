@@ -84,6 +84,17 @@ service cloud.firestore {
         allow update: if isBusinessOwner(businessId);
         allow delete: if isBusinessOwner(businessId);
       }
+
+      // Income Subcollection
+      // Lightweight money-in log (NOT invoicing). Any member can read the shared
+      // income feed and create their own income entries. Only the owner can
+      // update/delete, mirroring the expenses subcollection rules.
+      match /income/{incomeId} {
+        allow read: if isBusinessMember(businessId) || isBusinessOwner(businessId);
+        allow create: if isBusinessMember(businessId) || isBusinessOwner(businessId);
+        allow update: if isBusinessOwner(businessId);
+        allow delete: if isBusinessOwner(businessId);
+      }
     }
 
     // Chat Links Collection (for Telegram / WhatsApp auth pairing)

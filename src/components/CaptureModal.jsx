@@ -48,10 +48,32 @@ export const CaptureModal = ({
   const [previewImage, setPreviewImage] = useState(null);
   const [uploadedDocInfo, setUploadedDocInfo] = useState(null);
 
-  // Fetch live exchange rates on modal open
+  const resetFormState = () => {
+    setVendor("");
+    setAmount("");
+    setCurrency(workspaceCurrency || "USD");
+    setDate(new Date().toISOString().split("T")[0]);
+    setCategoryId(categories[0]?.id || "");
+    setCategoryName(categories[0]?.name || "General");
+    setMoneyMovement("company_card");
+    setNotes("");
+    setPreviewImage(null);
+    setUploadedDocInfo(null);
+    setVoiceTranscript("");
+    setIsRecordingVoice(false);
+    setIsProcessingAI(false);
+    setAiConfidence(null);
+    setCorrectedFields([]);
+    setNoticeMessage(null);
+    setFileInputKey((prev) => prev + 1);
+  };
+
+  // Fetch live exchange rates and reset state on modal open
   useEffect(() => {
     if (isOpen) {
       fetchLiveExchangeRates(workspaceCurrency || "USD");
+      setCurrency(workspaceCurrency || "USD");
+      resetFormState();
     }
   }, [isOpen, workspaceCurrency]);
 
@@ -153,54 +175,64 @@ export const CaptureModal = ({
         console.warn("Express API extract-receipt error, using client-side extraction:", fetchErr.message);
       }
 
-      // Fallback heuristic extraction if API is unavailable or unconfigured
-      if (!resData || !resData.success || !resData.data) {
-        const cleanName = (file.name || "receipt.jpg").replace(/[-_.]/g, " ");
-        let detectedVendor = "Merchant Store";
-        if (/shell/i.test(cleanName)) detectedVendor = "Shell Gas Station";
-        else if (/staples/i.test(cleanName)) detectedVendor = "Staples Office";
-        else if (/uber|cab|taxi/i.test(cleanName)) detectedVendor = "City Taxi";
-        else if (/starbucks|cafe|coffee/i.test(cleanName)) detectedVendor = "Starbucks Coffee";
-        else if (/target|walmart/i.test(cleanName)) detectedVendor = "Supermarket";
+      // Smart client-side heuristic extraction for instant field auto-population
+      const rawFileName = file.name || "receipt.jpg";
+      const cleanName = rawFileName.replace(/[-_.]/g, " ");
+      
+      let parsedVendor = "";
+      if (/shell|total|nnpcl|conoil|oando/i.test(cleanName)) parsedVendor = "Fuel Station";
+      else if (/staples|paper|office/i.test(cleanName)) parsedVendor = "Office Depot";
+      else if (/uber|bolt|cab|taxi/i.test(cleanName)) parsedVendor = "Ride Transport";
+      else if (/starbucks|cafe|coffee|restaurant|buka|kitchen/i.test(cleanName)) parsedVendor = "Meals & Dining";
+      else if (/target|walmart|shoprite|spares|hardware/i.test(cleanName)) parsedVendor = "Equipment & Supplies";
 
-        const numMatches = cleanName.match(/\d+(?:\.\d{1,2})?/g);
-        const detectedAmount = numMatches ? parseFloat(numMatches[0]) : (Math.floor(Math.random() * 85) + 15 + 0.50);
+      const numMatches = cleanName.match(/\d+(?:\.\d{1,2})?/g);
+      const parsedAmount = numMatches ? parseFloat(numMatches[0]) : 0;
+      
+      let parsedMoneyMovement = "company_card";
+      if (/cash|petty/i.test(cleanName)) parsedMoneyMovement = "petty_cash";
+      else if (/reimburse|personal/i.test(cleanName)) parsedMoneyMovement = "personal_reimbursement";
+      else if (/invoice|supplier|direct/i.test(cleanName)) parsedMoneyMovement = "supplier_payment";
 
-        resData = {
-          success: true,
-          notice: "Receipt scanned & parsed via local client-side OCR engine.",
-          data: {
-            vendor: detectedVendor,
-            amount: detectedAmount,
-            currency: workspaceCurrency || "USD",
-            date: new Date().toISOString().split("T")[0],
-            suggestedCategory: /gas|fuel|taxi|uber/i.test(cleanName) ? "Fuel & Transport" : "Office Supplies",
-            confidence: { vendor: 0.92, amount: 0.95, date: 0.88, category: 0.86 }
-          }
-        };
-      }
+      let parsedCat = "Other Expenses";
+      if (/fuel|gas|taxi|uber|cab|transport|flight/i.test(cleanName)) parsedCat = "Fuel & Transport";
+      else if (/office|paper|staples|stationery|print/i.test(cleanName)) parsedCat = "Office Supplies";
+      else if (/meal|food|lunch|dinner|cafe|restaurant|buka/i.test(cleanName)) parsedCat = "Meals & Food";
+      else if (/tool|hardware|equipment|repair/i.test(cleanName)) parsedCat = "Equipment & Tools";
+      else if (/bill|utility|power|water|electric|internet/i.test(cleanName)) parsedCat = "Utilities & Bills";
 
       if (resData && resData.data) {
         const d = resData.data;
-        setVendor(d.vendor || "");
-        setAmount(d.amount ? String(d.amount) : "");
-        setCurrency(d.currency || workspaceCurrency);
-        setDate(d.date || new Date().toISOString().split("T")[0]);
+        const finalVendor = d.vendor || parsedVendor || "";
+        const finalAmount = d.amount ? String(d.amount) : (parsedAmount > 0 ? String(parsedAmount) : "");
+        const finalCurrency = d.currency || workspaceCurrency || "USD";
+        const finalDate = d.date || new Date().toISOString().split("T")[0];
+        const finalCategoryName = d.suggestedCategory || parsedCat;
+        const finalMoneyMovement = d.moneyMovement || parsedMoneyMovement;
+        const finalNotes = d.notes || (d.lineItems && d.lineItems.length > 0 ? d.lineItems.map(i => i.description).join(", ") : `Receipt scanned from ${rawFileName}`);
+
+        setVendor(finalVendor);
+        setAmount(finalAmount);
+        setCurrency(finalCurrency);
+        setDate(finalDate);
+        setMoneyMovement(finalMoneyMovement);
+        setNotes(finalNotes);
 
         // Match category
         const matchedCat = categories.find(
-          (c) => c.name.toLowerCase().includes((d.suggestedCategory || "").toLowerCase()) ||
-                 (d.suggestedCategory || "").toLowerCase().includes(c.name.toLowerCase())
+          (c) => c.name.toLowerCase().includes(finalCategoryName.toLowerCase()) ||
+                 finalCategoryName.toLowerCase().includes(c.name.toLowerCase())
         );
         if (matchedCat) {
           setCategoryId(matchedCat.id);
           setCategoryName(matchedCat.name);
+        } else if (categories[0]) {
+          setCategoryId(categories[0].id);
+          setCategoryName(categories[0].name);
         }
 
-        setAiConfidence(d.confidence || { vendor: 0.9, amount: 0.95, date: 0.85, category: 0.88 });
-        if (resData.notice) {
-          setNoticeMessage(resData.notice);
-        }
+        setAiConfidence(d.confidence || { vendor: 0.92, amount: 0.95, date: 0.88, category: 0.86 });
+        setNoticeMessage(resData.notice || "Receipt scanned! All fields automatically populated below.");
       }
 
       // Store the compressed blob for upload on save
@@ -348,17 +380,8 @@ export const CaptureModal = ({
   };
 
   const fallbackSimulatedVoice = () => {
-    setIsRecordingVoice(true);
-    setTimeout(() => {
-      const samples = [
-        "Fuel refuel 45 dollars at Shell for truck 3",
-        "Paid 85 dollars cash for office paper and printer cartridges at Staples",
-        "Team lunch 62 dollars at Mama's Bistro on company card"
-      ];
-      const choice = samples[Math.floor(Math.random() * samples.length)];
-      setVoiceTranscript(choice);
-      handleVoiceProcess(choice);
-    }, 1800);
+    setIsRecordingVoice(false);
+    setNoticeMessage("Voice input complete. Please type or edit transcript context.");
   };
 
   const conversion = convertCurrency(amount, currency, workspaceCurrency || "USD");
@@ -377,7 +400,7 @@ export const CaptureModal = ({
     // Store the compressed image as a base64 data URL directly in the expense
     // record. This avoids the need for Firebase Storage (free-tier friendly).
     // The client-side compression keeps the data URL small (typically 100-500KB).
-    const receiptImageUrl = previewImage || undefined;
+    const receiptImageUrl = previewImage || null;
 
     onSaveExpense({
       id: expenseId,
@@ -398,13 +421,14 @@ export const CaptureModal = ({
       date,
       source: activeTab,
       receiptImageUrl,
-      voiceTranscript: voiceTranscript || undefined,
+      voiceTranscript: voiceTranscript || null,
       aiConfidence,
       correctedFields,
       syncStatus: isOfflineMode ? "pending" : "synced",
       notes
     });
 
+    resetFormState();
     onClose();
   };
 
@@ -488,7 +512,7 @@ export const CaptureModal = ({
                 />
 
                 {previewImage || uploadedDocInfo ? (
-                  <div className="relative rounded-lg border border-[#d9d4c8] bg-white p-2.5">
+                  <div className="relative rounded-lg border border-[#d9d4c8] bg-white p-2.5 space-y-2">
                     {uploadedDocInfo?.isDocument ? (
                       <div className="flex items-center gap-3 text-left">
                         <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 text-[#0075de] flex items-center justify-center shrink-0 font-bold text-xs uppercase">
@@ -498,25 +522,43 @@ export const CaptureModal = ({
                           <p className="font-semibold text-xs text-[#1c1b19] truncate">{uploadedDocInfo.name}</p>
                           <p className="text-[10px] text-[#6b665c]">{uploadedDocInfo.size} • {uploadedDocInfo.name.endsWith(".pdf") ? "PDF Document" : "Word Document"}</p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            fileInputRef.current?.click();
-                          }}
-                          className="text-[11px] font-semibold text-[#0f7a52] hover:underline px-2 py-1 bg-[#e7f4ec] rounded"
-                        >
-                          Change
-                        </button>
                       </div>
                     ) : (
-                      <div className="relative max-h-32 overflow-hidden rounded-lg border border-[#d9d4c8]">
-                        <img src={previewImage} alt="Receipt preview" className="w-full h-32 object-cover" />
+                      <div className="relative max-h-36 overflow-hidden rounded-lg border border-[#d9d4c8]">
+                        <img src={previewImage} alt="Receipt preview" className="w-full h-36 object-cover" />
                         <div className="absolute inset-0 bg-[#1c1b19]/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5">
                           <Upload className="w-4 h-4" /> Change Receipt Photo / File
                         </div>
                       </div>
                     )}
+
+                    {/* Clear / Reset Action Bar */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#d9d4c8]/60">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                        className="text-xs font-semibold text-[#0075de] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Change File
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewImage(null);
+                          setUploadedDocInfo(null);
+                          setNoticeMessage(null);
+                          setFileInputKey((prev) => prev + 1);
+                        }}
+                        className="text-xs font-semibold text-[#e32d14] hover:bg-red-50 px-2 py-1 rounded flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" /> Clear / Reset Upload
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-1.5 py-1">
@@ -745,21 +787,32 @@ export const CaptureModal = ({
           )}
 
           {/* Action Buttons */}
-          <div className="pt-3 border-t border-[#d9d4c8] flex items-center justify-end gap-3">
+          <div className="pt-3 border-t border-[#d9d4c8] flex items-center justify-between gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-lg text-xs font-semibold text-[#6b665c] hover:text-[#1c1b19] cursor-pointer"
+              onClick={resetFormState}
+              className="px-3 py-2 rounded-lg text-xs font-semibold text-[#e32d14] hover:bg-red-50 cursor-pointer flex items-center gap-1 transition-colors"
+              title="Reset all fields and clear upload pane"
             >
-              Cancel
+              <RefreshCw className="w-3.5 h-3.5" /> Reset Form
             </button>
-            <button
-              type="submit"
-              disabled={isProcessingAI}
-              className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
-            >
-              Save Expense Entry
-            </button>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg text-xs font-semibold text-[#6b665c] hover:text-[#1c1b19] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isProcessingAI}
+                className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-bold text-xs px-5 py-2.5 rounded-xl shadow-xs transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
+              >
+                Save Expense Entry
+              </button>
+            </div>
           </div>
         </form>
       </div>

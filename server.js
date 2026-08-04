@@ -102,7 +102,7 @@ app.post("/api/extract-receipt", async (req, res) => {
       return res.json(ocrResult);
     }
 
-    // TIER 2: Gemini 2.5 Flash Multi-Modal Vision API
+    // TIER 2: Gemini AI Multi-Modal Vision API (Gemini 2.0 / 1.5 Flash)
     const ai = getGeminiClient();
     if (ai) {
       try {
@@ -128,21 +128,32 @@ JSON Schema:
   }
 }`;
 
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { inlineData: { mimeType, data: base64Data } },
-                { text: prompt }
-              ]
-            }
-          ],
-          config: {
-            responseMimeType: "application/json"
+        const candidateModels = [process.env.GEMINI_MODEL || "gemini-2.0-flash", "gemini-1.5-flash-latest", "gemini-1.5-pro"];
+        let response = null;
+        let lastErr = null;
+
+        for (const modelCandidate of candidateModels) {
+          try {
+            response = await ai.models.generateContent({
+              model: modelCandidate,
+              contents: [
+                prompt,
+                { inlineData: { mimeType, data: base64Data } }
+              ],
+              config: {
+                responseMimeType: "application/json"
+              }
+            });
+            if (response && response.text) break;
+          } catch (modelErr) {
+            lastErr = modelErr;
+            console.warn(`Gemini model ${modelCandidate} failed (${modelErr?.message || modelErr}), checking next fallback model...`);
           }
-        });
+        }
+
+        if (!response || !response.text) {
+          throw lastErr || new Error("All Gemini vision models failed or returned empty response");
+        }
 
         const textResponse = response.text || "";
         const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -151,7 +162,7 @@ JSON Schema:
         return res.json({
           success: true,
           source: "ai_gemini_vision_tier",
-          notice: "Processed via Gemini 2.5 Flash AI",
+          notice: "Processed via Gemini AI Vision",
           data: {
             vendor: parsed.vendor || "Unknown Vendor",
             amount: typeof parsed.amount === "number" ? parsed.amount : 0,
@@ -167,32 +178,21 @@ JSON Schema:
       }
     }
 
-    // TIER 3: Local Heuristic Mock Parser (Fallback)
-    const mockVendors = [
-      { name: "Shell Gas Station", amount: 48.50, cat: "Fuel & Transport", conf: { vendor: 0.95, amount: 0.98, date: 0.9, category: 0.92 } },
-      { name: "Staples Office Supplies", amount: 112.30, cat: "Office Supplies", conf: { vendor: 0.88, amount: 0.92, date: 0.75, category: 0.82 } },
-      { name: "Mama's Kitchen Buka", amount: 18.00, cat: "Meals & Food", conf: { vendor: 0.65, amount: 0.90, date: 0.60, category: 0.70 } },
-      { name: "Hardware Depot", amount: 230.00, cat: "Equipment & Tools", conf: { vendor: 0.91, amount: 0.96, date: 0.85, category: 0.88 } },
-      { name: "City Cab Transport", amount: 25.00, cat: "Fuel & Transport", conf: { vendor: 0.72, amount: 0.85, date: 0.92, category: 0.80 } }
-    ];
-
-    const chosen = mockVendors[Math.floor(Math.random() * mockVendors.length)];
+    // TIER 3: Standard Fallback Engine (No dummy data)
     const today = new Date().toISOString().split("T")[0];
 
     return res.json({
       success: true,
-      source: "heuristic_ocr_tier",
-      notice: "Processed via Tier 3 heuristic OCR. Connect Unlimited-OCR or add GEMINI_API_KEY for live extraction.",
+      source: "standard_engine_tier",
+      notice: "Receipt attached. Please enter or verify the merchant name and amount.",
       data: {
-        vendor: chosen.name,
-        amount: chosen.amount,
+        vendor: "",
+        amount: 0,
         currency: "USD",
         date: today,
-        suggestedCategory: chosen.cat,
-        lineItems: [
-          { description: `${chosen.cat} purchase`, amount: chosen.amount }
-        ],
-        confidence: chosen.conf
+        suggestedCategory: "Other Expenses",
+        lineItems: [],
+        confidence: { vendor: 0.5, amount: 0.5, date: 0.5, category: 0.5 }
       }
     });
   } catch (error) {

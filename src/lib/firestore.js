@@ -415,16 +415,18 @@ export async function addExpenseFirestore(businessId, expense) {
   if (!businessId) throw new Error("Missing businessId");
   const { id, ...rest } = expense;
   const ref = id ? expenseDoc(businessId, id) : doc(expensesCol(businessId));
-  const payload = {
+  const rawPayload = {
     ...rest,
     createdAt: rest.createdAt || new Date().toISOString()
   };
-  if (id) {
-    await setDoc(ref, payload);
-    return id;
-  }
-  const added = await setDoc(ref, payload);
-  return ref.id;
+
+  // Convert any undefined values to null to prevent Firestore setDoc errors
+  const payload = Object.fromEntries(
+    Object.entries(rawPayload).map(([k, v]) => [k, v === undefined ? null : v])
+  );
+
+  await setDoc(ref, payload);
+  return ref.id || id;
 }
 
 /**

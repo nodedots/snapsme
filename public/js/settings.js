@@ -1,12 +1,178 @@
 /**
  * snapsme — Settings & User Control ES Module
  * Deliverable: /public/js/settings.js
- * 
+ *
  * Handles user profile updates, chat-link token generation for Telegram/WhatsApp,
- * unlinking chat channels, and user session management.
+ * unlinking chat channels, dashboard card preferences (including Net cash figure),
+ * and user session management.
  */
 
 import { recordActivityLog } from "../../src/lib/storage.js";
+
+/**
+ * Default dashboard card preferences.
+ * showNetCashFigure (FR-I6): optional Net for Period on the dashboard; default on.
+ */
+export const DEFAULT_DASHBOARD_PREFERENCES = {
+  showTopVendor: true,
+  showTeamLeaderboard: true,
+  showBudgetVsActual: true,
+  showSpendByDay: false,
+  showNetCashFigure: true
+};
+
+/**
+ * Merges workspace.dashboardPreferences with defaults.
+ */
+export function getDashboardPreferences(workspace) {
+  return {
+    ...DEFAULT_DASHBOARD_PREFERENCES,
+    ...(workspace?.dashboardPreferences || {})
+  };
+}
+
+/**
+ * Toggles a single dashboard preference key.
+ * Owner-only when saveWorkspaceFn is used with role checks at the call site.
+ *
+ * @param {object} workspace
+ * @param {string} key — e.g. "showNetCashFigure"
+ * @param {boolean} [value] — if omitted, flips current value
+ * @param {(ws: object) => void} [saveWorkspaceFn]
+ * @returns {object} updated workspace
+ */
+export function setDashboardPreference(workspace, key, value, saveWorkspaceFn) {
+  if (!workspace) {
+    throw new Error("Workspace is required to update dashboard preferences.");
+  }
+
+  const current = getDashboardPreferences(workspace);
+  if (!(key in DEFAULT_DASHBOARD_PREFERENCES) && key !== "showNetCashFigure") {
+    // Allow known defaults + showNetCashFigure; still accept other boolean keys for forward compat
+  }
+
+  const nextValue = typeof value === "boolean" ? value : !Boolean(current[key]);
+  const dashboardPreferences = {
+    ...current,
+    [key]: nextValue
+  };
+
+  const updatedWorkspace = {
+    ...workspace,
+    dashboardPreferences
+  };
+
+  if (typeof saveWorkspaceFn === "function") {
+    saveWorkspaceFn(updatedWorkspace);
+  }
+
+  return updatedWorkspace;
+}
+
+/**
+ * Convenience: toggle Net cash figure visibility (FR-I6).
+ */
+export function setShowNetCashFigure(workspace, show, saveWorkspaceFn) {
+  return setDashboardPreference(workspace, "showNetCashFigure", show, saveWorkspaceFn);
+}
+
+/**
+ * Renders the Dashboard Card Preferences block (including Net cash toggle)
+ * into a container. Pure DOM — used by settings UI hosts.
+ *
+ * @param {HTMLElement} container
+ * @param {object} options
+ * @param {object} options.workspace
+ * @param {boolean} [options.isOwner=true]
+ * @param {(key: string, value: boolean) => void} options.onToggle
+ */
+export function renderDashboardPreferencesPanel(container, options = {}) {
+  if (!container) return;
+
+  const prefs = getDashboardPreferences(options.workspace);
+  const isOwner = options.isOwner !== false;
+
+  const rows = [
+    {
+      key: "showNetCashFigure",
+      title: "Net cash figure",
+      description: "Show income minus expenses for the selected period at the top of the dashboard"
+    },
+    {
+      key: "showTopVendor",
+      title: "Top Vendor Stat",
+      description: "Show top vendor and spend category summary"
+    },
+    {
+      key: "showTeamLeaderboard",
+      title: "Team Leaderboard",
+      description: "Show spend ranking by team member"
+    },
+    {
+      key: "showBudgetVsActual",
+      title: "Budget vs. Actual",
+      description: "Show workspace monthly budget & ceiling progress bar"
+    },
+    {
+      key: "showSpendByDay",
+      title: "Spend by Day of Week",
+      description: "Show daily spending distribution chart card"
+    }
+  ];
+
+  container.innerHTML = `
+    <div class="settings-dash-prefs">
+      <div class="settings-dash-prefs-head">
+        <h3 class="settings-dash-prefs-title">Dashboard Card Preferences</h3>
+        <p class="settings-dash-prefs-sub">Toggle visibility of dashboard modules. Hiding Net cash does not delete income entries.</p>
+      </div>
+      <div class="settings-dash-prefs-list">
+        ${rows
+          .map((row) => {
+            const checked = prefs[row.key] !== false && prefs[row.key] !== undefined
+              ? prefs[row.key] !== false && Boolean(prefs[row.key] || row.key === "showNetCashFigure" ? prefs[row.key] !== false : prefs[row.key])
+              : DEFAULT_DASHBOARD_PREFERENCES[row.key];
+            // Normalize: missing keys use defaults
+            const isOn =
+              prefs[row.key] === undefined
+                ? DEFAULT_DASHBOARD_PREFERENCES[row.key]
+                : Boolean(prefs[row.key]);
+
+            return `
+            <label class="settings-dash-pref-row">
+              <div class="settings-dash-pref-copy">
+                <span class="settings-dash-pref-name">${row.title}</span>
+                <span class="settings-dash-pref-desc">${row.description}</span>
+              </div>
+              <input type="checkbox"
+                data-dash-pref="${row.key}"
+                ${isOn ? "checked" : ""}
+                ${isOwner ? "" : "disabled"}
+                class="settings-dash-pref-toggle" />
+            </label>`;
+          })
+          .join("")}
+      </div>
+      ${
+        !isOwner
+          ? `<p class="settings-dash-prefs-owner-note">Only workspace owners can change dashboard preferences.</p>`
+          : ""
+      }
+    </div>
+  `;
+
+  // Clean up unused variable warning from complex checked expr — isOn is the source of truth
+  void 0;
+
+  container.querySelectorAll("[data-dash-pref]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const key = input.getAttribute("data-dash-pref");
+      if (typeof options.onToggle === "function") {
+        options.onToggle(key, input.checked);
+      }
+    });
+  });
+}
 
 /**
  * Retrieves the current user's profile record from member list.

@@ -1532,4 +1532,781 @@ body {
   }
 }
 
+/* ==========================================================================
+   Income Log (NOT invoicing — lightweight money-in log)
+   ========================================================================== */
+
+/* Secondary "+ Add Income" action — ghost/outlined so it never competes
+   with the primary Snap/capture CTA used for expenses. */
+.btn-add-income {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: transparent;
+  color: var(--color-notion-blue);
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  border: 1px solid rgba(0, 117, 222, 0.35);
+  border-radius: var(--radius-buttons);
+  padding: 9px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-add-income:hover {
+  background-color: var(--color-sky-tint);
+  border-color: var(--color-notion-blue);
+  color: var(--color-notion-blue);
+}
+
+.btn-add-income:active {
+  background-color: #d8ebfd;
+}
+
+/* Income view shell */
+.income-view {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.income-view-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.income-view-heading {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  color: var(--color-ink-black);
+  margin: 0 0 4px 0;
+}
+
+.income-view-lede {
+  font-family: var(--font-notioninter);
+  font-size: 14px;
+  color: var(--color-graphite);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.income-view-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Income list */
+.income-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.income-list-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 2px 2px 10px 2px;
+}
+
+.income-list-title {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--color-ink-black);
+  margin: 0 0 2px 0;
+}
+
+.income-list-subtitle {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  color: var(--color-stone);
+  margin: 0;
+}
+
+.income-list-total {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--color-confirmed-green);
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* Single income row — white hairline card, same family as expense rows,
+   but distinguishable via a confirmed-green left accent + upward arrow. */
+.income-row {
+  display: flex;
+  background-color: var(--color-pure-white);
+  border: var(--border-hairline);
+  border-radius: var(--radius-cards);
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.income-row:hover {
+  border-color: rgba(0, 0, 0, 0.16);
+  box-shadow: var(--shadow-card);
+}
+
+.income-row-accent {
+  flex-shrink: 0;
+  width: 4px;
+  background-color: var(--color-confirmed-green);
+  opacity: 0.85;
+}
+
+.income-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+}
+
+.income-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.income-row-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-mint-wash);
+  color: var(--color-confirmed-green);
+}
+
+.income-row-text {
+  min-width: 0;
+}
+
+.income-row-source {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-ink-black);
+  margin: 0 0 3px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.income-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  color: var(--color-stone);
+  margin: 0;
+}
+
+.income-row-dot {
+  color: var(--color-stone);
+  opacity: 0.5;
+}
+
+.income-row-notes {
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  color: var(--color-graphite);
+  line-height: 1.45;
+  margin: 4px 0 0 0;
+}
+
+.income-row-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.income-amount-value {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--color-confirmed-green);
+  white-space: nowrap;
+}
+
+.income-type-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-notioninter);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-confirmed-green);
+  background-color: var(--color-mint-wash);
+  border-radius: var(--radius-pills);
+  padding: 2px 10px;
+}
+
+/* Income empty state */
+.income-list-empty {
+  background-color: var(--color-pure-white);
+  border: var(--border-hairline);
+  border-radius: var(--radius-cards);
+  padding: 36px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.income-list-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--color-mint-wash);
+  color: var(--color-confirmed-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.income-list-empty-title {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--color-ink-black);
+  margin: 0;
+}
+
+.income-list-empty-copy {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  color: var(--color-stone);
+  margin: 0;
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Income Entry Modal — fastest form in the app (no AI extraction)
+   ========================================================================== */
+
+.income-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.income-modal-card {
+  background-color: var(--color-pure-white);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 14px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.12), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 420px;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 24px;
+  box-sizing: border-box;
+  position: relative;
+  margin: auto;
+  animation: authModalScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.income-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.income-modal-title {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--color-ink-black);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.income-modal-subtitle {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  color: var(--color-graphite);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.income-modal-close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: var(--color-paper-warmth);
+  color: var(--color-graphite);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.income-modal-close:hover {
+  background-color: var(--color-sky-tint);
+  color: var(--color-notion-blue);
+  border-color: rgba(0, 117, 222, 0.3);
+}
+
+.income-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.income-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.income-field-label {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-ink-black);
+}
+
+.income-required {
+  color: var(--color-coral);
+}
+
+.income-optional {
+  color: var(--color-stone);
+  font-weight: 400;
+}
+
+.income-amount-input-wrap {
+  position: relative;
+}
+
+.income-currency-prefix {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-stone);
+  pointer-events: none;
+}
+
+.income-input {
+  width: 100%;
+  font-family: var(--font-notioninter);
+  font-size: 14px;
+  color: var(--color-ink-black);
+  background-color: var(--color-paper-warmth);
+  border: var(--border-hairline);
+  border-radius: var(--radius-buttons);
+  padding: 10px 14px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.income-amount-input-wrap .income-input {
+  padding-left: 60px;
+}
+
+.income-input:focus {
+  border-color: var(--color-notion-blue);
+  background-color: #ffffff;
+}
+
+.income-textarea {
+  min-height: 56px;
+  resize: vertical;
+  font-family: var(--font-notioninter);
+  line-height: 1.5;
+}
+
+.income-form-error {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  color: var(--color-coral);
+  background-color: #fdf2f0;
+  border: 1px solid rgba(227, 45, 20, 0.2);
+  border-radius: var(--radius-buttons);
+  padding: 10px 14px;
+  margin: 0;
+}
+
+.income-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.income-btn-cancel {
+  background-color: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: var(--color-graphite);
+}
+
+.income-btn-cancel:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+  color: var(--color-ink-black);
+}
+
+/* Secondary-styled submit — smaller emphasis than the primary Snap CTA,
+   but still clearly a green "money in" confirmation action. */
+.btn-income-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: var(--color-confirmed-green);
+  color: #ffffff;
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1;
+  border: none;
+  border-radius: var(--radius-buttons);
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.btn-income-secondary:hover {
+  background-color: #148055;
+}
+
+.btn-income-secondary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .income-modal-card {
+    padding: 20px 18px;
+    border-radius: 12px;
+  }
+  .income-modal-title {
+    font-size: 18px;
+  }
+  .income-view-heading {
+    font-size: 24px;
+  }
+  .income-row-body {
+    padding: 12px 14px;
+  }
+  .income-row-source {
+    font-size: 13px;
+  }
+}
+
+/* ==========================================================================
+   Net for Period Card (income − expenses)
+   ========================================================================== */
+
+.net-period-card {
+  background-color: var(--color-pure-white);
+  border: var(--border-hairline);
+  border-radius: var(--radius-cards);
+  padding: 20px 22px;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.net-period-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.net-period-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: var(--color-paper-warmth);
+  color: var(--color-graphite);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.net-period-kicker {
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-stone);
+  margin: 0;
+}
+
+.net-period-amount {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 34px;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 4px 0 2px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Functional color logic reused from existing confidence/status tokens.
+   Positive net → confirmed green; negative net → review amber; zero → neutral. */
+.net-amount--positive {
+  color: var(--color-confirmed-green);
+}
+
+.net-amount--negative {
+  color: var(--color-review-amber);
+}
+
+.net-amount--zero {
+  color: var(--color-ink-black);
+  opacity: 0.8;
+}
+
+.net-period-label {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-graphite);
+  margin: 0 0 10px 0;
+}
+
+.net-period-breakdown {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: var(--border-hairline);
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+}
+
+.net-breakdown-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.net-breakdown-income {
+  color: var(--color-confirmed-green);
+}
+
+.net-breakdown-expense {
+  color: var(--color-graphite);
+}
+
+.net-breakdown-count {
+  font-size: 12px;
+  color: var(--color-stone);
+  font-weight: 400;
+}
+
+.net-breakdown-sep {
+  color: var(--color-stone);
+  opacity: 0.6;
+}
+
+/* Period selector (this month / last 30 days / all) */
+.dash-period-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(0, 0, 0, 0.04);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pills);
+  padding: 3px;
+}
+
+.dash-period-btn {
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-graphite);
+  background-color: transparent;
+  border: none;
+  border-radius: var(--radius-pills);
+  padding: 6px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.dash-period-btn:hover {
+  color: var(--color-ink-black);
+}
+
+.dash-period-btn.is-active {
+  background-color: var(--color-pure-white);
+  color: var(--color-ink-black);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ==========================================================================
+   Settings — Dashboard Card Preferences (incl. Net cash figure toggle)
+   ========================================================================== */
+
+.settings-dash-prefs {
+  background-color: var(--color-pure-white);
+  border: var(--border-hairline);
+  border-radius: var(--radius-cards);
+  padding: 22px 24px;
+}
+
+.settings-dash-prefs-head {
+  margin-bottom: 16px;
+}
+
+.settings-dash-prefs-title {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 17px;
+  color: var(--color-ink-black);
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+}
+
+.settings-dash-prefs-sub {
+  font-family: var(--font-notioninter);
+  font-size: 13px;
+  color: var(--color-stone);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.settings-dash-prefs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-dash-pref-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 4px;
+  cursor: pointer;
+  border-top: var(--border-hairline);
+}
+
+.settings-dash-pref-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-dash-pref-name {
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--color-ink-black);
+}
+
+.settings-dash-pref-desc {
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  color: var(--color-stone);
+  line-height: 1.4;
+}
+
+.settings-dash-pref-toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: var(--radius-pills);
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  margin: 0;
+  border: none;
+  outline: none;
+}
+
+.settings-dash-pref-toggle::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.settings-dash-pref-toggle:checked {
+  background-color: var(--color-ledger-green);
+}
+
+.settings-dash-pref-toggle:checked::after {
+  transform: translateX(16px);
+}
+
+.settings-dash-pref-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-dash-prefs-owner-note {
+  font-family: var(--font-notioninter);
+  font-size: 12px;
+  color: var(--color-stone);
+  margin: 10px 0 0 0;
+  padding-top: 10px;
+  border-top: var(--border-hairline);
+}
+
 
