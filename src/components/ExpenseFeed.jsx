@@ -22,14 +22,17 @@ import {
   Maximize2,
   X,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Plus
 } from "lucide-react";
 
 export const ExpenseFeed = ({
   expenses,
+  incomeEntries = [],
   categories,
   members,
   onOpenCapture,
+  onAddIncome,
   currency
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,69 +76,87 @@ export const ExpenseFeed = ({
 
   const totalFilteredAmount = filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0);
 
-  // CSV Export logic for accounting
+  // CSV Export logic for accounting (FR-I5: income included, clearly typed)
   const handleExportCSV = () => {
-    if (filteredExpenses.length === 0) return;
-
-    const headers = [
-      "Expense ID",
-      "Date",
-      "Merchant / Vendor",
-      "Amount",
-      "Currency",
-      "Category",
-      "Submitted By",
-      "Money Movement",
-      "Source",
-      "Avg AI Confidence",
-      "Sync Status",
-      "Duplicate Warning",
-      "Notes"
-    ];
-
     const escapeCsvCell = (val) => {
       if (val === undefined || val === null) return '""';
       const str = String(val).replace(/"/g, '""');
       return `"${str}"`;
     };
 
-    const rows = filteredExpenses.map((exp) => {
-      let avgConfidence = "N/A";
-      if (exp.aiConfidence) {
-        const avg =
-          (exp.aiConfidence.vendor +
-            exp.aiConfidence.amount +
-            exp.aiConfidence.date +
-            exp.aiConfidence.category) /
-          4;
-        avgConfidence = `${Math.round(avg * 100)}%`;
-      }
+    const commonHeaders = [
+      "Type",
+      "ID",
+      "Date",
+      "Description / Vendor / Source",
+      "Amount",
+      "Currency",
+      "Category",
+      "Money Movement",
+      "Submitted By",
+      "Intake Source",
+      "Sync Status",
+      "Notes"
+    ];
 
-      return [
-        escapeCsvCell(exp.id),
-        escapeCsvCell(exp.date),
-        escapeCsvCell(exp.vendor),
-        escapeCsvCell(exp.amount),
-        escapeCsvCell(exp.currency || currency),
-        escapeCsvCell(exp.categoryName),
-        escapeCsvCell(exp.submittedByName),
-        escapeCsvCell(exp.moneyMovement),
-        escapeCsvCell(exp.source),
-        escapeCsvCell(avgConfidence),
-        escapeCsvCell(exp.syncStatus),
-        escapeCsvCell(exp.duplicateOf ? `Duplicate of ${exp.duplicateOf}` : "No"),
-        escapeCsvCell(exp.notes || "")
-      ];
-    });
+    const expenseRows = filteredExpenses.map((exp) => [
+      "Expense",
+      exp.id || "",
+      exp.date || "",
+      exp.vendor || "",
+      exp.amount ?? "",
+      exp.currency || currency,
+      exp.categoryName || "",
+      exp.moneyMovement || "",
+      exp.submittedByName || "",
+      exp.source || "",
+      exp.syncStatus || "",
+      exp.notes || ""
+    ].map(escapeCsvCell));
 
-    const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+    const incomeRows = (incomeEntries || []).map((i) => [
+      "Income",
+      i.id || "",
+      i.date || "",
+      i.source || "",
+      i.amount ?? "",
+      i.currency || currency,
+      "",
+      "",
+      i.submittedByName || "",
+      "manual",
+      "",
+      i.notes || ""
+    ].map(escapeCsvCell));
+
+    const lines = [];
+    lines.push("# SnapSME export — expenses and income");
+    lines.push(`# Generated ${new Date().toISOString()}`);
+    lines.push("");
+    lines.push("# === EXPENSES ===");
+    lines.push(commonHeaders.join(","));
+    if (expenseRows.length === 0) {
+      lines.push(escapeCsvCell("(no expense rows)"));
+    } else {
+      lines.push(...expenseRows);
+    }
+    lines.push("");
+    lines.push("# === INCOME ===");
+    lines.push(commonHeaders.join(","));
+    if (incomeRows.length === 0) {
+      lines.push(escapeCsvCell("(no income rows)"));
+    } else {
+      lines.push(...incomeRows);
+    }
+
+    const csvContent = lines.join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     const dateStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute("download", `snapsme_expenses_export_${dateStr}.csv`);
+    link.setAttribute("download", `snapsme_export_${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -171,21 +192,34 @@ export const ExpenseFeed = ({
               </span>
             </div>
 
-            {/* Export CSV Button */}
-            <button
-              type="button"
-              onClick={handleExportCSV}
-              disabled={filteredExpenses.length === 0}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-                filteredExpenses.length > 0
-                  ? "bg-[#0075de] hover:bg-[#0060b8] text-white"
-                  : "bg-black/10 text-[#757575] cursor-not-allowed"
-              }`}
-              title="Export current filtered expenses as a CSV file for accounting"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Export CSV</span>
-            </button>
+              {/* Add Income secondary-styled button (distinct from Snap Expense primary) */}
+              {onAddIncome && (
+                <button
+                  type="button"
+                  onClick={onAddIncome}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer bg-white hover:bg-[#e6f3fe] text-[#0075de] border border-[#0075de]/40 hover:border-[#0075de]"
+                  title="Log money that came in"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Income</span>
+                </button>
+              )}
+
+              {/* Export CSV Button */}
+              <button
+                type="button"
+                onClick={handleExportCSV}
+                disabled={filteredExpenses.length === 0 && (incomeEntries || []).length === 0}
+                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                  filteredExpenses.length > 0 || (incomeEntries || []).length > 0
+                    ? "bg-[#0075de] hover:bg-[#0060b8] text-white"
+                    : "bg-black/10 text-[#757575] cursor-not-allowed"
+                }`}
+                title="Export current filtered expenses as a CSV file for accounting"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
+              </button>
           </div>
         </div>
 

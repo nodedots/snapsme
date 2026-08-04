@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   MessageSquare,
   Receipt,
+  ArrowDownLeft,
   Building2,
   ChevronLeft,
   ChevronRight,
@@ -85,6 +86,13 @@ export const Header = ({
       icon: <LayoutDashboard className="w-4 h-4" />,
       badge: "Analytics",
       badgeColor: "bg-amber-500/10 text-amber-700"
+    },
+    {
+      id: "income",
+      label: "Income",
+      icon: <ArrowDownLeft className="w-4 h-4" />,
+      badge: "Money In",
+      badgeColor: "bg-[#0f7a52]/10 text-[#0f7a52]"
     },
     {
       id: "chat",

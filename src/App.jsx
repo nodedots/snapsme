@@ -10,6 +10,8 @@ import {
   saveMembers,
   loadExpenses,
   saveExpenses,
+  loadIncomeEntries,
+  saveIncomeEntries,
   loadCurrentUser,
   saveCurrentUser,
   loadOfflineSimMode,
@@ -28,11 +30,16 @@ import {
   deleteCategoryFirestore,
   addExpenseFirestore,
   updateExpenseFirestore,
+  addIncomeFirestore,
+  deleteIncomeFirestore,
   findUserBusinesses
 } from "./lib/firestore.js";
 import { Header } from "./components/Header.jsx";
 import { OfflineBanner } from "./components/OfflineBanner.jsx";
 import { ExpenseFeed } from "./components/ExpenseFeed.jsx";
+import { IncomeFeed } from "./components/IncomeFeed.jsx";
+import { IncomeFormModal } from "./components/IncomeFormModal.jsx";
+import { IncomeCaptureModal } from "./components/IncomeCaptureModal.jsx";
 import { DashboardView } from "./components/DashboardView.jsx";
 import { ChatIntakeModal } from "./components/ChatIntakeModal.jsx";
 import { TeamWorkspaceModal } from "./components/TeamWorkspaceModal.jsx";
@@ -47,6 +54,7 @@ export function App() {
   const [categories, setCategories] = useState(loadCategories);
   const [members, setMembers] = useState(loadMembers);
   const [expenses, setExpenses] = useState(loadExpenses);
+  const [incomeEntries, setIncomeEntries] = useState(loadIncomeEntries);
   const [currentUser, setCurrentUser] = useState(loadCurrentUser);
   const [isOfflineMode, setIsOfflineMode] = useState(loadOfflineSimMode);
 
@@ -59,6 +67,8 @@ export function App() {
 
   const [currentView, setCurrentView] = useState("feed");
   const [isCaptureOpen, setIsCaptureOpen] = useState(false);
+  const [isIncomeOpen, setIsIncomeOpen] = useState(false);
+  const [isIncomeCaptureOpen, setIsIncomeCaptureOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   // -------------------------------------------------------------------------
@@ -84,6 +94,10 @@ export function App() {
   useEffect(() => {
     if (!isFirestoreMode) saveExpenses(expenses);
   }, [expenses, isFirestoreMode]);
+
+  useEffect(() => {
+    if (!isFirestoreMode) saveIncomeEntries(incomeEntries);
+  }, [incomeEntries, isFirestoreMode]);
 
   useEffect(() => {
     if (!isFirestoreMode) saveCurrentUser(currentUser);
@@ -176,6 +190,7 @@ export function App() {
         },
         onCategories: (list) => setCategories(list),
         onExpenses: (list) => setExpenses(list),
+        onIncome: (list) => setIncomeEntries(list),
         onError: (err) => {
           console.warn("Firestore subscription error:", err.message);
           setFirestoreError(err.message);
@@ -218,7 +233,7 @@ export function App() {
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (params.get("view")) {
         const v = params.get("view");
-        if (["feed", "dashboard", "chat", "team", "settings"].includes(v)) {
+        if (["feed", "dashboard", "income", "chat", "team", "settings"].includes(v)) {
           setCurrentView(v);
         }
       }
@@ -423,6 +438,56 @@ export function App() {
       localStorage.setItem("snapsme_expenses", JSON.stringify([candidate, ...currentArr.filter(e => e.id !== candidate.id)]));
     } catch (e) {}
   }, [workspace, categories, expenses, isFirestoreMode, businessId, currentUser, firebaseUser, isOfflineMode]);
+
+  // -------------------------------------------------------------------------
+  // Income save/delete — Firestore or localStorage (FR-I1)
+  // -------------------------------------------------------------------------
+  const handleSaveIncome = useCallback(async (entry) => {
+    // Optimistically update local state immediately
+    setIncomeEntries((prev) => [entry, ...(prev || []).filter((e) => e.id !== entry.id)]);
+
+    // Firestore mode: write to the business income subcollection
+    if (isFirestoreMode && businessId) {
+      try {
+        const incomePayload = {
+          ...entry,
+          businessId,
+          submittedBy: currentUser?.userId || firebaseUser?.uid || "usr_guest",
+          submittedByName: currentUser?.displayName || firebaseUser?.displayName || "Team member"
+        };
+        await addIncomeFirestore(businessId, incomePayload);
+      } catch (err) {
+        console.error("Failed to save income to Firestore:", err);
+      }
+      return;
+    }
+
+    // Backup persistence to local storage
+    try {
+      const stored = localStorage.getItem("snapsme_income");
+      const currentArr = stored ? JSON.parse(stored) : [];
+      localStorage.setItem("snapsme_income", JSON.stringify([entry, ...currentArr.filter(e => e.id !== entry.id)]));
+    } catch (e) {}
+  }, [isFirestoreMode, businessId, currentUser, firebaseUser]);
+
+  const handleDeleteIncome = useCallback(async (incomeId) => {
+    setIncomeEntries((prev) => (prev || []).filter((e) => e.id !== incomeId));
+
+    if (isFirestoreMode && businessId) {
+      try {
+        await deleteIncomeFirestore(businessId, incomeId);
+      } catch (err) {
+        console.error("Failed to delete income from Firestore:", err);
+      }
+      return;
+    }
+
+    try {
+      const stored = localStorage.getItem("snapsme_income");
+      const currentArr = stored ? JSON.parse(stored) : [];
+      localStorage.setItem("snapsme_income", JSON.stringify(currentArr.filter(e => e.id !== incomeId)));
+    } catch (e) {}
+  }, [isFirestoreMode, businessId]);
 
   // -------------------------------------------------------------------------
   // Workspace update — Firestore or localStorage
@@ -651,16 +716,30 @@ export function App() {
         {currentView === "feed" && (
           <ExpenseFeed
             expenses={expenses}
+            incomeEntries={incomeEntries}
             categories={categories}
             members={members}
             onOpenCapture={() => setIsCaptureOpen(true)}
+            onAddIncome={() => setIsIncomeCaptureOpen(true)}
             currency={workspace?.currency || "USD"}
+          />
+        )}
+
+        {currentView === "income" && (
+          <IncomeFeed
+            incomeEntries={incomeEntries}
+            currency={workspace?.currency || "USD"}
+            onAddIncome={() => setIsIncomeOpen(true)}
+            onOpenIncomeCapture={() => setIsIncomeCaptureOpen(true)}
+            onDeleteIncome={handleDeleteIncome}
+            isOwner={currentUser?.role === "owner"}
           />
         )}
 
         {currentView === "dashboard" && (
           <DashboardView
             expenses={expenses}
+            incomeEntries={incomeEntries}
             categories={categories}
             members={members}
             currency={workspace?.currency || "USD"}
@@ -668,6 +747,7 @@ export function App() {
             workspace={workspace}
             onUpdateWorkspace={handleUpdateWorkspace}
             onOpenSettings={() => setCurrentView("settings")}
+            onAddIncome={() => setIsIncomeCaptureOpen(true)}
           />
         )}
 
@@ -676,6 +756,7 @@ export function App() {
             currentUser={currentUser}
             categories={categories}
             onSaveExpense={handleSaveExpense}
+            onSaveIncome={handleSaveIncome}
             currency={workspace?.currency || "USD"}
             workspaceCurrency={workspace?.currency || "USD"}
           />
@@ -719,6 +800,26 @@ export function App() {
         workspaceCurrency={workspace?.currency || "USD"}
         isOfflineMode={isOfflineMode}
         onSaveExpense={handleSaveExpense}
+        businessId={businessId}
+      />
+
+      {/* Income Form Modal (FR-I1) — lightweight quick log */}
+      <IncomeFormModal
+        isOpen={isIncomeOpen}
+        onClose={() => setIsIncomeOpen(false)}
+        currency={workspace?.currency || "USD"}
+        currentUser={currentUser}
+        onSaveIncome={handleSaveIncome}
+      />
+
+      {/* Income Capture Modal (FR-I1) — full capture flow: scan/upload, voice, manual */}
+      <IncomeCaptureModal
+        isOpen={isIncomeCaptureOpen}
+        onClose={() => setIsIncomeCaptureOpen(false)}
+        currentUser={currentUser}
+        workspaceCurrency={workspace?.currency || "USD"}
+        isOfflineMode={isOfflineMode}
+        onSaveIncome={handleSaveIncome}
         businessId={businessId}
       />
 

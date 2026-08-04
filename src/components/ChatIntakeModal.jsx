@@ -1,15 +1,17 @@
 import React, { useState } from "react";
 import { convertCurrency, getCurrencySymbol } from "../lib/currencies.js";
-import { Send, Bot, MessageSquare, ExternalLink, Check, Copy, Camera, ShieldCheck, Sparkles } from "lucide-react";
+import { Send, Bot, MessageSquare, ExternalLink, Check, Copy, Camera, ShieldCheck, Sparkles, ArrowDownLeft, Receipt } from "lucide-react";
 
 export const ChatIntakeModal = ({
   currentUser,
   categories,
   onSaveExpense,
+  onSaveIncome,
   currency,
   workspaceCurrency
 }) => {
   const [activeChannel, setActiveChannel] = useState("telegram");
+  const [captureType, setCaptureType] = useState("expense");
   const [linkCode, setLinkCode] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
 
@@ -18,7 +20,7 @@ export const ChatIntakeModal = ({
     {
       id: "m1",
       sender: "bot",
-      text: "Welcome to SnapSME Chat Bot! Send a receipt photo, a voice note, or text message here to test instant expense logging.",
+      text: "Welcome to SnapSME Chat Bot! Send a receipt photo, a voice note, or text message here to test instant expense or income logging.",
       time: "10:00 AM"
     }
   ]);
@@ -68,20 +70,33 @@ export const ChatIntakeModal = ({
     const userText = inputMessage;
     setInputMessage("");
 
-    // Simulate Bot response & automatic expense capture
+    // Simulate Bot response & automatic capture
     setTimeout(() => {
-      let vendor = "Merchant";
+      let label = "Merchant";
       let amount = 35.0;
 
       const amtMatch = userText.match(/(\d+(?:\.\d{1,2})?)/);
       if (amtMatch) amount = parseFloat(amtMatch[1]);
 
-      if (userText.toLowerCase().includes("fuel") || userText.toLowerCase().includes("gas")) {
-        vendor = "Shell Station";
-      } else if (userText.toLowerCase().includes("lunch") || userText.toLowerCase().includes("food")) {
-        vendor = "City Diner";
-      } else if (userText.toLowerCase().includes("paper") || userText.toLowerCase().includes("office")) {
-        vendor = "Staples Supplies";
+      if (captureType === "expense") {
+        if (userText.toLowerCase().includes("fuel") || userText.toLowerCase().includes("gas")) {
+          label = "Shell Station";
+        } else if (userText.toLowerCase().includes("lunch") || userText.toLowerCase().includes("food")) {
+          label = "City Diner";
+        } else if (userText.toLowerCase().includes("paper") || userText.toLowerCase().includes("office")) {
+          label = "Staples Supplies";
+        }
+      } else {
+        // Income capture
+        if (userText.toLowerCase().includes("sales") || userText.toLowerCase().includes("product")) {
+          label = "Product Sales";
+        } else if (userText.toLowerCase().includes("client") || userText.toLowerCase().includes("invoice")) {
+          label = "Client Payment";
+        } else if (userText.toLowerCase().includes("refund") || userText.toLowerCase().includes("return")) {
+          label = "Refund Received";
+        } else if (userText.toLowerCase().includes("transfer") || userText.toLowerCase().includes("bank")) {
+          label = "Bank Transfer";
+        }
       }
 
       const conversion = convertCurrency(amount, currency, workspaceCurrency || "USD");
@@ -89,35 +104,60 @@ export const ChatIntakeModal = ({
       const botReply = {
         id: `b_${Date.now()}`,
         sender: "bot",
-        text: `✅ Expense Captured!\n• Vendor: ${vendor}\n• Original: ${getCurrencySymbol(currency)}${amount.toFixed(2)} ${currency}\n• Accounting Ledger: ${getCurrencySymbol(workspaceCurrency || "USD")}${conversion.convertedAmount.toFixed(2)} ${workspaceCurrency || "USD"}\n• Source: ${activeChannel === "telegram" ? "Telegram" : "WhatsApp"}\nSaved to workspace feed instantly!`,
+        text: `✅ ${captureType === "expense" ? "Expense" : "Income"} Captured!\n• ${captureType === "expense" ? "Vendor" : "Source"}: ${label}\n• Original: ${getCurrencySymbol(currency)}${amount.toFixed(2)} ${currency}\n• Accounting Ledger: ${getCurrencySymbol(workspaceCurrency || "USD")}${conversion.convertedAmount.toFixed(2)} ${workspaceCurrency || "USD"}\n• Source: ${activeChannel === "telegram" ? "Telegram" : "WhatsApp"}\nSaved to workspace feed instantly!`,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       };
 
       setMessages((prev) => [...prev, botReply]);
 
-      // Automatically save converted amount to main expense feed
-      onSaveExpense({
-        businessId: currentUser?.businessId || "biz_default",
-        submittedBy: currentUser?.userId || "usr_guest",
-        submittedByName: currentUser?.displayName || "Guest User",
-        submittedByRole: currentUser?.role || "owner",
-        amount: conversion.convertedAmount,
-        currency: workspaceCurrency || "USD",
-        originalAmount: amount,
-        originalCurrency: currency,
-        exchangeRate: conversion.exchangeRate,
-        isConverted: conversion.isConverted,
-        vendor,
-        categoryId: categories[0]?.id || "cat_general",
-        categoryName: categories[0]?.name || "General",
-        moneyMovement: "personal_reimbursement",
-        date: new Date().toISOString().split("T")[0],
-        source: activeChannel,
-        aiConfidence: { vendor: 0.88, amount: 0.95, date: 0.80, category: 0.85 },
-        correctedFields: [],
-        syncStatus: "synced",
-        notes: `Logged via ${activeChannel === "telegram" ? "Telegram" : "WhatsApp"} chat bot`
-      });
+      if (captureType === "expense") {
+        // Automatically save converted amount to main expense feed
+        onSaveExpense({
+          businessId: currentUser?.businessId || "biz_default",
+          submittedBy: currentUser?.userId || "usr_guest",
+          submittedByName: currentUser?.displayName || "Guest User",
+          submittedByRole: currentUser?.role || "owner",
+          amount: conversion.convertedAmount,
+          currency: workspaceCurrency || "USD",
+          originalAmount: amount,
+          originalCurrency: currency,
+          exchangeRate: conversion.exchangeRate,
+          isConverted: conversion.isConverted,
+          vendor: label,
+          categoryId: categories[0]?.id || "cat_general",
+          categoryName: categories[0]?.name || "General",
+          moneyMovement: "personal_reimbursement",
+          date: new Date().toISOString().split("T")[0],
+          source: activeChannel,
+          aiConfidence: { vendor: 0.88, amount: 0.95, date: 0.80, category: 0.85 },
+          correctedFields: [],
+          syncStatus: "synced",
+          notes: `Logged via ${activeChannel === "telegram" ? "Telegram" : "WhatsApp"} chat bot`
+        });
+      } else {
+        // Automatically save converted amount to main income feed
+        onSaveIncome({
+          id: `inc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          businessId: currentUser?.businessId || "biz_default",
+          submittedBy: currentUser?.userId || "usr_guest",
+          submittedByName: currentUser?.displayName || "Guest User",
+          submittedByRole: currentUser?.role || "owner",
+          amount: conversion.convertedAmount,
+          currency: workspaceCurrency || "USD",
+          originalAmount: amount,
+          originalCurrency: currency,
+          exchangeRate: conversion.exchangeRate,
+          isConverted: conversion.isConverted,
+          source: label,
+          date: new Date().toISOString().split("T")[0],
+          notes: `Logged via ${activeChannel === "telegram" ? "Telegram" : "WhatsApp"} chat bot`,
+          sourceType: activeChannel,
+          aiConfidence: { source: 0.88, amount: 0.95, date: 0.80 },
+          correctedFields: [],
+          syncStatus: "synced",
+          createdAt: new Date().toISOString()
+        });
+      }
     }, 1000);
   };
 
@@ -128,10 +168,10 @@ export const ChatIntakeModal = ({
         <div>
           <h2 className="font-display font-bold text-xl text-[#1c1b19] flex items-center gap-2">
             <Bot className="w-5 h-5 text-[#0f7a52]" />
-            Telegram & WhatsApp Expense Intake Bot
+            Telegram & WhatsApp Intake Bot
           </h2>
           <p className="text-xs text-[#6b665c]">
-            Log expenses without downloading an app. Staff can simply snap photos or text the chat bot on Telegram or WhatsApp.
+            Log expenses or income without downloading an app. Staff can simply snap photos or text the chat bot on Telegram or WhatsApp.
           </p>
         </div>
 
@@ -157,6 +197,44 @@ export const ChatIntakeModal = ({
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" /> WhatsApp Bot
+          </button>
+        </div>
+      </div>
+
+      {/* Capture Type Toggle: Expense vs Income */}
+      <div className="bg-white p-4 rounded-xl border border-[#d9d4c8] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h3 className="font-display font-bold text-sm text-[#1c1b19] flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#0f7a52]" />
+            Capture Type
+          </h3>
+          <p className="text-xs text-[#6b665c]">
+            Choose what the bot should log when you send a message, photo, or voice note.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCaptureType("expense")}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
+              captureType === "expense"
+                ? "bg-[#ff5a3c] text-white shadow-2xs"
+                : "bg-[#f7f3ea] text-[#6b665c] border border-[#d9d4c8]"
+            }`}
+          >
+            <Receipt className="w-3.5 h-3.5" /> Expense
+          </button>
+          <button
+            type="button"
+            onClick={() => setCaptureType("income")}
+            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors ${
+              captureType === "income"
+                ? "bg-[#0f7a52] text-white shadow-2xs"
+                : "bg-[#f7f3ea] text-[#6b665c] border border-[#d9d4c8]"
+            }`}
+          >
+            <ArrowDownLeft className="w-3.5 h-3.5" /> Income
           </button>
         </div>
       </div>
@@ -261,7 +339,7 @@ export const ChatIntakeModal = ({
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Type e.g. 'Paid $45 for fuel at Shell'..."
+              placeholder={captureType === "expense" ? "Type e.g. 'Paid $45 for fuel at Shell'..." : "Type e.g. 'Received $500 from Acme Corp for sales'..."}
               className="flex-1 bg-white border border-[#d9d4c8] text-xs rounded-xl px-3.5 py-2 focus:outline-none focus:border-[#0f7a52]"
             />
             <button

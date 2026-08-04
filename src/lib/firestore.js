@@ -65,6 +65,8 @@ const categoriesCol = (businessId) => collection(db, "businesses", businessId, "
 const categoryDoc = (businessId, categoryId) => doc(db, "businesses", businessId, "categories", categoryId);
 const expensesCol = (businessId) => collection(db, "businesses", businessId, "expenses");
 const expenseDoc = (businessId, expenseId) => doc(db, "businesses", businessId, "expenses", expenseId);
+const incomeCol = (businessId) => collection(db, "businesses", businessId, "income");
+const incomeDoc = (businessId, incomeId) => doc(db, "businesses", businessId, "income", incomeId);
 
 // ---------------------------------------------------------------------------
 // User workspace reference (users/{uid} indirection)
@@ -186,6 +188,21 @@ export function subscribeToBusiness(businessId, handlers = {}) {
     );
   }
 
+  // Income subcollection (newest first) — lightweight money-in log, NOT invoicing
+  if (handlers.onIncome) {
+    unsubscribers.push(
+      onSnapshot(
+        query(incomeCol(businessId), orderBy("createdAt", "desc")),
+        (snap) => {
+          const list = [];
+          snap.forEach((s) => list.push({ id: s.id, ...s.data() }));
+          handlers.onIncome(list);
+        },
+        (err) => handlers.onError?.(err)
+      )
+    );
+  }
+
   return () => {
     unsubscribers.forEach((unsub) => {
       try {
@@ -239,7 +256,8 @@ export async function createBusinessWorkspaceFirestore(ownerUser, data, defaultC
       showTopVendor: true,
       showTeamLeaderboard: true,
       showBudgetVsActual: true,
-      showSpendByDay: false
+      showSpendByDay: false,
+      showNetCashFigure: true
     },
     monthlyBudget: 0,
     notifyAt80: true,
@@ -448,6 +466,40 @@ export async function deleteExpenseFirestore(businessId, expenseId) {
 }
 
 // ---------------------------------------------------------------------------
+// Income writes (lightweight money-in log — NOT invoicing)
+// ---------------------------------------------------------------------------
+
+/**
+ * Adds a new income entry to the business income subcollection.
+ * Returns the created income id.
+ */
+export async function addIncomeFirestore(businessId, income) {
+  if (!businessId) throw new Error("Missing businessId");
+  const { id, ...rest } = income;
+  const ref = id ? incomeDoc(businessId, id) : doc(incomeCol(businessId));
+  const rawPayload = {
+    ...rest,
+    createdAt: rest.createdAt || new Date().toISOString()
+  };
+
+  // Convert any undefined values to null to prevent Firestore setDoc errors
+  const payload = Object.fromEntries(
+    Object.entries(rawPayload).map(([k, v]) => [k, v === undefined ? null : v])
+  );
+
+  await setDoc(ref, payload);
+  return ref.id || id;
+}
+
+/**
+ * Deletes an income entry.
+ */
+export async function deleteIncomeFirestore(businessId, incomeId) {
+  if (!businessId || !incomeId) throw new Error("Missing businessId or incomeId");
+  await deleteDoc(incomeDoc(businessId, incomeId));
+}
+
+// ---------------------------------------------------------------------------
 // One-time reads (for initial hydration / invite acceptance)
 // ---------------------------------------------------------------------------
 
@@ -484,6 +536,16 @@ export async function getCategoriesOnce(businessId) {
  */
 export async function getExpensesOnce(businessId) {
   const snap = await getDocs(query(expensesCol(businessId), orderBy("createdAt", "desc")));
+  const list = [];
+  snap.forEach((s) => list.push({ id: s.id, ...s.data() }));
+  return list;
+}
+
+/**
+ * Fetches all income entries of a business (newest first).
+ */
+export async function getIncomeOnce(businessId) {
+  const snap = await getDocs(query(incomeCol(businessId), orderBy("createdAt", "desc")));
   const list = [];
   snap.forEach((s) => list.push({ id: s.id, ...s.data() }));
   return list;

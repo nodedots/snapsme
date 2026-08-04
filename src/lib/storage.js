@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   CATEGORIES: "snapsme_categories",
   MEMBERS: "snapsme_members",
   EXPENSES: "snapsme_expenses",
+  INCOME: "snapsme_income",
   CURRENT_USER: "snapsme_current_user",
   IS_OFFLINE_MODE: "snapsme_offline_sim",
   ACTIVITY_LOGS: "snapsme_activity_logs"
@@ -83,6 +84,21 @@ export function saveExpenses(expenses) {
   localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(expenses));
 }
 
+export function loadIncomeEntries() {
+  const data = localStorage.getItem(STORAGE_KEYS.INCOME);
+  if (!data) return [];
+  try {
+    const parsed = JSON.parse(data);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveIncomeEntries(income) {
+  localStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify(Array.isArray(income) ? income : []));
+}
+
 export function loadCurrentUser() {
   const data = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
   if (!data) {
@@ -146,6 +162,7 @@ export function clearAllWorkspaceData() {
   localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
   localStorage.setItem(STORAGE_KEYS.MEMBERS, JSON.stringify(INITIAL_MEMBERS));
   localStorage.setItem(STORAGE_KEYS.EXPENSES, JSON.stringify(INITIAL_EXPENSES));
+  localStorage.setItem(STORAGE_KEYS.INCOME, JSON.stringify([]));
   localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(INITIAL_MEMBERS[0]));
   localStorage.setItem(STORAGE_KEYS.ACTIVITY_LOGS, JSON.stringify(INITIAL_ACTIVITY_LOGS));
 }

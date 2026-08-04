@@ -16,18 +16,22 @@ import {
   BellRing,
   Mail,
   Globe,
-  Settings
+  Settings,
+  ArrowDownLeft,
+  Plus
 } from "lucide-react";
 
 export const DashboardView = ({
   expenses,
+  incomeEntries = [],
   categories,
   members,
   currency,
   isOwner,
   workspace,
   onUpdateWorkspace,
-  onOpenSettings
+  onOpenSettings,
+  onAddIncome
 }) => {
   const [monthlyBudgetInput, setMonthlyBudgetInput] = useState(
     workspace.monthlyBudget ?? 3000
@@ -72,6 +76,45 @@ export const DashboardView = ({
   }, [workspace]);
 
   const totalWorkspaceSpend = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+  // Net for Period (FR-I3): income − expenses for the selected period
+  const [netPeriod, setNetPeriod] = useState("this_month");
+  const netPeriodLabel =
+    netPeriod === "last_30_days" ? "Net last 30 days" : netPeriod === "all" ? "Net all time" : "Net this month";
+
+  const getPeriodStart = (period) => {
+    const now = new Date();
+    if (period === "last_30_days") {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 29);
+      start.setHours(0, 0, 0, 0);
+      return start;
+    }
+    if (period === "all") return null;
+    return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  };
+
+  const periodStart = getPeriodStart(netPeriod);
+  const inPeriod = (dateStr) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    if (periodStart && d < periodStart) return false;
+    return true;
+  };
+
+  const periodIncome = (incomeEntries || []).filter((e) => inPeriod(e.date));
+  const periodExpenses = expenses.filter((e) => inPeriod(e.date));
+  const totalPeriodIncome = periodIncome.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const totalPeriodExpenses = periodExpenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const netForPeriod = Math.round((totalPeriodIncome - totalPeriodExpenses) * 100) / 100;
+  const netIsPositive = netForPeriod > 0;
+  const netIsNegative = netForPeriod < 0;
+  const netColorClass = netIsPositive
+    ? "text-[#0f7a52]"
+    : netIsNegative
+    ? "text-[#e0982a]"
+    : "text-[#1c1b19]";
 
   // Calculate current month expenses
   const currentMonthStr = new Date().toISOString().slice(0, 7);
@@ -196,43 +239,84 @@ export const DashboardView = ({
     };
   });
 
-  // CSV Export Function per PRD FR19
+  // CSV Export Function per PRD FR19 + FR-I5 (income included, clearly typed)
   const handleExportCSV = () => {
-    const headers = [
-      "Expense ID",
+    const escapeCsvCell = (val) => {
+      if (val === undefined || val === null) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const commonHeaders = [
+      "Type",
+      "ID",
       "Date",
-      "Vendor",
+      "Description / Vendor / Source",
       "Amount",
       "Currency",
       "Category",
       "Money Movement",
       "Submitted By",
-      "Source",
+      "Intake Source",
       "Sync Status",
       "Notes"
     ];
 
-    const rows = expenses.map((e) => [
-      e.id,
-      e.date,
-      `"${e.vendor.replace(/"/g, '""')}"`,
-      e.amount,
-      e.currency,
-      `"${e.categoryName.replace(/"/g, '""')}"`,
-      e.moneyMovement,
-      `"${e.submittedByName.replace(/"/g, '""')}"`,
-      e.source,
-      e.syncStatus,
-      `"${(e.notes || "").replace(/"/g, '""')}"`
-    ]);
+    const expenseRows = expenses.map((e) => [
+      "Expense",
+      e.id || "",
+      e.date || "",
+      e.vendor || "",
+      e.amount ?? "",
+      e.currency || currency,
+      e.categoryName || "",
+      e.moneyMovement || "",
+      e.submittedByName || "",
+      e.source || "",
+      e.syncStatus || "",
+      e.notes || ""
+    ].map(escapeCsvCell));
 
-    const csvContent =
-      "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const incomeRows = (incomeEntries || []).map((i) => [
+      "Income",
+      i.id || "",
+      i.date || "",
+      i.source || "",
+      i.amount ?? "",
+      i.currency || currency,
+      "",
+      "",
+      i.submittedByName || "",
+      "manual",
+      "",
+      i.notes || ""
+    ].map(escapeCsvCell));
 
+    const lines = [];
+    lines.push("# SnapSME export — expenses and income");
+    lines.push(`# Generated ${new Date().toISOString()}`);
+    lines.push("");
+    lines.push("# === EXPENSES ===");
+    lines.push(commonHeaders.join(","));
+    if (expenseRows.length === 0) {
+      lines.push(escapeCsvCell("(no expense rows)"));
+    } else {
+      lines.push(...expenseRows);
+    }
+    lines.push("");
+    lines.push("# === INCOME ===");
+    lines.push(commonHeaders.join(","));
+    if (incomeRows.length === 0) {
+      lines.push(escapeCsvCell("(no income rows)"));
+    } else {
+      lines.push(...incomeRows);
+    }
+
+    const csvContent = "data:text/csv;charset=utf-8," + lines.join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `snapsme_expenses_export_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `snapsme_export_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -247,7 +331,17 @@ export const DashboardView = ({
           <p className="text-xs text-[#615d59]">Real-time visibility into team expenses, category budgets, and money movement</p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+          {onAddIncome && (
+            <button
+              onClick={onAddIncome}
+              className="w-full sm:w-auto bg-white hover:bg-[#e6f3fe] text-[#0075de] border border-[#0075de]/40 hover:border-[#0075de] font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer min-h-[44px] sm:min-h-0"
+              title="Log money that came in (secondary action)"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>Add Income</span>
+            </button>
+          )}
           {isOwner && onOpenSettings && (
             <button
               onClick={onOpenSettings}
@@ -266,6 +360,58 @@ export const DashboardView = ({
           </button>
         </div>
       </div>
+
+      {/* Net for Period Card (FR-I3, FR-I4) — hidden via showNetCashFigure (FR-I6) */}
+      {prefs.showNetCashFigure !== false && (
+        <div className="bg-white p-5 rounded-xl border border-[#0f7a52]/20 shadow-sm" data-net-period-card>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-lg bg-[#e7f4ec] border border-[#0f7a52]/20 flex items-center justify-center text-[#0f7a52] shrink-0">
+                <ArrowDownLeft className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#6b665c]">
+                  Cash position
+                </p>
+                <p className={`font-display font-bold text-3xl leading-tight tabular-nums ${netColorClass}`}>
+                  {netIsPositive ? "+" : ""}{getCurrencySymbol(currency)}{Math.abs(netForPeriod).toFixed(2)}
+                </p>
+                <p className="text-xs text-[#615d59] font-medium">{netPeriodLabel}</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:items-end gap-2">
+              {/* Period selector (this month / last 30 days / all) */}
+              <div className="flex items-center gap-1 bg-[#f7f3ea] border border-[#d9d4c8] rounded-lg p-1 text-[11px] w-fit">
+                {["this_month", "last_30_days", "all"].map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setNetPeriod(p)}
+                    className={`px-2.5 py-1 rounded font-semibold transition-colors cursor-pointer ${
+                      netPeriod === p
+                        ? "bg-white text-[#1c1b19] shadow-xs border border-[#d9d4c8]"
+                        : "text-[#6b665c] hover:text-[#1c1b19]"
+                    }`}
+                  >
+                    {p === "this_month" ? "This month" : p === "last_30_days" ? "Last 30 days" : "All time"}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] text-[#6b665c]">
+                <span className="bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.5 rounded font-mono font-semibold">
+                  In {getCurrencySymbol(currency)}{totalPeriodIncome.toFixed(2)} ({periodIncome.length})
+                </span>
+                <span className="text-[#6b665c]">−</span>
+                <span className="bg-[#f7f3ea] text-[#615d59] px-2 py-0.5 rounded font-mono font-semibold">
+                  Out {getCurrencySymbol(currency)}{totalPeriodExpenses.toFixed(2)} ({periodExpenses.length})
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Workspace Monthly Budget Overview Card */}
       {prefs.showBudgetVsActual && (

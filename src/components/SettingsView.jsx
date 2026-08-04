@@ -84,6 +84,7 @@ export const SettingsView = ({
     showTeamLeaderboard: true,
     showBudgetVsActual: true,
     showSpendByDay: false,
+    showNetCashFigure: true,
     ...(workspace?.dashboardPreferences || {})
   });
   const [dashPrefsToast, setDashPrefsToast] = useState("");
@@ -102,6 +103,7 @@ export const SettingsView = ({
           showTeamLeaderboard: true,
           showBudgetVsActual: true,
           showSpendByDay: false,
+          showNetCashFigure: true,
           ...workspace.dashboardPreferences
         });
       }
@@ -1020,6 +1022,20 @@ export const SettingsView = ({
           </div>
 
           <div className="space-y-2.5">
+            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
+              <div className="pr-2">
+                <span className="font-display font-bold text-xs text-[#1c1b19] block">Net Cash Figure</span>
+                <span className="text-[11px] text-[#6b665c] block">Show income minus expenses for the selected period on the dashboard</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={dashboardPrefs.showNetCashFigure !== false}
+                disabled={!userIsOwner}
+                onChange={() => handleToggleDashPref("showNetCashFigure")}
+                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
+              />
+            </label>
+
             <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
               <div className="pr-2">
                 <span className="font-display font-bold text-xs text-[#1c1b19] block">Top Vendor Stat</span>
