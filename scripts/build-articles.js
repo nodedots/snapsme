@@ -307,6 +307,28 @@ const hubHtml = `<!DOCTYPE html>
   <link rel="icon" type="image/jpeg" href="/logo.jpg">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/layout.css">
+  <!-- Responsive Mobile CSS -->
+  <style>
+    @media (max-width: 640px) {
+      .document-container {
+        padding: 24px 16px 60px 16px !important;
+      }
+      #learn-articles-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+      .learn-article-card {
+        padding: 20px !important;
+      }
+      h1 {
+        font-size: 26px !important;
+      }
+      .learn-cat-btn {
+        padding: 6px 12px !important;
+        font-size: 12px !important;
+      }
+    }
+  </style>
 </head>
 <body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased selection:bg-[#0075de]/20 selection:text-[#000000]">
 
@@ -317,14 +339,14 @@ const hubHtml = `<!DOCTYPE html>
   <div class="document-container" style="max-width: 1040px; margin: 0 auto; padding: 40px 20px 80px 20px;">
     
     <!-- Hero Section -->
-    <div style="text-align: center; margin-bottom: 44px;">
+    <div style="text-align: center; margin-bottom: 36px;">
       <div style="display: inline-block; background-color: #e6f3fe; color: #0075de; font-family: var(--font-notioninter); font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 9999px; margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.04em;">
         Knowledge Base & Guides
       </div>
-      <h1 style="font-family: var(--font-notioninter); font-size: 38px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0; letter-spacing: -0.03em;">
+      <h1 style="font-family: var(--font-notioninter); font-size: 36px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0; letter-spacing: -0.03em;">
         SnapSME Learn
       </h1>
-      <p style="font-family: var(--font-notioninter); font-size: 18px; color: #615d59; max-width: 600px; margin: 0 auto; line-height: 1.6;">
+      <p style="font-family: var(--font-notioninter); font-size: 16px; color: #615d59; max-width: 600px; margin: 0 auto; line-height: 1.6;">
         Simple, actionable guides to help small team owners control spend, organize receipts, and stay financially clear.
       </p>
     </div>
@@ -337,7 +359,7 @@ const hubHtml = `<!DOCTYPE html>
           type="text"
           id="learn-search-input"
           placeholder="Search guides (e.g. receipts, budget, categories)..."
-          style="width: 100%; padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.15); font-family: var(--font-notioninter); font-size: 15px; background: #ffffff; color: #1c1b19; outline: none; box-sizing: border-box; box-shadow: 0 1px 4px rgba(0,0,0,0.03);"
+          style="width: 100%; padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(0,0,0,0.15); font-family: var(--font-notioninter); font-size: 14px; background: #ffffff; color: #1c1b19; outline: none; box-sizing: border-box; box-shadow: 0 1px 4px rgba(0,0,0,0.03);"
         />
       </div>
 
@@ -361,7 +383,7 @@ const hubHtml = `<!DOCTYPE html>
     </div>
 
     <!-- Articles Grid -->
-    <div id="learn-articles-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr)); gap: 24px;">
+    <div id="learn-articles-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
       ${articles
         .map(
           (art) => `

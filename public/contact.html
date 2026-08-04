@@ -6,91 +6,176 @@
   <title>Contact Us — SnapSME</title>
 
   <!-- SEO Meta Tags -->
-  <meta name="description" content="Contact SnapSME support for assistance with team expense tracking." />
-  
+  <meta name="description" content="Get in touch with SnapSME support. We assist small business teams with expense tracking, voice scanning, Telegram/WhatsApp bot setup, and account inquiries." />
+  <meta name="keywords" content="SnapSME contact, expense tracking support, small business finance support, SnapSME help desk" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Contact Us — SnapSME" />
+  <meta property="og:description" content="Reach out to the SnapSME team for product support, custom integrations, or account questions." />
+  <meta property="og:type" content="website" />
+
   <!-- Fonts & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/jpeg" href="/logo.jpg">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/motion.css">
 </head>
-<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased">
+<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased selection:bg-[#0075de]/20 selection:text-[#000000]">
 
   <!-- Shared Reusable Nav Header -->
   <div id="snapsme-header"></div>
 
   <!-- Document Container -->
-  <div class="document-container">
-    <!-- Back to Home Link -->
+  <div class="document-container" style="max-width: 960px; margin: 0 auto; padding: 40px 20px 80px;">
+    
+    <!-- Navigation Breadcrumb -->
     <a href="/home" class="back-link">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="19" y1="12" x2="5" y2="12"></line>
         <polyline points="12 19 5 12 12 5"></polyline>
       </svg>
-      <span>Back to home</span>
+      <span>Back to Home</span>
     </a>
 
-    <!-- Title & Intro -->
-    <h1 class="document-title">Contact Us</h1>
-    <p class="document-meta">Have a question or need assistance? Send us a message and our team will get back to you shortly.</p>
+    <!-- Page Header -->
+    <div style="margin: 20px 0 36px;">
+      <h1 class="document-title" style="font-size: 32px; font-weight: 800; color: #1c1b19; margin: 0 0 8px 0;">Contact Our Team</h1>
+      <p style="font-size: 15px; color: #6b665c; margin: 0; max-width: 600px; line-height: 1.6;">Have a question about SnapSME, need assistance with your workspace setup, or looking for custom bot integration? We're here to help.</p>
+    </div>
 
-    <!-- Contact Container (Form or Success Torn Card) -->
-    <div id="contact-card-container">
-      <div class="contact-card torn-receipt-card">
+    <!-- Production Split Layout (Info Side + Contact Form Card) -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 32px;" class="contact-grid">
+      <style>
+        @media (min-width: 768px) {
+          .contact-grid { grid-template-columns: 320px 1fr !important; }
+        }
+      </style>
+
+      <!-- Left Column: Support Info Card -->
+      <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 16px; padding: 28px; height: fit-content; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+        <h3 style="font-family: var(--font-notioninter); font-size: 18px; font-weight: 700; color: #1c1b19; margin: 0 0 16px 0;">Support Channels</h3>
         
-        <!-- Error Banner -->
-        <div id="contact-form-error" class="form-error"></div>
-
-        <!-- Contact Form -->
-        <form id="snapsme-contact-form" class="contact-form" novalidate>
-          <div class="form-group">
-            <label for="contact-name" class="form-label">Your Name <span style="color: var(--color-vermillion);">*</span></label>
-            <input
-              type="text"
-              id="contact-name"
-              name="name"
-              class="form-input"
-              placeholder="e.g. Sarah Jenkins"
-              required
-            />
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- 1. Email -->
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #e7f4ec; color: #0f7a52; display: flex; align-items: center; justify-content: center; shrink-0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b665c;">Email Support</div>
+              <div style="font-size: 14px; font-weight: 600; color: #1c1b19; margin-top: 2px;">support@snapsme.co</div>
+              <div style="font-size: 12px; color: #8c877d; margin-top: 2px;">Typical response &lt; 24 hours</div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="contact-email" class="form-label">Email Address <span style="color: var(--color-vermillion);">*</span></label>
-            <input
-              type="email"
-              id="contact-email"
-              name="email"
-              class="form-input"
-              placeholder="e.g. sarah@acmetrading.com"
-              required
-            />
+          <!-- 2. Developer / Creator Info -->
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #eef2f6; color: #0075de; display: flex; align-items: center; justify-content: center; shrink-0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b665c;">Created By</div>
+              <div style="font-size: 14px; font-weight: 600; color: #1c1b19; margin-top: 2px;">NodeDots Product Studio</div>
+              <a href="https://ko-fi.com/nodedots" target="_blank" rel="noopener" style="font-size: 12px; color: #0075de; text-decoration: underline; font-weight: 500; margin-top: 2px; display: inline-block;">ko-fi.com/nodedots &rarr;</a>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="contact-message" class="form-label">Message <span style="color: var(--color-vermillion);">*</span></label>
-            <textarea
-              id="contact-message"
-              name="message"
-              class="form-textarea"
-              placeholder="How can we help your team?"
-              required
-            ></textarea>
+          <!-- 3. Telegram Support Group -->
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #fdf2f0; color: #ff5a3c; display: flex; align-items: center; justify-content: center; shrink-0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b665c;">Community & Bot</div>
+              <div style="font-size: 14px; font-weight: 600; color: #1c1b19; margin-top: 2px;">Telegram @nodedots</div>
+              <div style="font-size: 12px; color: #8c877d; margin-top: 2px;">Direct developer messaging</div>
+            </div>
           </div>
+        </div>
 
-          <button type="submit" class="btn-notion-primary" style="padding: 12px 24px; font-size: 15px; margin-top: 4px;">
-            <span>Send Message</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          </button>
-        </form>
+        <div style="margin-top: 28px; padding-top: 20px; border-top: 1px solid #eef2f6;">
+          <div style="font-size: 12px; font-weight: 600; color: #1c1b19; margin-bottom: 4px;">Help Desk Hours</div>
+          <div style="font-size: 12px; color: #6b665c; line-height: 1.5;">Monday – Friday: 9:00 AM – 6:00 PM (EST)<br/>Weekend monitoring for urgent workspace outages.</div>
+        </div>
+      </div>
 
+      <!-- Right Column: Interactive Form Card -->
+      <div id="contact-card-container">
+        <div class="contact-card torn-receipt-card" style="background: #ffffff; border-radius: 16px; border: 1px solid #d9d4c8; padding: 32px; box-shadow: 0 4px 16px rgba(0,0,0,0.03);">
+          
+          <h2 style="font-family: var(--font-notioninter); font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 4px 0;">Send Us a Message</h2>
+          <p style="font-size: 13px; color: #6b665c; margin: 0 0 24px 0;">Fill out the form below and our team will get back to you promptly.</p>
+
+          <!-- Error Banner -->
+          <div id="contact-form-error" class="form-error" style="display: none; padding: 12px 16px; background: #fdf2f0; border: 1px solid #ff5a3c; border-radius: 8px; color: #e32d14; font-size: 13px; font-weight: 500; margin-bottom: 20px;"></div>
+
+          <!-- Contact Form -->
+          <form id="snapsme-contact-form" class="contact-form" novalidate style="display: flex; flex-direction: column; gap: 18px;">
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="contact-name" class="form-label" style="font-size: 13px; font-weight: 600; color: #1c1b19;">Your Full Name <span style="color: #ff5a3c;">*</span></label>
+              <input
+                type="text"
+                id="contact-name"
+                name="name"
+                class="form-input"
+                placeholder="e.g. Sarah Jenkins"
+                style="padding: 12px 14px; border-radius: 8px; border: 1px solid #d9d4c8; font-size: 14px; font-family: var(--font-notioninter); outline: none;"
+                required
+              />
+            </div>
+
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="contact-email" class="form-label" style="font-size: 13px; font-weight: 600; color: #1c1b19;">Work Email Address <span style="color: #ff5a3c;">*</span></label>
+              <input
+                type="email"
+                id="contact-email"
+                name="email"
+                class="form-input"
+                placeholder="e.g. sarah@acmetrading.com"
+                style="padding: 12px 14px; border-radius: 8px; border: 1px solid #d9d4c8; font-size: 14px; font-family: var(--font-notioninter); outline: none;"
+                required
+              />
+            </div>
+
+            <div class="form-group" style="display: flex; flex-direction: column; gap: 6px;">
+              <label for="contact-message" class="form-label" style="font-size: 13px; font-weight: 600; color: #1c1b19;">How can we help your team? <span style="color: #ff5a3c;">*</span></label>
+              <textarea
+                id="contact-message"
+                name="message"
+                class="form-textarea"
+                placeholder="Describe your question, request, or workspace details..."
+                rows="5"
+                style="padding: 12px 14px; border-radius: 8px; border: 1px solid #d9d4c8; font-size: 14px; font-family: var(--font-notioninter); outline: none; resize: vertical;"
+                required
+              ></textarea>
+            </div>
+
+            <button type="submit" class="btn-notion-primary" style="padding: 14px 28px; font-size: 15px; font-weight: 700; justify-content: center; border-radius: 10px; margin-top: 6px; cursor: pointer;">
+              <span>Send Message</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            </button>
+          </form>
+
+        </div>
       </div>
     </div>
+
   </div>
 
   <!-- Reusable Header, Firebase & Footer -->

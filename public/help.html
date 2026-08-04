@@ -3,148 +3,294 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Help Center & FAQ — SnapSME</title>
+  <title>Help Center & Knowledge Base — SnapSME</title>
 
   <!-- SEO Meta Tags -->
-  <meta name="description" content="Help Center and Frequently Asked Questions for SnapSME team expense tracking." />
-  
+  <meta name="description" content="SnapSME Help Center. Guides and answers for receipt scanning, voice notes, income tracking, Telegram/WhatsApp bot setup, multi-currency, offline mode, and team expense management." />
+  <meta name="keywords" content="SnapSME help center, receipt scanning FAQ, voice expense tracking, Telegram bot setup, WhatsApp bot, income tracking, multi-currency accounting" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Help Center & Knowledge Base — SnapSME" />
+  <meta property="og:description" content="Find answers, setup guides, and quick solutions for managing business expenses and income with SnapSME." />
+  <meta property="og:type" content="website" />
+
   <!-- Fonts & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/jpeg" href="/logo.jpg">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/layout.css">
+  <link rel="stylesheet" href="/css/motion.css">
 </head>
-<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased">
+<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased selection:bg-[#0075de]/20 selection:text-[#000000]">
 
   <!-- Shared Reusable Nav Header -->
   <div id="snapsme-header"></div>
 
-  <!-- Document Container -->
-  <div class="document-container">
-    <!-- Back to Home Link -->
+  <!-- Main Container -->
+  <div class="document-container" style="max-width: 860px; margin: 0 auto; padding: 40px 20px 80px;">
+    
+    <!-- Navigation Breadcrumb -->
     <a href="/home" class="back-link">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="19" y1="12" x2="5" y2="12"></line>
         <polyline points="12 19 5 12 12 5"></polyline>
       </svg>
-      <span>Back to home</span>
+      <span>Back to Home</span>
     </a>
 
-    <!-- Title & Intro -->
-    <h1 class="document-title">Help Center & FAQ</h1>
-    <p class="document-meta">Find quick answers to common questions about using SnapSME for your team.</p>
+    <!-- Page Hero Banner -->
+    <div style="margin: 20px 0 36px; background: linear-gradient(135deg, #1c1b19 0%, #2c2a26 100%); color: #ffffff; padding: 40px 32px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.08);">
+      <h1 class="document-title" style="color: #ffffff; font-size: 32px; font-weight: 800; margin: 0 0 12px 0;">Help Center & Knowledge Base</h1>
+      <p style="font-size: 15px; color: #d0cbc3; margin: 0 0 24px 0; max-width: 600px; line-height: 1.6;">Everything you need to master expense and income tracking, setup Telegram/WhatsApp intake bots, and streamline team financial recording.</p>
+      
+      <!-- Interactive Instant Search Input -->
+      <div style="position: relative; max-width: 540px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b665c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%);">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input 
+          type="text" 
+          id="faq-search-input" 
+          placeholder="Search help articles (e.g. offline mode, receipts, currency, telegram)..." 
+          style="width: 100%; padding: 14px 16px 14px 48px; border-radius: 10px; border: 1px solid #423e38; background: #ffffff; color: #1c1b19; font-size: 14px; font-family: var(--font-notioninter); outline: none; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" 
+        />
+      </div>
+    </div>
 
-    <!-- FAQ Accordion Container -->
+    <!-- Quick Navigation Category Pills -->
+    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px;">
+      <a href="#getting-started" class="snapsme-nav-link" style="padding: 8px 16px; border-radius: 9999px; background: #ffffff; border: 1px solid #d9d4c8; font-size: 13px; font-weight: 600; color: #1c1b19;">Getting Started</a>
+      <a href="#expense-capture" class="snapsme-nav-link" style="padding: 8px 16px; border-radius: 9999px; background: #ffffff; border: 1px solid #d9d4c8; font-size: 13px; font-weight: 600; color: #1c1b19;">Receipt Scanning & Voice</a>
+      <a href="#income-tracking" class="snapsme-nav-link" style="padding: 8px 16px; border-radius: 9999px; background: #ffffff; border: 1px solid #d9d4c8; font-size: 13px; font-weight: 600; color: #1c1b19;">Income & Cash Flow</a>
+      <a href="#chat-bots" class="snapsme-nav-link" style="padding: 8px 16px; border-radius: 9999px; background: #ffffff; border: 1px solid #d9d4c8; font-size: 13px; font-weight: 600; color: #1c1b19;">Telegram & WhatsApp Bots</a>
+      <a href="#data-security" class="snapsme-nav-link" style="padding: 8px 16px; border-radius: 9999px; background: #ffffff; border: 1px solid #d9d4c8; font-size: 13px; font-weight: 600; color: #1c1b19;">Data, Export & Security</a>
+    </div>
+
+    <!-- FAQ Accordion List -->
     <div class="faq-list">
 
-      <!-- Question 1: How do I invite my team? -->
+      <!-- Section 1: Getting Started -->
+      <h2 id="getting-started" class="document-section-title" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #d9d4c8; font-size: 20px; font-weight: 700; color: #1c1b19;">Getting Started & Workspace Management</h2>
+
       <div class="faq-card torn-receipt-card">
         <div class="faq-header">
-          <h3 class="faq-question">How do I invite my team?</h3>
+          <h3 class="faq-question">How do I create a workspace and invite my team?</h3>
           <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
         <div class="faq-answer">
           <div class="faq-answer-inner">
-            As a business Workspace Owner, you can invite team members (staff) during the initial onboarding setup or anytime from the <strong>Team</strong> tab in your workspace dashboard. Simply enter their name along with their email address or phone number. Invited members receive instant access to submit expenses on behalf of your company.
+            Click <strong>Create your workspace</strong> on the landing page or sign in to launch onboarding. You'll enter your business name, choose your primary accounting currency, and set up custom expense categories. To invite staff, enter their email address or phone number under the <strong>Team Members</strong> step or manage them anytime from the <strong>Team</strong> tab inside your dashboard.
           </div>
         </div>
       </div>
 
-      <!-- Question 2: What happens if I don't have a receipt? -->
       <div class="faq-card torn-receipt-card">
         <div class="faq-header">
-          <h3 class="faq-question">What happens if I don't have a receipt?</h3>
+          <h3 class="faq-question">What roles exist and what can each team member do?</h3>
           <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
         <div class="faq-answer">
           <div class="faq-answer-inner">
-            No problem! If a merchant doesn't provide a paper receipt, staff can use the <strong>Voice Note</strong> capture mode to speak what they spent (e.g. <em>"Paid $28 for lunch meeting at City Diner"</em>), or submit a quick manual entry with the vendor name and amount. SnapSME converts voice recordings directly into categorized expense records.
+            SnapSME supports two primary user roles:
+            <ul style="margin-top: 8px; padding-left: 20px; line-height: 1.6;">
+              <li><strong>Owner / Administrator:</strong> Has complete administrative authority. Can configure workspace settings, manage team permissions, view all ledger records, delete entries, and export CSV reports.</li>
+              <li><strong>Staff Member:</strong> Can snap paper receipts, record voice notes, log manual entries, and view the team's shared activity feed — but cannot alter workspace settings or remove entries.</li>
+            </ul>
           </div>
         </div>
       </div>
 
-      <!-- Question 3: Does SnapSME work offline? -->
       <div class="faq-card torn-receipt-card">
         <div class="faq-header">
-          <h3 class="faq-question">Does SnapSME work offline?</h3>
+          <h3 class="faq-question">Is SnapSME free for small businesses?</h3>
           <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
         <div class="faq-answer">
           <div class="faq-answer-inner">
-            Yes! SnapSME is built offline-first. You can snap receipt photos or record voice notes in cell dead zones, basements, or remote jobsites with no internet connection. Transactions queue safely on your device and automatically sync to your workspace feed once you reconnect to Wi-Fi or cellular data.
+            Yes! SnapSME is free for small business teams of 2 to 10 staff members. There are no credit card requirements, no hidden fees, and no trial timeouts. You get full access to photo receipt scanning, voice processing, multi-currency conversion, offline queueing, CSV export, and messaging bot integration.
           </div>
         </div>
       </div>
 
-      <!-- Question 4: How do I connect Telegram or WhatsApp? -->
+      <!-- Section 2: Expense Capture -->
+      <h2 id="expense-capture" class="document-section-title" style="margin-top: 36px; padding-top: 24px; border-top: 1px solid #d9d4c8; font-size: 20px; font-weight: 700; color: #1c1b19;">Receipt Scanning & Voice Capture</h2>
+
       <div class="faq-card torn-receipt-card">
         <div class="faq-header">
-          <h3 class="faq-question">How do I connect Telegram or WhatsApp?</h3>
+          <h3 class="faq-question">What file formats can I upload for paper receipts and invoices?</h3>
           <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
         <div class="faq-answer">
           <div class="faq-answer-inner">
-            From the <strong>Settings</strong> page, navigate to the <em>Integrations & Messaging Bots</em> section. Grab your dedicated Telegram bot link or WhatsApp webhook code and share it with your staff. Team members can then snap receipt photos directly inside their favorite messaging app without installing extra software.
+            SnapSME accepts all standard document formats: <strong>JPG, PNG, WEBP</strong> image photos (captured directly via mobile camera or uploaded), digital <strong>PDF</strong> receipts and invoices, and <strong>DOCX/DOC</strong> Word documents. Images are automatically compressed client-side before storage to minimize bandwidth.
           </div>
         </div>
       </div>
 
-      <!-- Question 5: How do I export my data? -->
       <div class="faq-card torn-receipt-card">
         <div class="faq-header">
-          <h3 class="faq-question">How do I export my data?</h3>
+          <h3 class="faq-question">How does automatic receipt scanning and AI extraction work?</h3>
           <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
         <div class="faq-answer">
           <div class="faq-answer-inner">
-            You can export your workspace transaction history in one click by clicking the <strong>Export CSV</strong> button on either the <em>Shared Feed</em> or the <em>Dashboard</em> page. The exported spreadsheet includes dates, merchants, amounts, categories, staff submitter names, and money movement tags formatted for easy handoff to your accountant.
+            When a staff member snaps a photo or uploads a document, SnapSME runs a multi-tier OCR engine that automatically parses and populates the <strong>Merchant Name, Transaction Amount, Currency, Date, Category, Money Movement Channel, and Context Notes</strong>. All fields are pre-filled so staff can review and save in seconds.
           </div>
         </div>
       </div>
 
-      <!-- Question 6: Is my data secure? -->
       <div class="faq-card torn-receipt-card">
         <div class="faq-header">
-          <h3 class="faq-question">Is my data secure?</h3>
+          <h3 class="faq-question">Does SnapSME work offline in dead zones without internet signal?</h3>
           <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>
         <div class="faq-answer">
           <div class="faq-answer-inner">
-            All expense entries and receipt images are stored securely on Google Firebase cloud infrastructure with strict access controls. Only authorized members of your business workspace can access your expense feed.
+            Yes! SnapSME is built offline-first. When staff capture receipts or voice entries in basements, remote jobsites, or transit dead zones, entries are stored safely in local browser memory (`localStorage`). Once cellular connection or Wi-Fi is restored, transactions sync automatically with your cloud workspace feed.
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3: Income Tracking -->
+      <h2 id="income-tracking" class="document-section-title" style="margin-top: 36px; padding-top: 24px; border-top: 1px solid #d9d4c8; font-size: 20px; font-weight: 700; color: #1c1b19;">Income Tracking & Cash Flow</h2>
+
+      <div class="faq-card torn-receipt-card">
+        <div class="faq-header">
+          <h3 class="faq-question">Can I log business income as well as expenses?</h3>
+          <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            Yes! You can log income by scanning bank deposit slips, customer payment receipts, or sales invoices, recording voice notes ("Received $1,200 cash from Acme Corp for order #402"), or logging manual income entries. Income is tracked separately from expenses, giving you a live view of net cash flow (Income minus Expenses).
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-card torn-receipt-card">
+        <div class="faq-header">
+          <h3 class="faq-question">How does multi-currency conversion work for global transactions?</h3>
+          <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            SnapSME supports 140+ world currencies (USD, NGN, EUR, GBP, KES, CAD, ZAR, etc.). When an expense or income entry is captured in a foreign currency, SnapSME fetches live exchange rates via the ExchangeRate API and records both the original foreign amount and the converted base amount in your workspace default accounting currency.
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Chat Bots -->
+      <h2 id="chat-bots" class="document-section-title" style="margin-top: 36px; padding-top: 24px; border-top: 1px solid #d9d4c8; font-size: 20px; font-weight: 700; color: #1c1b19;">Telegram & WhatsApp Bot Setup</h2>
+
+      <div class="faq-card torn-receipt-card">
+        <div class="faq-header">
+          <h3 class="faq-question">How do I connect our Telegram or WhatsApp bot for instant receipt submission?</h3>
+          <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            Read our step-by-step publishing guide in the <a href="/learn/telegram-whatsapp-bot-setup.html" style="color: #0075de; text-decoration: underline; font-weight: 600;">Bot Integration Guide</a>. You create a Telegram bot via @BotFather or register a WhatsApp Cloud API webhook, obtain your Secret Token, and link your workspace using the <code style="background: #eef2f6; padding: 2px 6px; border-radius: 4px; font-family: var(--font-plex-mono);">/link [code]</code> command.
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5: Data & Security -->
+      <h2 id="data-security" class="document-section-title" style="margin-top: 36px; padding-top: 24px; border-top: 1px solid #d9d4c8; font-size: 20px; font-weight: 700; color: #1c1b19;">Data Export, Security & Privacy</h2>
+
+      <div class="faq-card torn-receipt-card">
+        <div class="faq-header">
+          <h3 class="faq-question">How do I export CSV reports for tax filings or accounting?</h3>
+          <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            Click the <strong>Export CSV</strong> button at the top of the Shared Feed or Dashboard. The generated spreadsheet includes all transaction records (expenses and income), transaction dates, merchants, original & converted amounts, currencies, categories, payment channels, submitters, and notes — formatted for QuickBooks, Xero, Excel, or tax accountants.
+          </div>
+        </div>
+      </div>
+
+      <div class="faq-card torn-receipt-card">
+        <div class="faq-header">
+          <h3 class="faq-question">Is our financial data private and secure?</h3>
+          <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
+        <div class="faq-answer">
+          <div class="faq-answer-inner">
+            Yes. All workspace data is encrypted in transit via TLS 1.3 / HTTPS and stored on enterprise-grade Google Firebase Cloud infrastructure with strict Firestore Security Rules. Only authenticated members of your business workspace can read or submit records. Read our full <a href="/privacy.html" style="color: #0075de; text-decoration: underline;">Privacy Policy</a> for details.
           </div>
         </div>
       </div>
 
     </div>
 
-    <!-- Need More Help Banner -->
-    <div style="margin-top: 48px; text-align: center; background-color: var(--color-pure-white); border-radius: 12px; border: var(--border-hairline); padding: 24px;">
-      <h3 style="font-family: var(--font-notioninter); font-size: 18px; font-weight: 600; margin: 0 0 8px 0;">Have more questions?</h3>
-      <p style="font-family: var(--font-notioninter); font-size: 14px; color: var(--color-graphite); margin: 0 0 16px 0;">Our support team is ready to assist your business.</p>
-      <a href="/contact.html" class="btn-notion-primary">Contact Support</a>
+    <!-- Support Help Card Banner -->
+    <div style="margin-top: 56px; text-align: center; background: #ffffff; border-radius: 16px; border: 1px solid #d9d4c8; padding: 40px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+      <div style="width: 56px; height: 56px; border-radius: 14px; background: #e7f4ec; color: #0f7a52; margin: 0 auto 16px; display: flex; items-center; justify-content: center;">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
+      <h3 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 800; margin: 0 0 8px 0; color: #1c1b19;">Need Additional Help?</h3>
+      <p style="font-size: 14px; color: #6b665c; margin: 0 auto 24px; max-width: 440px; line-height: 1.5;">Our dedicated support team is available to assist you with onboarding, custom integrations, or account questions. We respond within 24 hours.</p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="/contact.html" class="btn-notion-primary" style="padding: 12px 24px; font-size: 14px;">Contact Support</a>
+        <a href="/learn/" class="btn-notion-ghost" style="padding: 12px 24px; font-size: 14px;">Browse Guides</a>
+      </div>
     </div>
 
   </div>
 
-  <!-- Reusable Header & Footer -->
+  <!-- Reusable Footer & Scripts -->
   <div id="snapsme-footer"></div>
   <script type="module" src="/js/header.js"></script>
   <script type="module" src="/js/help.js"></script>
   <script type="module" src="/js/footer.js"></script>
+
+  <!-- Client-Side Instant FAQ Search Filter Script -->
+  <script type="module">
+    document.addEventListener("DOMContentLoaded", () => {
+      const searchInput = document.getElementById("faq-search-input");
+      const cards = document.querySelectorAll(".faq-card");
+
+      if (searchInput && cards.length > 0) {
+        searchInput.addEventListener("input", (e) => {
+          const query = e.target.value.toLowerCase().trim();
+          cards.forEach((card) => {
+            const text = card.textContent.toLowerCase();
+            if (!query || text.includes(query)) {
+              card.style.display = "block";
+            } else {
+              card.style.display = "none";
+            }
+          });
+        });
+      }
+    });
+  </script>
 
 </body>
 </html>

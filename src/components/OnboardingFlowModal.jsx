@@ -337,10 +337,10 @@ export function OnboardingFlowModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="w-full max-w-lg my-8 relative bg-white border border-black/10 rounded-xl p-6 shadow-lg">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-2.5 sm:p-4 overflow-y-auto box-border">
+      <div className="w-full max-w-lg my-auto relative bg-white border border-black/10 rounded-2xl p-4 sm:p-6 shadow-2xl max-h-[90vh] flex flex-col box-border min-w-0">
         {/* Header Bar: Stacks gracefully into 2 rows on mobile to prevent overlapping */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 pb-3.5 border-b border-black/10 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-black/10 mb-3 shrink-0">
           {/* Row 1 (Mobile) / Left Group (Desktop): Logo & Mobile Close Button */}
           <div className="flex items-center justify-between w-full sm:w-auto">
             <a href="/home" className="flex items-center gap-2 font-display font-bold text-lg text-[#000000] tracking-tight hover:opacity-80 transition-opacity no-underline shrink-0">
@@ -400,13 +400,15 @@ export function OnboardingFlowModal({
           </div>
         </div>
 
-        {/* Error Banner */}
-        {errorMsg && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg p-3 mb-4 flex items-start gap-2">
-            <span className="font-bold">Error:</span>
-            <span>{errorMsg}</span>
-          </div>
-        )}
+        {/* Scrollable Step Contents Box */}
+        <div className="overflow-y-auto max-h-full pr-1 space-y-4 flex-1 box-border min-w-0">
+          {/* Error Banner */}
+          {errorMsg && (
+            <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg p-3 mb-3 flex items-start gap-2">
+              <span className="font-bold">Error:</span>
+              <span>{errorMsg}</span>
+            </div>
+          )}
 
         {/* STEP 1: Owner Signup / Sign In / Password Reset */}
         {currentStep === 1 && (
@@ -917,6 +919,7 @@ export function OnboardingFlowModal({
             </button>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

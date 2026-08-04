@@ -75,8 +75,8 @@ export async function renderHeader(targetId = "snapsme-header") {
         
         <!-- Center: Navigation Links (Centered) -->
         <nav class="snapsme-nav-links desktop-only" style="display: flex; align-items: center; gap: 24px; position: absolute; left: 50%; transform: translateX(-50%);">
-          <a href="/home#how-it-works" class="snapsme-nav-link">How it works</a>
           <a href="/home#features" class="snapsme-nav-link">Features</a>
+          <a href="/home#how-it-works" class="snapsme-nav-link">How it works</a>
           <a href="/learn/" class="snapsme-nav-link">Learn</a>
           <a href="/about.html" class="snapsme-nav-link">About</a>
           <a href="/faq.html" class="snapsme-nav-link">FAQs</a>
@@ -144,8 +144,8 @@ export async function renderHeader(targetId = "snapsme-header") {
   <!-- Mobile Slide-Down Menu Overlay -->
   <div id="mobile-menu-overlay" class="mobile-nav-overlay hidden">
     <div class="mobile-nav-content">
-      <a href="/home#how-it-works" class="mobile-nav-link mobile-close-trigger">How it works</a>
       <a href="/home#features" class="mobile-nav-link mobile-close-trigger">Features</a>
+      <a href="/home#how-it-works" class="mobile-nav-link mobile-close-trigger">How it works</a>
       <a href="/learn/" class="mobile-nav-link mobile-close-trigger">Learn</a>
       <a href="/about.html" class="mobile-nav-link mobile-close-trigger">About</a>
       <a href="/faq.html" class="mobile-nav-link mobile-close-trigger">FAQs</a>
@@ -253,12 +253,13 @@ function attachHeaderEvents() {
 }
 
 function initMobileMenu() {
-  const toggleBtn = document.getElementById("mobile-menu-toggle");
+  const toggleBtn = document.getElementById("snapsme-mobile-menu-btn") || document.getElementById("mobile-menu-toggle");
   const overlay = document.getElementById("mobile-menu-overlay");
   const triggers = document.querySelectorAll(".mobile-close-trigger");
 
   if (toggleBtn && overlay) {
-    toggleBtn.addEventListener("click", () => {
+    toggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
       overlay.classList.toggle("hidden");
     });
   }
@@ -268,6 +269,14 @@ function initMobileMenu() {
       if (overlay) overlay.classList.add("hidden");
     });
   });
+
+  if (overlay) {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        overlay.classList.add("hidden");
+      }
+    });
+  }
 }
 
 // Global listener for auth state changes
