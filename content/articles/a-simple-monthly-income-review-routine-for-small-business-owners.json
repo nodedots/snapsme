@@ -1,0 +1,108 @@
+{
+  "slug": "a-simple-monthly-income-review-routine-for-small-business-owners",
+  "title": "A Simple Monthly Income Review Routine for Small Business Owners",
+  "summary": "A step-by-step 30-minute routine to review your income at the end of every month — calculate net cash flow, spot trends, and make data-driven decisions for the month ahead.",
+  "category": "Income Tracking",
+  "publishDate": "2026-08-04",
+  "readTime": "8 min read",
+  "author": "The SnapSME Team",
+  "keywords": ["monthly income review", "income routine", "small business finance", "month-end review", "cash flow review"],
+  "sections": [
+    {
+      "heading": "Why a Monthly Income Review Matters",
+      "content": [
+        "Most small business owners review their expenses religiously — but treat income as something that 'just happens.' The result is a reactive financial posture: you know what you spent, but you don't know whether you earned enough to cover it until the bank balance tells you.",
+        "A monthly income review flips this. By spending 30 minutes at the end of each month reviewing your income sources, calculating net cash flow, and spotting trends, you shift from reactive to proactive financial management. You start making decisions based on data, not gut feelings."
+      ]
+    },
+    {
+      "heading": "The 30-Minute Monthly Income Review Routine",
+      "content": [
+        "Set a recurring calendar event for the last business day of each month. Block 30 minutes. Close your email. Here's the routine:"
+      ]
+    },
+    {
+      "heading": "Step 1: Reconcile Missing Income Entries (5 minutes)",
+      "content": [
+        "Open your income log and scan for gaps. Did you log every payment that came in this month? Cross-reference with your bank statement or payment processor dashboard.",
+        "If you find missing entries, add them now while the context is still fresh. The longer you wait, the harder it is to remember what a deposit was for.",
+        "If you use SnapSME, check the Income tab — any entries captured via photo, voice, or chat bot will already be there. Just verify nothing is missing."
+      ],
+      "callout": "The biggest source of income tracking errors is not wrong amounts — it's missing entries. A $2,000 payment you forgot to log makes your month look $2,000 worse than it was."
+    },
+    {
+      "heading": "Step 2: Calculate Total Income for the Month (5 minutes)",
+      "content": [
+        "Sum up all income entries for the month. If you're using a tracking tool, this is automatic — just read the total.",
+        "Write it down: 'Total Income — [Month]: $X'. This number is your top-line for the month. It's not profit, and it's not cash flow — it's simply the total money that came in."
+      ]
+    },
+    {
+      "heading": "Step 3: Calculate Net Cash Flow (5 minutes)",
+      "content": [
+        "Now pull your total expenses for the same month. Subtract expenses from income:",
+        "Net Cash Flow = Total Income − Total Expenses",
+        "Write down the result: 'Net Cash Flow — [Month]: +$X' (positive) or '−$X' (negative).",
+        "If you use SnapSME, the dashboard shows this automatically as 'Net for Period' — you can toggle between This Month, Last 30 Days, and All Time."
+      ],
+      "bullets": [
+        "Positive net cash flow = your business grew its cash reserves this month.",
+        "Negative net cash flow = your business consumed more than it earned.",
+        "Track this number month-over-month to see the trend — is it improving or declining?"
+      ]
+    },
+    {
+      "heading": "Step 4: Review Income by Source (5 minutes)",
+      "content": [
+        "Break down your total income by source. How much came from product sales vs client payments vs subscriptions vs other sources?",
+        "Look for changes from last month:",
+        "Did a specific client's payment increase or decrease? Did a new income source appear? Did a recurring source stop? Is any single source representing more than 30% of total income (concentration risk)?"
+      ],
+      "callout": "If one income source represents more than 30% of your total, that's concentration risk. Start building alternative revenue streams before that source dries up."
+    },
+    {
+      "heading": "Step 5: Compare to Last Month and Last Year (5 minutes)",
+      "content": [
+        "Pull up last month's numbers and (if available) the same month last year. Compare:",
+        "Total income: Is it up or down? By what percentage? Net cash flow: Is it improving or declining? Top income source: Has it changed? Any new sources appeared or disappeared?",
+        "This comparison reveals trends that a single month can't. A 5% income dip in one month might be normal seasonality. A 5% dip three months in a row is a trend that needs action."
+      ]
+    },
+    {
+      "heading": "Step 6: Identify Action Items (5 minutes)",
+      "content": [
+        "Based on what you've learned, write down 1-3 action items for the coming month. Be specific:",
+        "If net cash flow was negative: 'Cut software subscriptions by $200/month' or 'Follow up on 3 overdue client invoices.'",
+        "If one client represents 40% of income: 'Pitch 2 new prospects this month to diversify.'",
+        "If product sales are growing: 'Order more inventory of top-selling product.'",
+        "If income is volatile: 'Build a 3-month cash reserve before expanding.'"
+      ],
+      "bullets": [
+        "Write action items in present tense: 'Follow up on overdue invoices' not 'Should follow up.'",
+        "Assign a deadline: 'By the 15th' not 'Sometime this month.'",
+        "Keep it to 3 items max — more than 3 and you won't do any of them."
+      ]
+    },
+    {
+      "heading": "Step 7: Export and Archive (Optional, 2 minutes)",
+      "content": [
+        "Export your income and expense data for the month as a CSV file. This creates a permanent record you can share with your accountant, use for tax preparation, or reference in future months.",
+        "SnapSME's CSV export includes both income and expense entries, clearly typed, with all fields — source/vendor, amount, currency, date, category, submitter, and notes."
+      ]
+    },
+    {
+      "heading": "The Power of Consistency",
+      "content": [
+        "A single monthly income review won't transform your business. But 12 consecutive monthly reviews — each building on the last — will give you a year of data that reveals patterns no single month can show.",
+        "You'll see which months are seasonally strong and which are weak. You'll notice if a client's payments are gradually declining before they tell you they're leaving. You'll catch expense creep before it eats your margins. And you'll make decisions with confidence because you have data, not guesses."
+      ]
+    },
+    {
+      "heading": "Start Your Monthly Review Today",
+      "content": [
+        "Don't wait for the 'perfect' month to start. Even if your income log is incomplete, do the review anyway. The act of reviewing — even with imperfect data — builds the habit and reveals gaps to fix next month.",
+        "Ready to start? Open the <a href='/' style='color: #0075de; text-decoration: underline;'>SnapSME dashboard</a> to see your net cash flow, or read about <a href='/learn/cash-flow-basics-understanding-money-in-vs-money-out.html' style='color: #0075de; text-decoration: underline;'>cash flow basics</a> to understand what the numbers mean."
+      ]
+    }
+  ]
+}

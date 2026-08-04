@@ -1,0 +1,91 @@
+{
+  "slug": "income-sources-every-small-business-should-track",
+  "title": "Income Sources Every Small Business Should Track (But Most Don't)",
+  "summary": "From product sales to client payments to refund received — here are the income sources that small businesses often overlook, and why tracking each one separately is essential for financial clarity.",
+  "category": "Income Tracking",
+  "publishDate": "2026-08-04",
+  "readTime": "7 min read",
+  "author": "The SnapSME Team",
+  "keywords": ["income sources", "revenue streams", "small business income", "income categories", "revenue tracking"],
+  "sections": [
+    {
+      "heading": "Beyond 'Money Came In'",
+      "content": [
+        "When most small business owners log income, they write one thing: 'Payment received — $X.' That's better than nothing, but it's like logging every expense as 'Money went out.' The category, source, and context matter.",
+        "To truly understand your business, you need to know not just how much money came in, but where it came from, what type of income it was, and whether it's likely to repeat. Here are the income sources every small business should track — and most don't."
+      ]
+    },
+    {
+      "heading": "1. Product Sales",
+      "content": [
+        "If you sell physical or digital products, this is likely your primary income source. Track each product sale separately so you can identify your best-selling products, calculate profit margins per product, and spot trends in demand.",
+        "Even if you don't run a full inventory system, simply tagging income entries as 'Product Sales' with the product name in the notes gives you valuable data over time."
+      ]
+    },
+    {
+      "heading": "2. Client Payments (Service Revenue)",
+      "content": [
+        "For service-based businesses — consultants, freelancers, agencies, contractors — client payments are the lifeblood. Track each client payment with the client name as the source so you can see which clients are your biggest revenue drivers, which clients pay on time vs late, and how your client concentration risk looks.",
+        "If 80% of your income comes from one client, that's a risk. If income is spread across 10 clients, that's resilience. You can't know which scenario you're in without tracking client payments individually."
+      ],
+      "callout": "Client concentration risk is the #1 hidden threat to service businesses. If one client represents more than 30% of your income, start diversifying — before they leave."
+    },
+    {
+      "heading": "3. Recurring Subscriptions",
+      "content": [
+        "If you offer a subscription service — monthly retainers, SaaS subscriptions, membership fees — track these as a separate income source. Recurring income is the most valuable type because it's predictable. Investors value recurring revenue at 5-10x multiple compared to one-time sales.",
+        "Tracking subscriptions separately lets you calculate your Monthly Recurring Revenue (MRR), churn rate (how many subscribers cancel each month), and average revenue per user (ARPU)."
+      ]
+    },
+    {
+      "heading": "4. Bank Transfers and Deposits",
+      "content": [
+        "Not all income comes from a specific client or product. Sometimes it's a bank transfer — a loan disbursement, an owner capital injection, or an interest payment from your bank. These should be tracked separately because they're not operating income — they don't represent your business model's performance.",
+        "Mixing loan proceeds with sales revenue inflates your perceived business performance and leads to bad decisions. A $50,000 loan disbursement logged as 'income' makes a bad month look great — until the loan needs to be repaid."
+      ]
+    },
+    {
+      "heading": "5. Refunds Received",
+      "content": [
+        "Sometimes money comes back — a supplier refunds an overpayment, a vendor issues a credit, or a tax authority sends a rebate. These are income-adjacent events that should be tracked separately because they're non-recurring. A large refund in March might make the month look profitable, but it doesn't mean April will be too.",
+        "Tagging refunds as their own income source prevents them from distorting your operating revenue trends."
+      ]
+    },
+    {
+      "heading": "6. Interest and Investment Income",
+      "content": [
+        "If your business holds cash in an interest-bearing account or has investments, the interest and dividends are income. While often small, these amounts can add up — and they're important for tax purposes.",
+        "Track interest income separately so you can see whether your cash reserves are earning a competitive return or sitting idle in a zero-interest account."
+      ]
+    },
+    {
+      "heading": "7. Grants and Awards",
+      "content": [
+        "If your business receives grants, competition prizes, or government support, track these separately. Grant income is often restricted — it can only be used for specific purposes — and needs to be reported separately on tax filings and grant compliance reports.",
+        "Mixing grant money with operating income makes it look like your business model is more profitable than it actually is, which can lead to over-spending or misaligned growth expectations."
+      ]
+      },
+    {
+      "heading": "8. Miscellaneous and One-Time Income",
+      "content": [
+        "Sometimes income doesn't fit a category — you sold old equipment, received a settlement, or got a referral bonus. Track these as 'Other' or 'Miscellaneous' income so they're visible but don't distort your core revenue trends.",
+        "The goal isn't to have a perfect category for everything — it's to ensure that one-time windfalls don't get confused with recurring operating income."
+      ]
+    },
+    {
+      "heading": "How to Categorize Income Sources",
+      "content": [
+        "You don't need 20 income categories. For most small businesses, 5-7 broad categories are sufficient:",
+        "Product Sales, Client Payments, Subscriptions, Bank Transfers, Refunds Received, Interest/Investment, and Other. The key is consistency — use the same category names every time so you can compare month-over-month and year-over-year.",
+        "Tools like SnapSME let you log income with a 'source' field that captures the specific payer or product, plus a notes field for additional context. Over time, you can group and analyze by source to see which income streams are growing."
+      ]
+    },
+    {
+      "heading": "Start Tracking Every Income Source",
+      "content": [
+        "Don't let another month of income go untracked. Start logging every income entry — by source, amount, and date — and within 90 days you'll have a clear picture of where your money actually comes from.",
+        "Open the <a href='/' style='color: #0075de; text-decoration: underline;'>SnapSME workspace</a> and log your first income entry today. Or learn more about <a href='/learn/why-tracking-income-separately-from-expenses-matters.html' style='color: #0075de; text-decoration: underline;'>why separate income tracking matters</a>."
+      ]
+    }
+  ]
+}
