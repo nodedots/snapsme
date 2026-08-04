@@ -257,50 +257,26 @@ export async function handlePostAuthRedirect(user) {
 
   const status = await checkUserMemberStatus(user);
 
-  // Save current user snapshot
+  // Save current user snapshot & mark onboarding completed
   const userPayload = {
     userId: user.uid || user.userId,
     displayName: user.displayName || status.memberData?.displayName || user.email?.split("@")[0] || "User",
     email: user.email || status.memberData?.email || "",
     photoURL: user.photoURL || null,
     role: status.memberData?.role || "owner",
-    businessId: status.businessId || null
+    businessId: status.businessId || "biz_default"
   };
   localStorage.setItem("snapsme_current_user", JSON.stringify(userPayload));
+  localStorage.setItem("snapsme_onboarding_completed", "true");
 
-  const isSetupCompleted =
-    (status.hasMemberDoc && status.hasWorkspace) ||
-    localStorage.getItem("snapsme_onboarding_completed") === "true" ||
-    localStorage.getItem("snapsme_onboarding_skipped") === "true";
-
-  if (isSetupCompleted) {
-    // Returning member or completed setup -> route to workspace dashboard
-    if (window.location.pathname.includes("home")) {
-      window.location.href = "/";
-    } else {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("onboarding");
-      url.searchParams.delete("auth");
-      url.searchParams.delete("signin");
-      url.searchParams.delete("signup");
-      const target = url.pathname + (url.search ? url.search : "");
-      if (window.location.search.includes("onboarding") || window.location.search.includes("auth")) {
-        window.location.href = target;
-      } else if (window.location.pathname !== "/") {
-        window.location.href = "/";
-      }
-    }
+  // Route to workspace dashboard
+  if (window.location.pathname.includes("home") || window.location.search.includes("auth") || window.location.search.includes("onboarding")) {
+    window.location.href = "/";
+  } else if (window.location.pathname !== "/") {
+    window.location.href = "/";
   } else {
-    // Brand-new user -> route to onboarding
-    if (window.location.pathname.includes("home")) {
-      window.location.href = "/?onboarding=true";
-    } else {
-      const url = new URL(window.location.href);
-      url.searchParams.set("onboarding", "true");
-      if (!window.location.search.includes("onboarding=true")) {
-        window.location.href = url.toString();
-      }
-    }
+    // Already on /, reload to mount workspace view
+    window.location.reload();
   }
 }
 

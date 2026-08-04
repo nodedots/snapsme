@@ -206,19 +206,47 @@ export function OnboardingFlowModal({
       }
 
       // After auth, check if the user already has a workspace
-      const activeUser = auth.currentUser || (currentUser && currentUser.userId ? currentUser : null);
+      const activeUser = user || auth.currentUser || currentUser;
       if (activeUser) {
-        const targetUid = activeUser.uid || activeUser.userId;
+        const targetUid = activeUser.uid || activeUser.userId || "usr_" + Date.now();
         const targetEmail = activeUser.email || signUpForm.emailOrPhone;
         const businesses = await findUserBusinesses(targetUid, targetEmail);
-        if (businesses && businesses.length > 0) {
-          // Returning member -> skip onboarding & route to workspace dashboard
-          const first = businesses[0];
+
+        const localWsStr = localStorage.getItem("snapsme_workspace");
+        let localWs = null;
+        if (localWsStr) {
+          try { localWs = JSON.parse(localWsStr); } catch (e) {}
+        }
+
+        const isSignInFlow = authMode === "signin";
+
+        if ((businesses && businesses.length > 0) || localWs || isSignInFlow) {
+          // Returning member or sign-in -> complete auth & route straight to workspace dashboard
+          const first = (businesses && businesses.length > 0) ? businesses[0] : null;
+          const wsData = first
+            ? { id: first.businessId, businessId: first.businessId, name: first.name || "My Workspace" }
+            : (localWs || { id: "biz_default", businessId: "biz_default", name: "My Workspace" });
+          const memberData = first
+            ? first.member
+            : { userId: targetUid, email: targetEmail, displayName: signUpForm.displayName || activeUser.displayName || targetEmail.split("@")[0] || "Owner", role: "owner" };
+
+          // Save active user snapshot & set onboarding completed flag
+          const userPayload = {
+            userId: targetUid,
+            displayName: memberData.displayName || activeUser.displayName || targetEmail.split("@")[0] || "User",
+            email: targetEmail,
+            photoURL: activeUser.photoURL || null,
+            role: memberData.role || "owner",
+            businessId: wsData.businessId
+          };
+          localStorage.setItem("snapsme_current_user", JSON.stringify(userPayload));
+          localStorage.setItem("snapsme_onboarding_completed", "true");
+
           if (onCompleteOnboarding) {
             onCompleteOnboarding({
-              workspace: { id: first.businessId, businessId: first.businessId, name: "My Workspace" },
-              members: [first.member],
-              ownerMember: first.member,
+              workspace: wsData,
+              members: [memberData],
+              ownerMember: memberData,
               categories: []
             });
           }
