@@ -718,11 +718,11 @@ body {
 
 .auth-tab-btn {
   flex: 1;
-  padding: 8px 12px;
+  padding: 9px 12px;
   font-family: var(--font-notioninter);
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-stone);
+  color: var(--color-ink-black, #1c1b19);
   background: transparent;
   border: none;
   border-radius: 8px;
@@ -731,9 +731,9 @@ body {
 }
 
 .auth-tab-btn.active {
-  background-color: #ffffff;
-  color: var(--color-ink-black);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background-color: var(--color-notion-blue, #0075de);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 117, 222, 0.25);
 }
 
 .auth-google-btn {
@@ -816,14 +816,15 @@ body {
 }
 
 .auth-input.input-error {
-  border-color: #e32d14;
-  background-color: #fff9f8;
+  border-color: var(--color-review-amber, #d97706);
+  background-color: #fffdfa;
 }
 
 .auth-field-error {
   font-family: var(--font-notioninter);
-  font-size: 13px;
-  color: #e32d14;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-review-amber, #d97706);
   margin-top: 4px;
 }
 
@@ -1371,6 +1372,163 @@ body {
     align-items: center;
     text-align: center;
     gap: 8px;
+  }
+}
+
+/* ==========================================================================
+   SnapSME About Page Styling (Notion-Inspired System)
+   ========================================================================== */
+
+.about-section {
+  background-color: var(--color-pure-white, #ffffff);
+  border: var(--border-hairline, 1px solid rgba(0, 0, 0, 0.08));
+  border-radius: 14px;
+  padding: 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.about-section-title {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 24px;
+  color: var(--color-ink-black, #1c1b19);
+  margin: 0 0 12px 0;
+  letter-spacing: -0.5px;
+}
+
+.about-text {
+  font-family: var(--font-notioninter);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-graphite, #615d59);
+  margin: 0;
+}
+
+/* Support Accent Card */
+.about-support-card {
+  background-color: var(--color-paper-warmth, #fbf9f5);
+  border: 2px solid var(--color-marigold, #ffb110);
+}
+
+.about-support-badge {
+  background-color: var(--color-marigold, #ffb110);
+  color: #000000;
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+.btn-support-kofi {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-coral, #f64932);
+  color: #ffffff;
+  font-family: var(--font-notioninter);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  text-decoration: none;
+  margin-top: 20px;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  box-shadow: 0 2px 6px rgba(246, 73, 50, 0.25);
+}
+
+.btn-support-kofi:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+/* Developer Card */
+.about-developer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.about-dev-profile-trigger {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: opacity 0.15s ease;
+}
+
+.about-dev-profile-trigger:hover {
+  opacity: 0.85;
+}
+
+.about-dev-avatar-frame {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.about-dev-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.about-dev-name {
+  font-family: var(--font-notioninter);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--color-ink-black, #1c1b19);
+  margin: 0 0 2px 0;
+}
+
+.about-dev-bio {
+  font-family: var(--font-notioninter);
+  font-size: 14px;
+  color: var(--color-graphite, #615d59);
+  margin: 0;
+}
+
+.about-dev-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.about-icon-link {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: var(--color-paper-warmth, #f6f5f4);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--color-ink-black, #1c1b19);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.about-icon-link:hover {
+  background-color: var(--color-sky-tint, #e6f3fe);
+  border-color: rgba(0, 117, 222, 0.25);
+  color: var(--color-notion-blue, #0075de);
+}
+
+@media (max-width: 640px) {
+  .about-section {
+    padding: 24px 18px;
+    border-radius: 12px;
   }
 }
 

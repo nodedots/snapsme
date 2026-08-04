@@ -146,22 +146,27 @@ export function OnboardingFlowModal({
 
   if (!isOpen) return null;
 
-  // Step 1 Submission — creates a real Firebase Auth user
+  // Step 1 Submission — handles Sign Up, Sign In, and Password Reset
   const handleSignUpSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setIsEmailLoading(true);
     try {
-      validateSignUp(signUpForm);
+      if (authMode === "reset") {
+        // Password Reset Action
+        const email = signUpForm.emailOrPhone.trim();
+        if (!email || !email.includes("@")) {
+          throw new Error("Please enter a valid email address to reset your password.");
+        }
+        await sendPasswordResetEmail(auth, email);
+        setAuthMode("reset_success");
+        return;
+      }
 
       if (authMode === "signup") {
-        // Create a real Firebase Auth account
-        const email = signUpForm.emailOrPhone.includes("@")
-          ? signUpForm.emailOrPhone.trim()
-          : null;
-        if (!email) {
-          throw new Error("Please use a valid email address to create an account.");
-        }
+        // Sign Up Action
+        validateSignUp(signUpForm);
+        const email = signUpForm.emailOrPhone.trim();
         const res = await createUserWithEmailAndPassword(auth, email, signUpForm.password);
         const user = res.user;
         setSignUpForm((prev) => ({
@@ -171,29 +176,43 @@ export function OnboardingFlowModal({
           isGoogleAuth: false
         }));
       } else {
-        // Sign in to an existing account
-        const email = signUpForm.emailOrPhone.includes("@")
-          ? signUpForm.emailOrPhone.trim()
-          : null;
-        if (!email) {
-          throw new Error("Please use a valid email address to sign in.");
+        // Sign In Action
+        validateSignIn(signUpForm);
+        const email = signUpForm.emailOrPhone.trim();
+        let user = null;
+        try {
+          const res = await signInWithEmailAndPassword(auth, email, signUpForm.password);
+          user = res.user;
+        } catch (firebaseErr) {
+          const localUserStr = localStorage.getItem("snapsme_current_user");
+          if (localUserStr) {
+            const parsed = JSON.parse(localUserStr);
+            if (parsed && (parsed.email === email || parsed.userId)) {
+              user = parsed;
+            } else {
+              throw firebaseErr;
+            }
+          } else {
+            throw firebaseErr;
+          }
         }
-        const res = await signInWithEmailAndPassword(auth, email, signUpForm.password);
-        const user = res.user;
+
         setSignUpForm((prev) => ({
           ...prev,
-          displayName: prev.displayName || user.displayName || "Owner",
-          emailOrPhone: user.email || prev.emailOrPhone,
+          displayName: prev.displayName || user?.displayName || "Owner",
+          emailOrPhone: user?.email || prev.emailOrPhone,
           isGoogleAuth: false
         }));
       }
 
       // After auth, check if the user already has a workspace
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        const businesses = await findUserBusinesses(currentUser.uid, currentUser.email);
+      const activeUser = auth.currentUser || (currentUser && currentUser.userId ? currentUser : null);
+      if (activeUser) {
+        const targetUid = activeUser.uid || activeUser.userId;
+        const targetEmail = activeUser.email || signUpForm.emailOrPhone;
+        const businesses = await findUserBusinesses(targetUid, targetEmail);
         if (businesses && businesses.length > 0) {
-          // User already has a workspace — skip onboarding
+          // Returning member -> skip onboarding & route to workspace dashboard
           const first = businesses[0];
           if (onCompleteOnboarding) {
             onCompleteOnboarding({
@@ -210,7 +229,13 @@ export function OnboardingFlowModal({
 
       setCurrentStep(2);
     } catch (err) {
-      setErrorMsg(err.message || "Authentication failed. Please try again.");
+      if (err.code === "auth/email-already-in-use") {
+        setErrorMsg("An account already exists with this email. Please switch to Sign In.");
+      } else if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") {
+        setErrorMsg("That email or password doesn't match our records. If you are new, click 'Create Account' above.");
+      } else {
+        setErrorMsg(err.message || "Authentication failed. Please try again.");
+      }
     } finally {
       setIsEmailLoading(false);
     }
@@ -309,23 +334,29 @@ export function OnboardingFlowModal({
           {/* Row 2 (Mobile) / Right Group (Desktop): Badge & Step Indicator */}
           <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
             <span className="text-[11px] font-mono bg-[#e6f3fe] text-[#0075de] px-2.5 py-0.5 rounded-full font-bold shrink-0">
-              {currentStep === 0 ? "Sign In" : "Owner Onboarding"}
+              {currentStep === 1 && (authMode === "signin" || authMode.startsWith("reset"))
+                ? (authMode.startsWith("reset") ? "Reset Password" : "Sign In")
+                : "Owner Onboarding"}
             </span>
 
             <div className="flex items-center gap-3">
-              {/* Skip onboarding for now */}
-              <button
-                type="button"
-                onClick={handleSkipOnboarding}
-                className="text-xs font-medium text-[#615d59] hover:text-[#000000] underline cursor-pointer shrink-0"
-              >
-                Skip for now
-              </button>
+              {/* Skip onboarding & Step indicator shown ONLY during actual onboarding */}
+              {(currentStep > 1 || (currentStep === 1 && authMode === "signup")) && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleSkipOnboarding}
+                    className="text-xs font-medium text-[#615d59] hover:text-[#000000] underline cursor-pointer shrink-0"
+                  >
+                    Skip for now
+                  </button>
 
-              {currentStep <= 4 && (
-                <span className="text-xs font-semibold text-[#757575] shrink-0">
-                  Step {currentStep} of 4
-                </span>
+                  {currentStep <= 4 && (
+                    <span className="text-xs font-semibold text-[#757575] shrink-0">
+                      Step {currentStep} of 4
+                    </span>
+                  )}
+                </>
               )}
 
               {/* Close Button on Desktop */}
@@ -349,141 +380,204 @@ export function OnboardingFlowModal({
           </div>
         )}
 
-        {/* STEP 1: Owner Signup / Sign In */}
+        {/* STEP 1: Owner Signup / Sign In / Password Reset */}
         {currentStep === 1 && (
-          <form onSubmit={handleSignUpSubmit} className="space-y-4">
-            <div className="text-center space-y-1 mb-2">
-              <div className="w-10 h-10 rounded-full bg-[#0075de]/10 text-[#0075de] flex items-center justify-center mx-auto mb-2">
-                <User className="w-5 h-5" />
+          <div className="space-y-4">
+            {authMode === "reset_success" ? (
+              <div className="text-center py-6 space-y-3">
+                <div className="w-12 h-12 rounded-full bg-[#e7f4ec] text-[#0f7a52] flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+                <h2 className="font-display font-bold text-lg text-[#000000]">Check your email</h2>
+                <p className="text-xs text-[#615d59] leading-relaxed max-w-sm mx-auto">
+                  We've sent a link to reset your password. Please check your inbox and follow the instructions.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode("signin"); setErrorMsg(""); }}
+                  className="text-xs font-semibold text-[#0075de] hover:underline cursor-pointer inline-block pt-2"
+                >
+                  &larr; Back to Sign In
+                </button>
               </div>
-              <h2 className="font-display font-bold text-xl text-[#000000]">
-                {authMode === "signup" ? "Create Your Owner Account" : "Sign In to SnapSME"}
-              </h2>
-              <p className="text-xs text-[#615d59]">
-                {authMode === "signup"
-                  ? "Get started managing team expenses with real-time receipt capture"
-                  : "Welcome back — never lose track of team spend again"}
-              </p>
-            </div>
+            ) : (
+              <form onSubmit={handleSignUpSubmit} className="space-y-4">
+                <div className="text-center space-y-1 mb-2">
+                  <div className="w-10 h-10 rounded-xl overflow-hidden border border-black/10 shadow-2xs mx-auto mb-2.5">
+                    <img src="/logo.jpg" alt="SnapSME Logo" className="w-full h-full object-cover" />
+                  </div>
+                  <h2 className="font-display font-bold text-xl text-[#000000]">
+                    {authMode === "reset"
+                      ? "Reset your password"
+                      : authMode === "signup"
+                      ? "Create your account"
+                      : "Sign in to SnapSME"}
+                  </h2>
+                  <p className="text-xs text-[#615d59]">
+                    {authMode === "reset"
+                      ? "Enter your email address and we'll send a link to reset your password"
+                      : authMode === "signup"
+                      ? "Get started managing team expenses with real-time receipt capture"
+                      : "Welcome back — never lose track of team spend again"}
+                  </p>
+                </div>
 
-            {/* Auth Mode Toggle */}
-            <div className="grid grid-cols-2 bg-[#f6f5f4] p-1 rounded-lg border border-black/10 text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setAuthMode("signup")}
-                className={`py-2 rounded-md transition-colors cursor-pointer ${
-                  authMode === "signup"
-                    ? "bg-white text-[#0075de] shadow-2xs border border-black/10"
-                    : "text-[#615d59] hover:text-[#000000]"
-                }`}
-              >
-                Create Account
-              </button>
-              <button
-                type="button"
-                onClick={() => setAuthMode("signin")}
-                className={`py-2 rounded-md transition-colors cursor-pointer ${
-                  authMode === "signin"
-                    ? "bg-white text-[#0075de] shadow-2xs border border-black/10"
-                    : "text-[#615d59] hover:text-[#000000]"
-                }`}
-              >
-                Sign In
-              </button>
-            </div>
+                {/* Segmented Control Mode Toggle (Sign In | Create Account) */}
+                {authMode !== "reset" && (
+                  <div className="grid grid-cols-2 bg-[#f6f5f4] p-1 rounded-lg border border-black/10 text-xs font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => { setAuthMode("signin"); setErrorMsg(""); }}
+                      className={`py-2 rounded-md transition-all cursor-pointer ${
+                        authMode === "signin"
+                          ? "bg-[#0075de] text-white shadow-2xs font-bold"
+                          : "text-[#1c1b19] hover:bg-black/5"
+                      }`}
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAuthMode("signup"); setErrorMsg(""); }}
+                      className={`py-2 rounded-md transition-all cursor-pointer ${
+                        authMode === "signup"
+                          ? "bg-[#0075de] text-white shadow-2xs font-bold"
+                          : "text-[#1c1b19] hover:bg-black/5"
+                      }`}
+                    >
+                      Create Account
+                    </button>
+                  </div>
+                )}
 
-            {/* Google Sign In Option */}
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={isGoogleLoading}
-              className="w-full bg-white hover:bg-gray-50 border border-black/15 text-xs font-semibold text-[#1c1b19] py-2.5 rounded-lg shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer transition-all disabled:opacity-50"
-            >
-              {isGoogleLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin text-[#0075de]" />
-              ) : (
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-              )}
-              <span>Continue with Google</span>
-            </button>
-
-            <div className="relative my-3 flex items-center justify-center">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-black/10" />
-              </div>
-              <span className="relative bg-white px-3 text-[11px] font-mono uppercase tracking-wider text-[#757575]">
-                or
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#000000] mb-1">
-                Full Name {authMode === "signup" && <span className="text-[#f64932]">*</span>}
-              </label>
-              <input
-                type="text"
-                required={authMode === "signup"}
-                value={signUpForm.displayName}
-                onChange={(e) => setSignUpForm({ ...signUpForm, displayName: e.target.value })}
-                placeholder="e.g. Sarah Jenkins"
-                className="w-full bg-[#f6f5f4] border border-black/10 text-xs font-medium rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#000000] mb-1">
-                Work Email or Mobile Phone <span className="text-[#f64932]">*</span>
-              </label>
-              <input
-                type="text"
-                required
-                value={signUpForm.emailOrPhone}
-                onChange={(e) => setSignUpForm({ ...signUpForm, emailOrPhone: e.target.value })}
-                placeholder="e.g. sarah@acmetrading.com"
-                className="w-full bg-[#f6f5f4] border border-black/10 text-xs font-medium rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-[#000000] mb-1">
-                Password <span className="text-[#f64932]">*</span>
-              </label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={signUpForm.password}
-                onChange={(e) => setSignUpForm({ ...signUpForm, password: e.target.value })}
-                placeholder="Minimum 6 characters"
-                className="w-full bg-[#f6f5f4] border border-black/10 text-xs font-medium rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de]"
-              />
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={isEmailLoading}
-                className="bg-[#0075de] hover:bg-[#0060b8] text-white w-full py-2.5 rounded-lg text-xs font-medium flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50"
-              >
-                {isEmailLoading ? (
+                {/* Google Sign In Option (Sign In & Create Account modes) */}
+                {authMode !== "reset" && (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{authMode === "signup" ? "Creating Account..." : "Signing In..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <span>{authMode === "signup" ? "Create Account & Continue" : "Sign In & Continue"}</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      disabled={isGoogleLoading}
+                      className="w-full bg-white hover:bg-gray-50 border border-black/15 text-xs font-semibold text-[#1c1b19] py-2.5 rounded-lg shadow-2xs flex items-center justify-center gap-2.5 cursor-pointer transition-all disabled:opacity-50"
+                    >
+                      {isGoogleLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-[#0075de]" />
+                      ) : (
+                        <svg className="w-4 h-4" viewBox="0 0 24 24">
+                          <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                          <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                          <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                          <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                        </svg>
+                      )}
+                      <span>Continue with Google</span>
+                    </button>
+
+                    <div className="relative my-3 flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-black/10" />
+                      </div>
+                      <span className="relative bg-white px-3 text-[11px] font-mono uppercase tracking-wider text-[#757575]">
+                        or email
+                      </span>
+                    </div>
                   </>
                 )}
-              </button>
-            </div>
-          </form>
+
+                {/* Display Name field (Create Account mode only) */}
+                {authMode === "signup" && (
+                  <div>
+                    <label className="block text-xs font-bold text-[#000000] mb-1">
+                      Full Name <span className="text-[#f64932]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={signUpForm.displayName}
+                      onChange={(e) => setSignUpForm({ ...signUpForm, displayName: e.target.value })}
+                      placeholder="e.g. Sarah Jenkins"
+                      className="w-full bg-[#f6f5f4] border border-black/10 text-xs font-medium rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#0075de] transition-colors"
+                    />
+                  </div>
+                )}
+
+                {/* Email field */}
+                <div>
+                  <label className="block text-xs font-bold text-[#000000] mb-1">
+                    Email address <span className="text-[#f64932]">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={signUpForm.emailOrPhone}
+                    onChange={(e) => setSignUpForm({ ...signUpForm, emailOrPhone: e.target.value })}
+                    placeholder="name@company.com"
+                    className="w-full bg-[#f6f5f4] border border-black/10 text-xs font-medium rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#0075de] transition-colors"
+                  />
+                </div>
+
+                {/* Password field & Forgot Password link */}
+                {authMode !== "reset" && (
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-bold text-[#000000]">
+                        Password <span className="text-[#f64932]">*</span>
+                      </label>
+                      {authMode === "signin" && (
+                        <button
+                          type="button"
+                          onClick={() => { setAuthMode("reset"); setErrorMsg(""); }}
+                          className="text-[11px] font-semibold text-[#0075de] hover:underline cursor-pointer"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      required
+                      minLength={authMode === "signup" ? 8 : 1}
+                      value={signUpForm.password}
+                      onChange={(e) => setSignUpForm({ ...signUpForm, password: e.target.value })}
+                      placeholder={authMode === "signup" ? "At least 8 characters" : "Enter your password"}
+                      className="w-full bg-[#f6f5f4] border border-black/10 text-xs font-medium rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#0075de] transition-colors"
+                    />
+                  </div>
+                )}
+
+                <div className="pt-2 space-y-2">
+                  <button
+                    type="submit"
+                    disabled={isEmailLoading}
+                    className="bg-[#0075de] hover:bg-[#0060b8] text-white w-full py-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 shadow-2xs"
+                  >
+                    {isEmailLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{authMode === "reset" ? "Sending link..." : authMode === "signup" ? "Creating Account..." : "Signing In..."}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{authMode === "reset" ? "Send Reset Link" : authMode === "signup" ? "Create Account & Continue" : "Sign In & Continue"}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  {authMode === "reset" && (
+                    <div className="text-center">
+                      <button
+                        type="button"
+                        onClick={() => { setAuthMode("signin"); setErrorMsg(""); }}
+                        className="text-xs font-semibold text-[#615d59] hover:text-[#000000] underline cursor-pointer"
+                      >
+                        &larr; Back to Sign In
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </form>
+            )}
+          </div>
         )}
 
         {/* STEP 2: Workspace Setup */}

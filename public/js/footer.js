@@ -26,6 +26,8 @@ export function renderFooter(targetId = "snapsme-footer") {
           <ul class="snapsme-footer-links">
             <li><a href="/home#how-it-works" class="snapsme-footer-link">How it works</a></li>
             <li><a href="/home#features" class="snapsme-footer-link">Features</a></li>
+            <li><a href="/learn/" class="snapsme-footer-link">Learn & Guides</a></li>
+            <li><a href="/about.html" class="snapsme-footer-link">About</a></li>
             <li><a href="/faq.html" class="snapsme-footer-link">FAQs</a></li>
             <li><a href="/?auth=signin" class="snapsme-footer-link">Sign in</a></li>
           </ul>

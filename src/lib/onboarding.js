@@ -95,6 +95,7 @@ export function getPresetCategoriesForBusinessType(businessTypeId, businessId = 
 
 /**
  * Validates Step 1 Signup Form inputs.
+ * Password is required and must be explicitly provided.
  */
 export function validateSignUp({ displayName, emailOrPhone, password }) {
   if (!displayName || !displayName.trim()) {
@@ -113,15 +114,42 @@ export function validateSignUp({ displayName, emailOrPhone, password }) {
     throw new Error("Please enter a valid email address (e.g., owner@acme.com) or phone number (+1 555-0192).");
   }
 
-  if (password && password.length < 6) {
-    throw new Error("Password must be at least 6 characters long.");
+  if (!password || password.length < 6) {
+    throw new Error("Password is required and must be at least 6 characters long.");
   }
 
   return {
     displayName: displayName.trim(),
     email: isEmail ? trimmed : null,
     phone: isPhone ? trimmed : null,
-    password: password || "password123"
+    password: password
+  };
+}
+
+/**
+ * Validates Sign In Form inputs (Lighter validation, no password strength rule).
+ */
+export function validateSignIn({ emailOrPhone, password }) {
+  if (!emailOrPhone || !emailOrPhone.trim()) {
+    throw new Error("Please enter your email address or phone number.");
+  }
+
+  const trimmed = emailOrPhone.trim();
+  const isEmail = trimmed.includes("@") && trimmed.includes(".");
+  const isPhone = /^[+\d\s-]{7,18}$/.test(trimmed);
+
+  if (!isEmail && !isPhone) {
+    throw new Error("Please enter a valid email address or phone number.");
+  }
+
+  if (!password) {
+    throw new Error("Please enter your password.");
+  }
+
+  return {
+    email: isEmail ? trimmed : null,
+    phone: isPhone ? trimmed : null,
+    password: password
   };
 }
 
@@ -170,19 +198,33 @@ export function validateStaffInvite({ email, phone, displayName }) {
 }
 
 /**
- * Executes full onboarding pipeline:
- * 1. Simulates/Creates Auth User
- * 2. Writes businesses/{businessId} with brand, businessType, dashboardPreferences
- * 3. Pre-populates category subcollection for selected businessType
- * 4. Writes optional staff members
- * 5. Records audit log
+ * Gets the current resumable onboarding step from local storage.
  */
-export function executeOnboardingPipeline(
-  { signUpData, workspaceData, businessType = null, staffInvites = [] },
-  { saveWorkspaceFn, saveMembersFn, saveCurrentUserFn, saveCategoriesFn }
-) {
-  // Step 1: Create Owner User
-  const ownerUserId = `usr_owner_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+export function getResumableOnboardingStep() {
+  try {
+    const isCompleted = localStorage.getItem("snapsme_onboarding_completed") === "true";
+    if (isCompleted) return 5;
+    const step = localStorage.getItem("snapsme_onboarding_step");
+    return step ? parseInt(step, 10) : 1;
+  } catch (e) {
+    return 1;
+  }
+}
+
+/**
+ * Saves current onboarding step to local storage for crash/browser-close resilience.
+ */
+export function saveOnboardingStepProgress(stepNumber) {
+  try {
+    localStorage.setItem("snapsme_onboarding_step", String(stepNumber));
+  } catch (e) {}
+}
+
+/**
+ * Modular Step 1: Create Owner User Record
+ */
+export function createOwnerAccountStep({ signUpData, saveCurrentUserFn }) {
+  const ownerUserId = signUpData.userId || `usr_owner_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
   const ownerUser = {
     userId: ownerUserId,
     role: "owner",
@@ -194,10 +236,17 @@ export function executeOnboardingPipeline(
     joinedAt: new Date().toISOString()
   };
 
-  // Attach brand, businessType, and default dashboardPreferences to workspace
+  if (saveCurrentUserFn) saveCurrentUserFn(ownerUser);
+  saveOnboardingStepProgress(2);
+  return ownerUser;
+}
+
+/**
+ * Modular Step 2: Create Business Workspace & Owner Member
+ */
+export function createWorkspaceStep({ ownerUser, workspaceData, saveWorkspaceFn, saveMembersFn, saveCurrentUserFn }) {
   const extendedWorkspaceData = {
     ...workspaceData,
-    businessType,
     brand: {
       logoUrl: null,
       accentColor: "#0f7a52"
@@ -210,8 +259,7 @@ export function executeOnboardingPipeline(
     }
   };
 
-  // Step 2: Create Business Workspace & Owner Member
-  const { workspace, ownerMember } = createBusinessWorkspace(
+  const result = createBusinessWorkspace(
     ownerUser,
     extendedWorkspaceData,
     saveWorkspaceFn,
@@ -219,34 +267,46 @@ export function executeOnboardingPipeline(
     saveCurrentUserFn
   );
 
-  // Step 3: Pre-populate Categories if businessType selected
+  saveOnboardingStepProgress(3);
+  return result;
+}
+
+/**
+ * Modular Step 3: Apply Business Type Template Categories
+ */
+export function applyBusinessTypeStep({ businessType, workspaceId, saveCategoriesFn }) {
   let createdCategories = [];
   if (businessType) {
-    createdCategories = getPresetCategoriesForBusinessType(businessType, workspace.businessId || workspace.id);
+    createdCategories = getPresetCategoriesForBusinessType(businessType, workspaceId || "biz_default");
     if (saveCategoriesFn) {
       saveCategoriesFn(createdCategories);
     } else {
       saveCategories(createdCategories);
     }
   }
+  saveOnboardingStepProgress(4);
+  return createdCategories;
+}
 
-  let currentMembers = [ownerMember];
-
-  // Step 4: Invite Staff Members if provided
+/**
+ * Modular Step 4: Invite Staff Members
+ */
+export function inviteStaffStep({ staffInvites = [], currentMembers = [], ownerMember, saveMembersFn }) {
+  let updatedMembers = [...currentMembers];
   if (staffInvites && staffInvites.length > 0) {
     staffInvites.forEach((invite) => {
       try {
-        const invited = inviteMember(
-          currentMembers,
+        inviteMember(
+          updatedMembers,
           {
             email: invite.email,
             phone: invite.phone,
             displayName: invite.displayName
           },
           ownerMember,
-          (updatedMembers) => {
-            currentMembers = updatedMembers;
-            if (saveMembersFn) saveMembersFn(updatedMembers);
+          (newMemberList) => {
+            updatedMembers = newMemberList;
+            if (saveMembersFn) saveMembersFn(newMemberList);
           }
         );
       } catch (err) {
@@ -255,20 +315,62 @@ export function executeOnboardingPipeline(
     });
   }
 
-  // Step 5: Record Completion Log
+  saveOnboardingStepProgress(5);
+  try {
+    localStorage.setItem("snapsme_onboarding_completed", "true");
+  } catch (e) {}
+
+  return updatedMembers;
+}
+
+/**
+ * Executes full onboarding pipeline sequentially (preserves backward compatibility).
+ */
+export function executeOnboardingPipeline(
+  { signUpData, workspaceData, businessType = null, staffInvites = [] },
+  { saveWorkspaceFn, saveMembersFn, saveCurrentUserFn, saveCategoriesFn }
+) {
+  // Step 1: Owner User
+  const ownerUser = createOwnerAccountStep({ signUpData, saveCurrentUserFn });
+
+  // Step 2: Workspace Creation
+  const { workspace, ownerMember } = createWorkspaceStep({
+    ownerUser,
+    workspaceData,
+    saveWorkspaceFn,
+    saveMembersFn,
+    saveCurrentUserFn
+  });
+
+  // Step 3: Categories
+  const createdCategories = applyBusinessTypeStep({
+    businessType,
+    workspaceId: workspace.businessId || workspace.id,
+    saveCategoriesFn
+  });
+
+  // Step 4: Staff Invites
+  const finalMembers = inviteStaffStep({
+    staffInvites,
+    currentMembers: [ownerMember],
+    ownerMember,
+    saveMembersFn
+  });
+
+  // Step 5: Audit Log
   recordActivityLog({
     actorId: ownerMember.userId,
     actorName: ownerMember.displayName,
     actorRole: "owner",
     actionType: "ONBOARDING_COMPLETED",
-    description: `Completed business onboarding for "${workspace.name}" (${businessType || "Custom"}) with ${currentMembers.length} initial member(s) & ${createdCategories.length} category template(s)`,
+    description: `Completed business onboarding for "${workspace.name}" (${businessType || "Custom"}) with ${finalMembers.length} member(s) & ${createdCategories.length} category template(s)`,
     tag: "Workspace Config"
   });
 
   return {
     workspace,
     ownerMember,
-    members: currentMembers,
+    members: finalMembers,
     categories: createdCategories
   };
 }

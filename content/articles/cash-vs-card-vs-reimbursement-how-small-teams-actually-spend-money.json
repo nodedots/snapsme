@@ -1,0 +1,53 @@
+{
+  "slug": "cash-vs-card-vs-reimbursement-how-small-teams-actually-spend-money",
+  "title": "Cash vs. Card vs. Reimbursement: How Small Teams Actually Spend Money",
+  "summary": "A practical comparison of the three primary spending methods used by small business teams, evaluating their pros, cons, and control mechanisms.",
+  "category": "Cash Flow & Control",
+  "publishDate": "2026-08-02",
+  "readTime": "7 min read",
+  "author": "The SnapSME Team",
+  "keywords": ["company cards", "out of pocket reimbursement", "petty cash management", "small team spend control"],
+  "sections": [
+    {
+      "heading": "Understanding How Small Teams Spend Money",
+      "content": [
+        "In a small team of 2 to 10 employees, day-to-day spending happens in different ways. A field technician buys fuel at a local station, an office manager orders printing supplies online, or a sales representative pays for a client lunch.",
+        "To manage team spend effectively, business owners generally rely on three main spending mechanisms: Petty Cash, Company Credit Cards, and Out-of-Pocket Reimbursements. Each method has distinct trade-offs in terms of speed, control, and administrative effort."
+      ]
+    },
+    {
+      "heading": "Option 1: Company Cards (High Convenience, Requires Safeguards)",
+      "content": [
+        "Issuing company debit or credit cards to key team members is the most convenient approach. Employees can pay for job-related supplies without using personal funds or requesting cash advances.",
+        "However, shared or individual company cards carry risks if not paired with immediate receipt capture. Without real-time receipt uploads, card statements can become cluttered with unrecognized charges, leading to confusion during reconciliation."
+      ],
+      "bullets": [
+        "Pros: Instant purchasing power, no employee personal funds involved.",
+        "Cons: Risk of overspending or unvouched transactions if receipts are not captured immediately.",
+        "Best practice: Enforce a rule that every card transaction requires a photo receipt upload within 24 hours."
+      ]
+    },
+    {
+      "heading": "Option 2: Out-of-Pocket Reimbursements (High Control, Moderate Friction)",
+      "content": [
+        "Under a reimbursement model, team members pay for business expenses using their personal funds or personal cards and submit claims to the company for repayment.",
+        "This method gives owners high control, as funds are only disbursed after management reviews and approves the expense. However, it places financial strain on staff if repayments take too long, which can hurt morale."
+      ],
+      "callout": "Keep reimbursement turnaround fast (under 3 business days) to maintain trust and high morale across your team."
+    },
+    {
+      "heading": "Option 3: Petty Cash (Essential for Field Operations, Requires Auditing)",
+      "content": [
+        "Physical cash remains necessary for minor incidental expenses such as parking meters, cash-only vendors, or small local purchases.",
+        "Petty cash can easily become a 'black hole' if transactions are not logged promptly. Maintaining a small, capped cash float alongside digital photo receipt logs keeps cash accountable."
+      ]
+    },
+    {
+      "heading": "Choosing the Right Mix for Your Team",
+      "content": [
+        "Most successful small businesses use a hybrid approach tailored to their operations: company cards for high-frequency or online recurring purchases, reimbursements for occasional travel, and a small petty cash float for local field needs.",
+        "Regardless of which spending methods you use, the key to financial control is establishing a unified logging system. For more insights on organizing team expenses, read our guide on <a href='/learn/setting-expense-categories-and-budgets-that-actually-work-for-a-small-team.html' style='color: #0075de; text-decoration: underline;'>setting expense categories and budgets for small teams</a>."
+      ]
+    }
+  ]
+}

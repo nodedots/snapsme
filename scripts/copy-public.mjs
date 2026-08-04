@@ -19,6 +19,7 @@ const distDir = join(root, "dist");
 // We skip index.html (Vite generates its own) and favicon.ico (Vite copies it).
 const COPY_ITEMS = [
   "404.html",
+  "about.html",
   "contact.html",
   "cookies.html",
   "faq.html",
@@ -29,6 +30,9 @@ const COPY_ITEMS = [
   "nodedots.png",
   "privacy.html",
   "terms.html",
+  "sitemap.xml",
+  "robots.txt",
+  "learn",
   "assets",
   "css",
   "image",

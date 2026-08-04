@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "build": "vite build && node scripts/copy-public.mjs",
+    "build": "node scripts/build-articles.js && vite build && node scripts/copy-public.mjs",
     "start": "node server.js",
     "lint": "node -c server.js"
   },

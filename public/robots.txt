@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Allow: /learn/
+Allow: /about.html
+Allow: /help.html
+Allow: /faq.html
+
+Sitemap: https://snapsme.com/sitemap.xml

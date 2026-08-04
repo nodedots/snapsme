@@ -4,7 +4,7 @@
  * Supports Centered Nav Links & Signed-In State
  */
 
-import { auth, checkUserMemberStatus, handleSignOut } from "./auth.js";
+import { auth, checkUserMemberStatus, handleSignOut, showAuthModal } from "./auth.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 function getInitials(nameOrEmail) {
@@ -77,6 +77,8 @@ export async function renderHeader(targetId = "snapsme-header") {
         <nav class="snapsme-nav-links desktop-only" style="display: flex; align-items: center; gap: 24px; position: absolute; left: 50%; transform: translateX(-50%);">
           <a href="/home#how-it-works" class="snapsme-nav-link">How it works</a>
           <a href="/home#features" class="snapsme-nav-link">Features</a>
+          <a href="/learn/" class="snapsme-nav-link">Learn</a>
+          <a href="/about.html" class="snapsme-nav-link">About</a>
           <a href="/faq.html" class="snapsme-nav-link">FAQs</a>
         </nav>
 
@@ -144,6 +146,8 @@ export async function renderHeader(targetId = "snapsme-header") {
     <div class="mobile-nav-content">
       <a href="/home#how-it-works" class="mobile-nav-link mobile-close-trigger">How it works</a>
       <a href="/home#features" class="mobile-nav-link mobile-close-trigger">Features</a>
+      <a href="/learn/" class="mobile-nav-link mobile-close-trigger">Learn</a>
+      <a href="/about.html" class="mobile-nav-link mobile-close-trigger">About</a>
       <a href="/faq.html" class="mobile-nav-link mobile-close-trigger">FAQs</a>
       
       ${isSignedIn ? `
@@ -155,7 +159,7 @@ export async function renderHeader(targetId = "snapsme-header") {
           Sign out
         </button>
       ` : `
-        <a href="/?auth=signin" class="mobile-nav-link">Sign in</a>
+        <button type="button" id="mobile-nav-login-btn" class="mobile-nav-link" style="text-align: left; background: none; border: none; font-size: 16px; padding: 12px 0; cursor: pointer; width: 100%;">Sign in</button>
         <div style="margin-top: 8px;">
           <a href="/?onboarding=true" class="btn-notion-primary" style="width: 100%; justify-content: center;">
             <span>Create your workspace</span>
@@ -208,6 +212,19 @@ function attachHeaderEvents() {
   const dropdown = document.getElementById("snapsme-user-dropdown");
   const signoutBtn = document.getElementById("snapsme-signout-btn");
   const mobileSignoutBtn = document.getElementById("mobile-signout-btn");
+
+  // Handle all Sign In triggers on the page (header nav & hero links)
+  const signinTriggers = document.querySelectorAll(
+    "#snapsme-nav-login-btn, #mobile-nav-login-btn, #snapsme-hero-login-btn, a[href='/?auth=signin'], button[href='/?auth=signin']"
+  );
+  signinTriggers.forEach((trigger) => {
+    trigger.addEventListener("click", (e) => {
+      e.preventDefault();
+      const overlay = document.getElementById("mobile-menu-overlay");
+      if (overlay) overlay.classList.add("hidden");
+      showAuthModal("signin");
+    });
+  });
 
   if (avatarBtn && dropdown) {
     avatarBtn.addEventListener("click", (e) => {

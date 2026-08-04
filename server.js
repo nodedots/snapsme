@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
@@ -14,6 +15,7 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
+app.use(express.static(path.join(process.cwd(), "public")));
 
 // Helper to get Gemini client lazily
 function getGeminiClient() {
@@ -384,6 +386,24 @@ app.get(["/home", "/home.html", "/landing", "/landing.html"], (_req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "home.html"));
 });
 
+app.get(["/about", "/about.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "about.html"));
+});
+
+app.get(["/learn", "/learn/", "/learn/index.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "learn", "index.html"));
+});
+
+app.get("/learn/:slug", (req, res) => {
+  const slug = req.params.slug.replace(/\.html$/, "");
+  const file = path.join(process.cwd(), "public", "learn", `${slug}.html`);
+  res.sendFile(file, (err) => {
+    if (err) {
+      res.status(404).sendFile(path.join(process.cwd(), "public", "404.html"));
+    }
+  });
+});
+
 app.get(["/help", "/help.html"], (_req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "help.html"));
 });
@@ -404,6 +424,14 @@ app.get(["/cookies", "/cookies.html"], (_req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "cookies.html"));
 });
 
+app.get("/sitemap.xml", (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "sitemap.xml"));
+});
+
+app.get("/robots.txt", (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "robots.txt"));
+});
+
 app.get("/404", (_req, res) => {
   res.status(404).sendFile(path.join(process.cwd(), "public", "404.html"));
 });
@@ -413,13 +441,26 @@ async function startServer() {
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa"
+      appType: "custom"
     });
     app.use(vite.middlewares);
+
+    // Serve React App index on root or unhandled SPA routes
+    app.get(["/", "/index.html"], async (req, res, next) => {
+      try {
+        const url = req.originalUrl;
+        let template = fs.readFileSync(path.join(process.cwd(), "index.html"), "utf-8");
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*", (_req, res) => {
+    app.get("/", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }

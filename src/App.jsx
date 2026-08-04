@@ -395,6 +395,9 @@ export function App() {
     const duplicateId = checkForDuplicate(candidate, expenses);
     candidate.duplicateOf = duplicateId;
 
+    // Optimistically update local state immediately so feed updates with 0 delay
+    setExpenses((prev) => [candidate, ...prev.filter((e) => e.id !== candidate.id)]);
+
     // Firestore mode: write to the business expenses subcollection
     if (isFirestoreMode && businessId) {
       try {
@@ -407,20 +410,18 @@ export function App() {
           syncStatus: isOfflineMode ? "pending" : "synced"
         };
         await addExpenseFirestore(businessId, expensePayload);
-        // The onSnapshot listener will update the feed automatically
-        return;
       } catch (err) {
         console.error("Failed to save expense to Firestore:", err);
-        // Fall back to local optimistic write so the user doesn't lose the entry
-        const updated = [candidate, ...expenses];
-        setExpenses(updated);
-        return;
       }
+      return;
     }
 
-    // Demo mode: local optimistic write
-    const updated = [candidate, ...expenses];
-    setExpenses(updated);
+    // Backup persistence to local storage
+    try {
+      const stored = localStorage.getItem("snapsme_expenses");
+      const currentArr = stored ? JSON.parse(stored) : [];
+      localStorage.setItem("snapsme_expenses", JSON.stringify([candidate, ...currentArr.filter(e => e.id !== candidate.id)]));
+    } catch (e) {}
   }, [workspace, categories, expenses, isFirestoreMode, businessId, currentUser, firebaseUser, isOfflineMode]);
 
   // -------------------------------------------------------------------------
