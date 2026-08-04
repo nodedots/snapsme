@@ -1,0 +1,150 @@
+{
+  "slug": "telegram-whatsapp-bot-setup",
+  "title": "How to Set Up the Telegram & WhatsApp Bot for Expense and Income Capture",
+  "summary": "Step-by-step guide to configuring the SnapSME Telegram and WhatsApp bots so your team can log expenses and income by simply sending a message, photo, or voice note from their phone.",
+  "category": "Integration Guide",
+  "publishDate": "2026-08-04",
+  "readTime": "10 min read",
+  "author": "The SnapSME Team",
+  "keywords": ["telegram bot", "whatsapp bot", "expense capture", "income capture", "chat bot setup", "webhook"],
+  "sections": [
+    {
+      "heading": "Why Use the Telegram & WhatsApp Bot?",
+      "content": [
+        "The SnapSME Telegram and WhatsApp bots let your team log expenses and income without downloading any app. Staff can simply open Telegram or WhatsApp, send a text message, snap a receipt photo, or record a voice note — and the bot automatically parses the amount, vendor/source, currency, and category, then saves it to your shared workspace feed in real time.",
+        "This guide walks you through setting up both the Telegram bot and the WhatsApp Business bot from scratch."
+      ]
+    },
+    {
+      "heading": "Prerequisites",
+      "content": [
+        "Before you begin, make sure you have:",
+        "A running SnapSME server (node server.js) accessible via a public HTTPS URL. If you're testing locally, use a tunneling service like ngrok (https://ngrok.com) to expose port 3000: <code>ngrok http 3000</code>.",
+        "A Telegram account (for the Telegram bot).",
+        "A Meta for Developers account (for the WhatsApp Business Cloud API).",
+        "Your <code>.env</code> file ready to receive the bot credentials."
+      ]
+    },
+    {
+      "heading": "Part 1: Setting Up the Telegram Bot",
+      "content": [
+        "Telegram bots are free and easy to create using the official BotFather. Here's how:"
+      ],
+      "bullets": [
+        "Open Telegram and search for @BotFather (the official Telegram bot creator).",
+        "Send the command /newbot to BotFather.",
+        "Choose a name for your bot (e.g. 'SnapSME Expense Bot').",
+        "Choose a unique username ending in 'bot' (e.g. 'snapsme_bot').",
+        "BotFather will give you an API token — copy it.",
+        "Open your .env file and set: TELEGRAM_BOT_TOKEN=your_token_here",
+        "Set: TELEGRAM_BOT_USERNAME=snapsme_bot",
+        "Set: TELEGRAM_WEBHOOK_URL=https://yourdomain.com/api/bot/telegram/webhook"
+      ]
+    },
+    {
+      "heading": "Registering the Telegram Webhook",
+      "content": [
+        "After setting the token, you need to tell Telegram where to send updates. Run this curl command (replace YOUR_BOT_TOKEN and YOUR_WEBHOOK_URL):",
+        "<code>curl -s -X POST https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook -d url=YOUR_WEBHOOK_URL</code>",
+        "If successful, Telegram will respond with {\"ok\":true,\"result\":true,\"description\":\"Webhook was set\"}.",
+        "Now any message sent to your bot will be forwarded to your SnapSME server's /api/bot/telegram/webhook endpoint."
+      ],
+      "callout": "The webhook URL must be HTTPS. If you're testing locally, use ngrok to get a public HTTPS URL: ngrok http 3000, then use https://your-ngrok-url.ngrok.io/api/bot/telegram/webhook."
+    },
+    {
+      "heading": "Part 2: Setting Up the WhatsApp Business Bot",
+      "content": [
+        "WhatsApp uses the WhatsApp Business Cloud API (via Meta for Developers). This requires a bit more setup than Telegram:"
+      ],
+      "bullets": [
+        "Go to https://developers.facebook.com and create a new Meta App.",
+        "Select 'Business' as the app type and add the WhatsApp product.",
+        "In the WhatsApp > API Setup tab, copy the Phone Number ID.",
+        "Generate a permanent access token (System User access token) in Business Settings.",
+        "Open your .env file and set: WHATSAPP_ACCESS_TOKEN=your_token_here",
+        "Set: WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id_here",
+        "Set: WHATSAPP_VERIFY_TOKEN=snapsme_verify_token (a custom string you choose)",
+        "Set: WHATSAPP_WEBHOOK_URL=https://yourdomain.com/api/bot/whatsapp/webhook"
+      ]
+    },
+    {
+      "heading": "Registering the WhatsApp Webhook",
+      "content": [
+        "In the Meta App Dashboard, go to WhatsApp > Configuration > Webhook:",
+        "1. Enter your Callback URL: https://yourdomain.com/api/bot/whatsapp/webhook",
+        "2. Enter the Verify Token (must match WHATSAPP_VERIFY_TOKEN in your .env, e.g. snapsme_verify_token)",
+        "3. Click Verify and Save",
+        "4. Subscribe to the 'messages' field so you receive incoming message notifications",
+        "Once verified, any WhatsApp message sent to your business number will be forwarded to your SnapSME server."
+      ],
+      "callout": "WhatsApp Business Cloud API requires a verified Meta Business account and a phone number that is not already registered with WhatsApp. The first 1,000 conversations per month are free."
+    },
+    {
+      "heading": "Part 3: Linking Your Account",
+      "content": [
+        "Once the bots are configured, your team needs to link their Telegram/WhatsApp account to their SnapSME workspace:",
+        "1. Open the SnapSME app and go to the Chat Bot tab.",
+        "2. Select Telegram or WhatsApp as the channel.",
+        "3. Click 'Generate 6-Digit Link Code' — this creates a temporary pairing code.",
+        "4. Open Telegram or WhatsApp and find your bot.",
+        "5. Send the message: /link 123456 (using your actual code).",
+        "6. The bot will confirm: 'Account Linked! Welcome, [Your Name]'.",
+        "Your chat is now linked to your SnapSME workspace. All messages will be logged to your shared feed."
+      ]
+    },
+    {
+      "heading": "Part 4: Logging Expenses and Income via Chat",
+      "content": [
+        "Once linked, you can log entries by simply sending a text message to the bot. The bot automatically detects the amount, currency, vendor/source, and category."
+      ],
+      "bullets": [
+        "Expense: 'Paid $45 for fuel at Shell' — logs an expense with vendor 'Shell', amount $45, category 'Fuel & Transport'.",
+        "Income: 'Received $500 from Acme Corp for sales' — logs income with source 'Acme Corp', amount $500.",
+        "Switch mode: Send /expense or /income to toggle between expense and income capture.",
+        "Help: Send /help to see all available commands.",
+        "Multi-currency: 'Paid 5000 naira for diesel at Total' — auto-converts NGN to your workspace currency."
+      ]
+    },
+    {
+      "heading": "Bot Commands Reference",
+      "content": [
+        "The SnapSME bot supports the following commands on both Telegram and WhatsApp:"
+      ],
+      "bullets": [
+        "/link <code> — Link your SnapSME account using a 6-digit pairing code.",
+        "/expense — Switch the bot to expense capture mode (default).",
+        "/income — Switch the bot to income capture mode.",
+        "/help — Show the help message with all commands and examples.",
+        "/start — Same as /help (Telegram only).",
+        "Any text message — Parsed for amount, vendor/source, and category, then saved to the feed.",
+        "Photo — Receipt photo (acknowledged; full OCR coming soon).",
+        "Voice note — Voice recording (acknowledged; full transcription coming soon)."
+      ]
+    },
+    {
+      "heading": "Troubleshooting",
+      "content": [
+        "If the bot isn't responding, check these common issues:",
+        "Bot not configured: The Chat Bot tab will show a yellow warning banner if the bot credentials are missing. Check your .env file.",
+        "Webhook not registered: For Telegram, run the setWebhook curl command. For WhatsApp, verify the webhook in the Meta Dashboard.",
+        "Wrong webhook URL: The URL must be HTTPS and publicly accessible. Use ngrok for local testing.",
+        "Pairing code expired: Codes expire after 10 minutes. Generate a new one in the app.",
+        "Bot shows 'simulation mode': This means the .env credentials are not set. The chat playground still works for testing, but real Telegram/WhatsApp messages won't be captured."
+      ]
+    },
+    {
+      "heading": "Security & Privacy",
+      "content": [
+        "Your bot tokens and access tokens are stored server-side in the .env file and never exposed to the client. The bot only processes messages from linked accounts — unlinked users are prompted to generate a pairing code. All data is transmitted over HTTPS.",
+        "For production deployments, consider adding rate limiting and message validation to prevent abuse."
+      ]
+    },
+    {
+      "heading": "Get Started Today",
+      "content": [
+        "Ready to let your team log expenses and income from Telegram or WhatsApp? Set up your bot credentials in the .env file, restart your server, and head to the <a href='/' style='color: #0075de; text-decoration: underline;'>Chat Bot tab</a> in the SnapSME app to generate your first pairing code.",
+        "For more tips on expense tracking, check out <a href='/learn/what-to-look-for-in-receipt-scanning-software.html' style='color: #0075de; text-decoration: underline;'>What to Look for in Receipt-Scanning Software</a> or <a href='/learn/how-to-stop-losing-receipts-for-good.html' style='color: #0075de; text-decoration: underline;'>How to Stop Losing Receipts for Good</a>."
+      ]
+    }
+  ]
+}

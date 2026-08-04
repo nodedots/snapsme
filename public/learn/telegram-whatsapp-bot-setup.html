@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Set Up the Telegram &amp; WhatsApp Bot for Expense and Income Capture — SnapSME Learn</title>
+
+  <!-- SEO & Meta Tags -->
+  <meta name="description" content="Step-by-step guide to configuring the SnapSME Telegram and WhatsApp bots so your team can log expenses and income by simply sending a message, photo, or voice note from their phone." />
+  <meta name="keywords" content="telegram bot, whatsapp bot, expense capture, income capture, chat bot setup, webhook" />
+  <link rel="canonical" href="https://snapsme.com/learn/telegram-whatsapp-bot-setup.html" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="How to Set Up the Telegram &amp; WhatsApp Bot for Expense and Income Capture" />
+  <meta property="og:description" content="Step-by-step guide to configuring the SnapSME Telegram and WhatsApp bots so your team can log expenses and income by simply sending a message, photo, or voice note from their phone." />
+  <meta property="og:url" content="https://snapsme.com/learn/telegram-whatsapp-bot-setup.html" />
+  <meta property="og:site_name" content="SnapSME" />
+  <meta property="article:published_time" content="2026-08-04" />
+  <meta property="article:author" content="The SnapSME Team" />
+  <meta property="article:section" content="Integration Guide" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="How to Set Up the Telegram &amp; WhatsApp Bot for Expense and Income Capture" />
+  <meta name="twitter:description" content="Step-by-step guide to configuring the SnapSME Telegram and WhatsApp bots so your team can log expenses and income by simply sending a message, photo, or voice note from their phone." />
+
+  <!-- Structured Data / JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": "How to Set Up the Telegram & WhatsApp Bot for Expense and Income Capture",
+    "description": "Step-by-step guide to configuring the SnapSME Telegram and WhatsApp bots so your team can log expenses and income by simply sending a message, photo, or voice note from their phone.",
+    "datePublished": "2026-08-04",
+    "author": {
+      "@type": "Organization",
+      "name": "The SnapSME Team"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "SnapSME",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://snapsme.com/logo.jpg"
+      }
+    },
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://snapsme.com/learn/telegram-whatsapp-bot-setup.html"
+    }
+  }
+  </script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://snapsme.com/home"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Learn",
+        "item": "https://snapsme.com/learn/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": "How to Set Up the Telegram & WhatsApp Bot for Expense and Income Capture",
+        "item": "https://snapsme.com/learn/telegram-whatsapp-bot-setup.html"
+      }
+    ]
+  }
+  </script>
+
+  <!-- Fonts & Styles -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+Pro:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/jpeg" href="/logo.jpg">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/layout.css">
+</head>
+<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased selection:bg-[#0075de]/20 selection:text-[#000000]">
+
+  <!-- Header Container -->
+  <div id="snapsme-header"></div>
+
+  <!-- Document Main Wrapper -->
+  <div class="document-container" style="max-width: 760px; margin: 0 auto; padding: 40px 20px 80px 20px;">
+    
+    <!-- Breadcrumb Navigation -->
+    <nav aria-label="Breadcrumb" style="margin-bottom: 24px; font-family: var(--font-notioninter); font-size: 13px; color: #6b665c;">
+      <a href="/home" style="color: #6b665c; text-decoration: none;">Home</a>
+      <span style="margin: 0 8px; color: #d9d4c8;">/</span>
+      <a href="/learn/" style="color: #6b665c; text-decoration: none;">Learn</a>
+      <span style="margin: 0 8px; color: #d9d4c8;">/</span>
+      <span style="color: #1c1b19; font-weight: 500;">Integration Guide</span>
+    </nav>
+
+    <!-- Article Header Card -->
+    <header class="notion-card-white" style="padding: 36px 32px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.08); background: #ffffff; margin-bottom: 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+      <div style="display: inline-block; background-color: #e6f3fe; color: #0075de; font-family: var(--font-notioninter); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 9999px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.04em;">
+        Integration Guide
+      </div>
+
+      <h1 style="font-family: var(--font-notioninter); font-size: 32px; font-weight: 700; color: #1c1b19; line-height: 1.25; margin: 0 0 16px 0; letter-spacing: -0.03em;">
+        How to Set Up the Telegram &amp; WhatsApp Bot for Expense and Income Capture
+      </h1>
+
+      <p style="font-family: var(--font-notioninter); font-size: 17px; line-height: 1.6; color: #615d59; margin: 0 0 24px 0;">
+        Step-by-step guide to configuring the SnapSME Telegram and WhatsApp bots so your team can log expenses and income by simply sending a message, photo, or voice note from their phone.
+      </p>
+
+      <!-- Byline Metadata -->
+      <div style="display: flex; align-items: center; gap: 14px; padding-top: 18px; border-top: 1px solid #f0eee9; font-family: var(--font-notioninter); font-size: 13px; color: #6b665c;">
+        <div style="width: 32px; height: 32px; border-radius: 50%; background: #0f7a52; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px;">
+          T
+        </div>
+        <div>
+          <span style="font-weight: 600; color: #1c1b19;">The SnapSME Team</span>
+          <span style="margin: 0 6px;">•</span>
+          <span>2026-08-04</span>
+          <span style="margin: 0 6px;">•</span>
+          <span>10 min read</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Article Body -->
+    <article class="notion-card-white" style="padding: 40px 36px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.08); background: #ffffff; margin-bottom: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+      <div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Why Use the Telegram &amp; WhatsApp Bot?</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">The SnapSME Telegram and WhatsApp bots let your team log expenses and income without downloading any app. Staff can simply open Telegram or WhatsApp, send a text message, snap a receipt photo, or record a voice note — and the bot automatically parses the amount, vendor/source, currency, and category, then saves it to your shared workspace feed in real time.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">This guide walks you through setting up both the Telegram bot and the WhatsApp Business bot from scratch.</p></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Prerequisites</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Before you begin, make sure you have:</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">A running SnapSME server (node server.js) accessible via a public HTTPS URL. If you're testing locally, use a tunneling service like ngrok (https://ngrok.com) to expose port 3000: <code>ngrok http 3000</code>.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">A Telegram account (for the Telegram bot).</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">A Meta for Developers account (for the WhatsApp Business Cloud API).</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Your <code>.env</code> file ready to receive the bot credentials.</p></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Part 1: Setting Up the Telegram Bot</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Telegram bots are free and easy to create using the official BotFather. Here's how:</p><ul style="margin: 0 0 20px 20px; padding: 0; list-style-type: disc;"><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Open Telegram and search for @BotFather (the official Telegram bot creator).</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Send the command /newbot to BotFather.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Choose a name for your bot (e.g. 'SnapSME Expense Bot').</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Choose a unique username ending in 'bot' (e.g. 'snapsme_bot').</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">BotFather will give you an API token — copy it.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Open your .env file and set: TELEGRAM_BOT_TOKEN=your_token_here</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Set: TELEGRAM_BOT_USERNAME=snapsme_bot</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Set: TELEGRAM_WEBHOOK_URL=https://yourdomain.com/api/bot/telegram/webhook</li></ul></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Registering the Telegram Webhook</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">After setting the token, you need to tell Telegram where to send updates. Run this curl command (replace YOUR_BOT_TOKEN and YOUR_WEBHOOK_URL):</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;"><code>curl -s -X POST https://api.telegram.org/botYOUR_BOT_TOKEN/setWebhook -d url=YOUR_WEBHOOK_URL</code></p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">If successful, Telegram will respond with {"ok":true,"result":true,"description":"Webhook was set"}.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Now any message sent to your bot will be forwarded to your SnapSME server's /api/bot/telegram/webhook endpoint.</p><div style="background-color: #f7f3ea; border-left: 4px solid var(--color-notion-blue, #0075de); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 20px 0; font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: #1c1b19;">
+          <strong>Tip:</strong> The webhook URL must be HTTPS. If you're testing locally, use ngrok to get a public HTTPS URL: ngrok http 3000, then use https://your-ngrok-url.ngrok.io/api/bot/telegram/webhook.
+        </div></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Part 2: Setting Up the WhatsApp Business Bot</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">WhatsApp uses the WhatsApp Business Cloud API (via Meta for Developers). This requires a bit more setup than Telegram:</p><ul style="margin: 0 0 20px 20px; padding: 0; list-style-type: disc;"><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Go to https://developers.facebook.com and create a new Meta App.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Select 'Business' as the app type and add the WhatsApp product.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">In the WhatsApp > API Setup tab, copy the Phone Number ID.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Generate a permanent access token (System User access token) in Business Settings.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Open your .env file and set: WHATSAPP_ACCESS_TOKEN=your_token_here</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Set: WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id_here</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Set: WHATSAPP_VERIFY_TOKEN=snapsme_verify_token (a custom string you choose)</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Set: WHATSAPP_WEBHOOK_URL=https://yourdomain.com/api/bot/whatsapp/webhook</li></ul></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Registering the WhatsApp Webhook</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">In the Meta App Dashboard, go to WhatsApp > Configuration > Webhook:</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">1. Enter your Callback URL: https://yourdomain.com/api/bot/whatsapp/webhook</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">2. Enter the Verify Token (must match WHATSAPP_VERIFY_TOKEN in your .env, e.g. snapsme_verify_token)</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">3. Click Verify and Save</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">4. Subscribe to the 'messages' field so you receive incoming message notifications</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Once verified, any WhatsApp message sent to your business number will be forwarded to your SnapSME server.</p><div style="background-color: #f7f3ea; border-left: 4px solid var(--color-notion-blue, #0075de); border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 20px 0; font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: #1c1b19;">
+          <strong>Tip:</strong> WhatsApp Business Cloud API requires a verified Meta Business account and a phone number that is not already registered with WhatsApp. The first 1,000 conversations per month are free.
+        </div></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Part 3: Linking Your Account</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Once the bots are configured, your team needs to link their Telegram/WhatsApp account to their SnapSME workspace:</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">1. Open the SnapSME app and go to the Chat Bot tab.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">2. Select Telegram or WhatsApp as the channel.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">3. Click 'Generate 6-Digit Link Code' — this creates a temporary pairing code.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">4. Open Telegram or WhatsApp and find your bot.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">5. Send the message: /link 123456 (using your actual code).</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">6. The bot will confirm: 'Account Linked! Welcome, [Your Name]'.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Your chat is now linked to your SnapSME workspace. All messages will be logged to your shared feed.</p></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Part 4: Logging Expenses and Income via Chat</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Once linked, you can log entries by simply sending a text message to the bot. The bot automatically detects the amount, currency, vendor/source, and category.</p><ul style="margin: 0 0 20px 20px; padding: 0; list-style-type: disc;"><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Expense: 'Paid $45 for fuel at Shell' — logs an expense with vendor 'Shell', amount $45, category 'Fuel & Transport'.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Income: 'Received $500 from Acme Corp for sales' — logs income with source 'Acme Corp', amount $500.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Switch mode: Send /expense or /income to toggle between expense and income capture.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Help: Send /help to see all available commands.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Multi-currency: 'Paid 5000 naira for diesel at Total' — auto-converts NGN to your workspace currency.</li></ul></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Bot Commands Reference</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">The SnapSME bot supports the following commands on both Telegram and WhatsApp:</p><ul style="margin: 0 0 20px 20px; padding: 0; list-style-type: disc;"><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">/link <code> — Link your SnapSME account using a 6-digit pairing code.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">/expense — Switch the bot to expense capture mode (default).</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">/income — Switch the bot to income capture mode.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">/help — Show the help message with all commands and examples.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">/start — Same as /help (Telegram only).</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Any text message — Parsed for amount, vendor/source, and category, then saved to the feed.</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Photo — Receipt photo (acknowledged; full OCR coming soon).</li><li style="font-family: var(--font-notioninter); font-size: 15px; line-height: 1.6; color: var(--color-graphite, #45433f); margin-bottom: 8px;">Voice note — Voice recording (acknowledged; full transcription coming soon).</li></ul></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Troubleshooting</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">If the bot isn't responding, check these common issues:</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Bot not configured: The Chat Bot tab will show a yellow warning banner if the bot credentials are missing. Check your .env file.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Webhook not registered: For Telegram, run the setWebhook curl command. For WhatsApp, verify the webhook in the Meta Dashboard.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Wrong webhook URL: The URL must be HTTPS and publicly accessible. Use ngrok for local testing.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Pairing code expired: Codes expire after 10 minutes. Generate a new one in the app.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Bot shows 'simulation mode': This means the .env credentials are not set. The chat playground still works for testing, but real Telegram/WhatsApp messages won't be captured.</p></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Security &amp; Privacy</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Your bot tokens and access tokens are stored server-side in the .env file and never exposed to the client. The bot only processes messages from linked accounts — unlinked users are prompted to generate a pairing code. All data is transmitted over HTTPS.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">For production deployments, consider adding rate limiting and message validation to prevent abuse.</p></div>
+<div class="article-section" style="margin-bottom: 32px;"><h2 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; color: #1c1b19; margin: 0 0 14px 0; line-height: 1.35; letter-spacing: -0.02em;">Get Started Today</h2><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">Ready to let your team log expenses and income from Telegram or WhatsApp? Set up your bot credentials in the .env file, restart your server, and head to the <a href='/' style='color: #0075de; text-decoration: underline;'>Chat Bot tab</a> in the SnapSME app to generate your first pairing code.</p><p style="font-family: var(--font-notioninter); font-size: 16px; line-height: 1.7; color: var(--color-graphite, #45433f); margin: 0 0 16px 0;">For more tips on expense tracking, check out <a href='/learn/what-to-look-for-in-receipt-scanning-software.html' style='color: #0075de; text-decoration: underline;'>What to Look for in Receipt-Scanning Software</a> or <a href='/learn/how-to-stop-losing-receipts-for-good.html' style='color: #0075de; text-decoration: underline;'>How to Stop Losing Receipts for Good</a>.</p></div>
+    </article>
+
+    <!-- Call to Action Banner -->
+    <div style="background-color: #0f7a52; color: #ffffff; border-radius: 16px; padding: 36px; text-align: center; margin-bottom: 48px; box-shadow: 0 4px 14px rgba(15, 122, 82, 0.25);">
+      <h3 style="font-family: var(--font-notioninter); font-size: 22px; font-weight: 700; margin: 0 0 10px 0; color: #ffffff;">Ready to simplify team expense tracking?</h3>
+      <p style="font-family: var(--font-notioninter); font-size: 15px; opacity: 0.9; margin: 0 0 24px 0; max-width: 480px; margin-left: auto; margin-right: auto; line-height: 1.5;">
+        Snap receipts, record voice notes, and see your business cash flow in real-time. SnapSME is completely free to use.
+      </p>
+      <a href="/?onboarding=true" style="display: inline-block; background-color: #ffffff; color: #0f7a52; font-family: var(--font-notioninter); font-size: 15px; font-weight: 700; padding: 12px 28px; border-radius: 10px; text-decoration: none; transition: transform 0.15s ease;">
+        Create Your Free Workspace &rarr;
+      </a>
+    </div>
+
+    <!-- Related Articles Section -->
+    <section>
+      <div style="display: flex; align-items: center; justify-between; margin-bottom: 20px;">
+        <h3 style="font-family: var(--font-notioninter); font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0;">Related Guides & Articles</h3>
+        <a href="/learn/" style="font-family: var(--font-notioninter); font-size: 14px; font-weight: 600; color: #0075de; text-decoration: none; margin-left: auto;">View all guides &rarr;</a>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px;">
+        
+          <a href="/learn/a-simple-monthly-expense-review-routine-for-small-business-owners.html" style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 20px; text-decoration: none; transition: border-color 0.15s ease, transform 0.15s ease;" class="hover:border-[#0075de]">
+            <span style="font-family: var(--font-notioninter); font-size: 11px; font-weight: 700; color: #0075de; text-transform: uppercase; margin-bottom: 8px;">Routine &amp; Control</span>
+            <h4 style="font-family: var(--font-notioninter); font-size: 15px; font-weight: 700; color: #1c1b19; line-height: 1.4; margin: 0 0 8px 0;">A Simple Monthly Expense Review Routine for Small Business Owners</h4>
+            <span style="font-family: var(--font-notioninter); font-size: 12px; color: #6b665c; margin-top: auto;">5 min read</span>
+          </a>
+        
+
+          <a href="/learn/setting-expense-categories-and-budgets-that-actually-work-for-a-small-team.html" style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 20px; text-decoration: none; transition: border-color 0.15s ease, transform 0.15s ease;" class="hover:border-[#0075de]">
+            <span style="font-family: var(--font-notioninter); font-size: 11px; font-weight: 700; color: #0075de; text-transform: uppercase; margin-bottom: 8px;">Budgets &amp; Planning</span>
+            <h4 style="font-family: var(--font-notioninter); font-size: 15px; font-weight: 700; color: #1c1b19; line-height: 1.4; margin: 0 0 8px 0;">Setting Expense Categories and Budgets That Actually Work for a Small Team</h4>
+            <span style="font-family: var(--font-notioninter); font-size: 12px; color: #6b665c; margin-top: auto;">6 min read</span>
+          </a>
+        
+
+          <a href="/learn/what-to-look-for-in-receipt-scanning-software.html" style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 20px; text-decoration: none; transition: border-color 0.15s ease, transform 0.15s ease;" class="hover:border-[#0075de]">
+            <span style="font-family: var(--font-notioninter); font-size: 11px; font-weight: 700; color: #0075de; text-transform: uppercase; margin-bottom: 8px;">Software Evaluation</span>
+            <h4 style="font-family: var(--font-notioninter); font-size: 15px; font-weight: 700; color: #1c1b19; line-height: 1.4; margin: 0 0 8px 0;">What to Look for in Receipt-Scanning Software</h4>
+            <span style="font-family: var(--font-notioninter); font-size: 12px; color: #6b665c; margin-top: auto;">6 min read</span>
+          </a>
+        
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer Container -->
+  <div id="snapsme-footer"></div>
+
+  <script type="module" src="/js/header.js"></script>
+  <script type="module" src="/js/auth.js"></script>
+  <script type="module" src="/js/footer.js"></script>
+</body>
+</html>

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { convertCurrency, getCurrencySymbol } from "../lib/currencies.js";
-import { Send, Bot, MessageSquare, ExternalLink, Check, Copy, Camera, ShieldCheck, Sparkles, ArrowDownLeft, Receipt } from "lucide-react";
+import { Send, Bot, MessageSquare, ExternalLink, Check, Copy, Camera, ShieldCheck, Sparkles, ArrowDownLeft, Receipt, AlertCircle, Loader2 } from "lucide-react";
 
 export const ChatIntakeModal = ({
   currentUser,
@@ -14,6 +14,9 @@ export const ChatIntakeModal = ({
   const [captureType, setCaptureType] = useState("expense");
   const [linkCode, setLinkCode] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [botStatus, setBotStatus] = useState(null);
+  const [isCheckingBot, setIsCheckingBot] = useState(true);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
 
   // Simulated Chat Inbox
   const [messages, setMessages] = useState([
@@ -27,23 +30,65 @@ export const ChatIntakeModal = ({
 
   const [inputMessage, setInputMessage] = useState("");
 
-  const handleGenerateLink = async () => {
+  // Fetch bot connection status on mount
+  useEffect(() => {
+    fetchBotStatus();
+  }, []);
+
+  const fetchBotStatus = async () => {
+    setIsCheckingBot(true);
     try {
-      const res = await fetch("/api/chat/generate-link", {
+      const res = await fetch("/api/bot/status");
+      const data = await res.json();
+      if (data.success) {
+        setBotStatus(data);
+      }
+    } catch (err) {
+      console.error("Error fetching bot status:", err);
+    } finally {
+      setIsCheckingBot(false);
+    }
+  };
+
+  const handleGenerateLink = async () => {
+    setIsGeneratingLink(true);
+    try {
+      // Try the real bot pairing endpoint first
+      const res = await fetch("/api/bot/register-pairing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: currentUser.userId,
+          userId: currentUser?.userId || "usr_guest",
+          businessId: currentUser?.businessId || "biz_default",
+          displayName: currentUser?.displayName || "Guest User",
           channel: activeChannel
         })
       });
-      const data = await res.json();
-      if (data.success) {
-        setLinkCode(data.linkCode);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          setLinkCode(data.linkCode);
+          return;
+        }
+      }
+      // Fallback to the legacy generate-link endpoint
+      const fallbackRes = await fetch("/api/chat/generate-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: currentUser?.userId || "usr_guest",
+          channel: activeChannel
+        })
+      });
+      const fallbackData = await fallbackRes.json();
+      if (fallbackData.success) {
+        setLinkCode(fallbackData.linkCode);
       }
     } catch (err) {
       console.error("Error generating chat link code:", err);
       setLinkCode("849201");
+    } finally {
+      setIsGeneratingLink(false);
     }
   };
 
@@ -53,6 +98,18 @@ export const ChatIntakeModal = ({
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     }
+  };
+
+  const isChannelConfigured = (channel) => {
+    if (!botStatus) return false;
+    if (channel === "telegram") return botStatus.telegram?.configured;
+    if (channel === "whatsapp") return botStatus.whatsapp?.configured;
+    return false;
+  };
+
+  const getBotUsername = () => {
+    if (!botStatus) return "@snapsme_bot";
+    return botStatus.telegram?.botUsername ? `@${botStatus.telegram.botUsername}` : "@snapsme_bot";
   };
 
   const handleSendMessage = (e) => {
@@ -186,6 +243,9 @@ export const ChatIntakeModal = ({
             }`}
           >
             <Send className="w-3.5 h-3.5" /> Telegram Bot
+            {isChannelConfigured("telegram") && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" title="Connected" />
+            )}
           </button>
           <button
             type="button"
@@ -197,9 +257,41 @@ export const ChatIntakeModal = ({
             }`}
           >
             <MessageSquare className="w-3.5 h-3.5" /> WhatsApp Bot
+            {isChannelConfigured("whatsapp") && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" title="Connected" />
+            )}
           </button>
         </div>
       </div>
+
+      {/* Bot Connection Status Banner */}
+      {isCheckingBot ? (
+        <div className="bg-white p-3 rounded-xl border border-[#d9d4c8] shadow-sm flex items-center gap-2 text-xs text-[#6b665c]">
+          <Loader2 className="w-4 h-4 animate-spin" /> Checking bot connection status...
+        </div>
+      ) : !isChannelConfigured(activeChannel) ? (
+        <div className="bg-[#fbf1de] border border-[#e0982a]/40 p-4 rounded-xl flex items-start gap-2 text-xs text-[#1c1b19]">
+          <AlertCircle className="w-4 h-4 text-[#e0982a] shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold">
+              {activeChannel === "telegram" ? "Telegram" : "WhatsApp"} bot is not connected yet.
+            </p>
+            <p className="text-[#6b665c]">
+              The bot is running in <strong>simulation mode</strong>. You can still test the chat playground below,
+              but real messages from {activeChannel === "telegram" ? "Telegram" : "WhatsApp"} won't be captured until
+              you configure the bot credentials in your <code className="bg-white px-1 rounded">.env</code> file.
+            </p>
+            <p className="text-[#6b665c]">
+              See the <a href="/learn/telegram-whatsapp-bot-setup" className="text-[#0075de] hover:underline font-semibold">setup guide</a> for step-by-step instructions.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[#e7f4ec] border border-[#0f7a52]/30 p-3 rounded-xl flex items-center gap-2 text-xs text-[#0f7a52] font-semibold">
+          <Check className="w-4 h-4" />
+          {activeChannel === "telegram" ? "Telegram" : "WhatsApp"} bot is connected and ready to receive messages.
+        </div>
+      )}
 
       {/* Capture Type Toggle: Expense vs Income */}
       <div className="bg-white p-4 rounded-xl border border-[#d9d4c8] shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -254,9 +346,18 @@ export const ChatIntakeModal = ({
             <button
               type="button"
               onClick={handleGenerateLink}
-              className="w-full bg-[#0f7a52] hover:bg-[#0b5f40] text-white font-display font-bold text-xs py-2.5 rounded-xl shadow-2xs flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-95"
+              disabled={isGeneratingLink}
+              className="w-full bg-[#0f7a52] hover:bg-[#0b5f40] text-white font-display font-bold text-xs py-2.5 rounded-xl shadow-2xs flex items-center justify-center gap-2 cursor-pointer transition-transform active:scale-95 disabled:opacity-50"
             >
-              <Sparkles className="w-4 h-4" /> Generate 6-Digit Link Code
+              {isGeneratingLink ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" /> Generate 6-Digit Link Code
+                </>
+              )}
             </button>
           ) : (
             <div className="bg-[#f7f3ea] p-4 rounded-xl border border-[#d9d4c8] space-y-3 text-center">
@@ -280,10 +381,18 @@ export const ChatIntakeModal = ({
           <div className="pt-3 border-t border-[#d9d4c8] space-y-2 text-xs text-[#6b665c]">
             <p className="font-semibold text-[#1c1b19]">How staff uses the bot:</p>
             <ol className="list-decimal list-inside space-y-1 text-[11px] leading-relaxed">
-              <li>Open @snapsme_bot on Telegram / WhatsApp.</li>
+              <li>Open {getBotUsername()} on {activeChannel === "telegram" ? "Telegram" : "WhatsApp"}.</li>
               <li>Send the command code above once.</li>
               <li>Snap receipt photos or type notes anytime.</li>
             </ol>
+            <div className="pt-2 mt-2 border-t border-[#d9d4c8]/60">
+              <a
+                href="/learn/telegram-whatsapp-bot-setup"
+                className="text-[#0075de] hover:underline font-semibold flex items-center gap-1 text-[11px]"
+              >
+                <ExternalLink className="w-3 h-3" /> Read the full setup guide
+              </a>
+            </div>
           </div>
         </div>
 
