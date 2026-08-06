@@ -74,7 +74,7 @@ async function isBusinessMember(businessId, uid) {
 }
 
 /**
- * Extracts structured expense data from an image using Gemini 2.5 Flash.
+ * Extracts structured expense data from an image using Gemini AI Vision.
  */
 async function extractFromImage(imageBase64, mimeType) {
   const ai = getGeminiClient();
@@ -85,49 +85,99 @@ async function extractFromImage(imageBase64, mimeType) {
   const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
   const prompt = `Analyze this receipt image or document and extract structured expense details.
 Return strictly valid JSON with no markdown formatting or triple backticks.
+
 JSON Schema:
 {
-  "vendor": "string (name of the merchant/vendor)",
-  "amount": number (total amount paid, e.g. 45.50),
-  "currency": "string (3 letter ISO code like USD, EUR, GBP, NGN, KES, CAD)",
-  "date": "string (YYYY-MM-DD)",
-  "suggestedCategory": "string (one of: ${DEFAULT_CATEGORIES.join(", ")})",
+  "vendor": "string or null (name of the merchant/vendor found on the receipt, or null if illegible/absent)",
+  "amount": "number or null (total monetary amount paid, e.g. 45.50, or null if illegible/absent)",
+  "currency": "string or null (3-letter ISO currency code like USD, EUR, GBP, NGN, KES, CAD, or null if undetermined)",
+  "date": "string or null (ISO date YYYY-MM-DD if legible, or null if illegible/absent)",
+  "suggestedCategory": "string or null (one of: ${DEFAULT_CATEGORIES.join(", ")}, or null)",
   "lineItems": [
-    { "description": "string", "amount": number }
+    { "description": "string", "amount": "number" }
   ],
   "confidence": {
-    "vendor": number between 0.0 and 1.0,
-    "amount": number between 0.0 and 1.0,
-    "date": number between 0.0 and 1.0,
-    "category": number between 0.0 and 1.0
+    "vendor": "high" | "medium" | "low",
+    "amount": "high" | "medium" | "low",
+    "date": "high" | "medium" | "low",
+    "category": "high" | "medium" | "low"
   }
-}`;
+}
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: [
-      {
-        role: "user",
-        parts: [
-          { inlineData: { mimeType, data: base64Data } },
-          { text: prompt }
-        ]
-      }
-    ],
-    config: { responseMimeType: "application/json" }
-  });
+IMPORTANT: Return null for any field that you cannot clearly determine from the receipt image. Do NOT guess, fabricate, or hallucinate values.`;
+
+  const candidateModels = [
+    process.env.GEMINI_MODEL,
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-2.5-flash-lite",
+    "gemini-1.5-flash"
+  ].filter(Boolean);
+
+  let response = null;
+  let lastErr = null;
+
+  for (const modelCandidate of candidateModels) {
+    try {
+      response = await ai.models.generateContent({
+        model: modelCandidate,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { inlineData: { mimeType, data: base64Data } },
+              { text: prompt }
+            ]
+          }
+        ],
+        config: { responseMimeType: "application/json" }
+      });
+      if (response && response.text) break;
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+
+  if (!response || !response.text) {
+    throw new Error(`Gemini Vision call failed: ${lastErr?.message || "All model candidates failed"}`);
+  }
 
   const textResponse = response.text || "";
   const parsed = JSON.parse(cleanJson(textResponse));
 
+  if (!parsed || (parsed.vendor === null && parsed.amount === null && parsed.date === null)) {
+    return {
+      vendor: null,
+      amount: null,
+      currency: null,
+      date: null,
+      suggestedCategory: null,
+      lineItems: [],
+      confidence: { vendor: 0.3, amount: 0.3, date: 0.3, category: 0.3 }
+    };
+  }
+
+  const confMap = { high: 0.90, medium: 0.75, low: 0.45 };
+  const rawConf = parsed.confidence || {};
+
+  const vendorConf = typeof rawConf.vendor === "number" ? rawConf.vendor : (confMap[rawConf.vendor] || (parsed.vendor ? 0.85 : 0.30));
+  const amountConf = typeof rawConf.amount === "number" ? rawConf.amount : (confMap[rawConf.amount] || (parsed.amount !== null ? 0.90 : 0.30));
+  const dateConf = typeof rawConf.date === "number" ? rawConf.date : (confMap[rawConf.date] || (parsed.date ? 0.85 : 0.30));
+  const categoryConf = typeof rawConf.category === "number" ? rawConf.category : (confMap[rawConf.category] || (parsed.suggestedCategory ? 0.80 : 0.30));
+
   return {
-    vendor: parsed.vendor || "Unknown Vendor",
-    amount: typeof parsed.amount === "number" ? parsed.amount : 0,
-    currency: parsed.currency || "USD",
-    date: parsed.date || new Date().toISOString().split("T")[0],
-    suggestedCategory: normalizeCategory(parsed.suggestedCategory),
+    vendor: (parsed.vendor && typeof parsed.vendor === "string") ? parsed.vendor.trim() : null,
+    amount: (typeof parsed.amount === "number" && !isNaN(parsed.amount)) ? parsed.amount : null,
+    currency: parsed.currency || null,
+    date: parsed.date || null,
+    suggestedCategory: parsed.suggestedCategory ? normalizeCategory(parsed.suggestedCategory) : null,
     lineItems: Array.isArray(parsed.lineItems) ? parsed.lineItems : [],
-    confidence: parsed.confidence || { vendor: 0.92, amount: 0.95, date: 0.88, category: 0.85 }
+    confidence: {
+      vendor: vendorConf,
+      amount: amountConf,
+      date: dateConf,
+      category: categoryConf
+    }
   };
 }
 

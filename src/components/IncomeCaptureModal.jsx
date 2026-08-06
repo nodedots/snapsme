@@ -140,8 +140,9 @@ export const IncomeCaptureModal = ({
         }
       }
 
-      // Try Express API first, falling back to local heuristic extraction
+      // Send to backend API for AI Vision income extraction
       let resData = null;
+      let isOk = false;
       try {
         const response = await fetch("/api/extract-income-doc", {
           method: "POST",
@@ -152,42 +153,47 @@ export const IncomeCaptureModal = ({
             fileName: file.name
           })
         });
-        if (response.ok) {
-          resData = await response.json();
-        }
+        isOk = response.ok;
+        resData = await response.json();
       } catch (fetchErr) {
-        console.warn("Express API extract-income-doc error, using client-side extraction:", fetchErr.message);
+        console.warn("Express API extract-income-doc error:", fetchErr.message);
       }
 
-      // Smart client-side heuristic extraction for instant field auto-population
-      const rawFileName = file.name || "income.jpg";
-      const cleanName = rawFileName.replace(/[-_.]/g, " ");
-
-      let parsedSource = "";
-      if (/invoice|payment|client|acme|corp|inc|llc/i.test(cleanName)) parsedSource = "Client Payment";
-      else if (/sales|product|order|shop|store/i.test(cleanName)) parsedSource = "Product Sales";
-      else if (/refund|return|reversal/i.test(cleanName)) parsedSource = "Refund Received";
-      else if (/transfer|bank|deposit|wire/i.test(cleanName)) parsedSource = "Bank Transfer";
-
-      const numMatches = cleanName.match(/\d+(?:\.\d{1,2})?/g);
-      const parsedAmount = numMatches ? parseFloat(numMatches[0]) : 0;
-
-      if (resData && resData.data) {
+      if (isOk && resData && resData.success && resData.data) {
         const d = resData.data;
-        const finalSource = d.source || parsedSource || "";
-        const finalAmount = d.amount ? String(d.amount) : (parsedAmount > 0 ? String(parsedAmount) : "");
+        const finalSource = d.source || "";
+        const finalAmount = d.amount && d.amount > 0 ? String(d.amount) : "";
         const finalCurrency = d.currency || workspaceCurrency || "USD";
         const finalDate = d.date || new Date().toISOString().split("T")[0];
-        const finalNotes = d.notes || `Income document scanned from ${rawFileName}`;
+        const finalNotes = d.notes || "";
 
         setSource(finalSource);
         setAmount(finalAmount);
         setCurrency(finalCurrency);
         setDate(finalDate);
-        setNotes(finalNotes);
+        if (finalNotes) setNotes(finalNotes);
 
-        setAiConfidence(d.confidence || { source: 0.92, amount: 0.95, date: 0.88 });
-        setNoticeMessage(resData.notice || "Income document scanned! All fields automatically populated below.");
+        const realConfidence = d.confidence || { source: 0.85, amount: 0.85, date: 0.85 };
+        setAiConfidence(realConfidence);
+
+        const avgConfidence = (
+          (realConfidence.source || 0) +
+          (realConfidence.amount || 0) +
+          (realConfidence.date || 0)
+        ) / 3;
+
+        if (avgConfidence < 0.70) {
+          setNoticeMessage("Income document scanned with low confidence — please verify the populated fields below.");
+        } else {
+          setNoticeMessage("Income document scanned! Please review the auto-populated fields below.");
+        }
+      } else {
+        const errorText = (resData && resData.error)
+          ? resData.error
+          : "We couldn't read that income document. Please enter details manually below.";
+        
+        setAiConfidence(null);
+        setNoticeMessage(errorText);
       }
 
       // Store the compressed blob for upload on save
@@ -196,7 +202,8 @@ export const IncomeCaptureModal = ({
       }
     } catch (err) {
       console.error("AI income photo/document extraction error:", err);
-      setNoticeMessage(`Extraction error: ${err.message}`);
+      setAiConfidence(null);
+      setNoticeMessage("We couldn't read that income document — please enter details manually below.");
     } finally {
       setIsProcessingAI(false);
     }

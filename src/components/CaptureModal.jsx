@@ -156,8 +156,9 @@ export const CaptureModal = ({
         }
       }
 
-      // Try Express API first, falling back to local heuristic extraction
+      // Send to backend API for AI Vision extraction
       let resData = null;
+      let isOk = false;
       try {
         const response = await fetch("/api/extract-receipt", {
           method: "POST",
@@ -168,55 +169,28 @@ export const CaptureModal = ({
             fileName: file.name
           })
         });
-        if (response.ok) {
-          resData = await response.json();
-        }
+        isOk = response.ok;
+        resData = await response.json();
       } catch (fetchErr) {
-        console.warn("Express API extract-receipt error, using client-side extraction:", fetchErr.message);
+        console.warn("Express API extract-receipt error:", fetchErr.message);
       }
 
-      // Smart client-side heuristic extraction for instant field auto-population
-      const rawFileName = file.name || "receipt.jpg";
-      const cleanName = rawFileName.replace(/[-_.]/g, " ");
-      
-      let parsedVendor = "";
-      if (/shell|total|nnpcl|conoil|oando/i.test(cleanName)) parsedVendor = "Fuel Station";
-      else if (/staples|paper|office/i.test(cleanName)) parsedVendor = "Office Depot";
-      else if (/uber|bolt|cab|taxi/i.test(cleanName)) parsedVendor = "Ride Transport";
-      else if (/starbucks|cafe|coffee|restaurant|buka|kitchen/i.test(cleanName)) parsedVendor = "Meals & Dining";
-      else if (/target|walmart|shoprite|spares|hardware/i.test(cleanName)) parsedVendor = "Equipment & Supplies";
-
-      const numMatches = cleanName.match(/\d+(?:\.\d{1,2})?/g);
-      const parsedAmount = numMatches ? parseFloat(numMatches[0]) : 0;
-      
-      let parsedMoneyMovement = "company_card";
-      if (/cash|petty/i.test(cleanName)) parsedMoneyMovement = "petty_cash";
-      else if (/reimburse|personal/i.test(cleanName)) parsedMoneyMovement = "personal_reimbursement";
-      else if (/invoice|supplier|direct/i.test(cleanName)) parsedMoneyMovement = "supplier_payment";
-
-      let parsedCat = "Other Expenses";
-      if (/fuel|gas|taxi|uber|cab|transport|flight/i.test(cleanName)) parsedCat = "Fuel & Transport";
-      else if (/office|paper|staples|stationery|print/i.test(cleanName)) parsedCat = "Office Supplies";
-      else if (/meal|food|lunch|dinner|cafe|restaurant|buka/i.test(cleanName)) parsedCat = "Meals & Food";
-      else if (/tool|hardware|equipment|repair/i.test(cleanName)) parsedCat = "Equipment & Tools";
-      else if (/bill|utility|power|water|electric|internet/i.test(cleanName)) parsedCat = "Utilities & Bills";
-
-      if (resData && resData.data) {
+      if (isOk && resData && resData.success && resData.data) {
         const d = resData.data;
-        const finalVendor = d.vendor || parsedVendor || "";
-        const finalAmount = d.amount ? String(d.amount) : (parsedAmount > 0 ? String(parsedAmount) : "");
+        const finalVendor = d.vendor || "";
+        const finalAmount = d.amount && d.amount > 0 ? String(d.amount) : "";
         const finalCurrency = d.currency || workspaceCurrency || "USD";
         const finalDate = d.date || new Date().toISOString().split("T")[0];
-        const finalCategoryName = d.suggestedCategory || parsedCat;
-        const finalMoneyMovement = d.moneyMovement || parsedMoneyMovement;
-        const finalNotes = d.notes || (d.lineItems && d.lineItems.length > 0 ? d.lineItems.map(i => i.description).join(", ") : `Receipt scanned from ${rawFileName}`);
+        const finalCategoryName = d.suggestedCategory || "Other Expenses";
+        const finalNotes = (d.lineItems && d.lineItems.length > 0)
+          ? d.lineItems.map(i => i.description).join(", ")
+          : "";
 
         setVendor(finalVendor);
         setAmount(finalAmount);
         setCurrency(finalCurrency);
         setDate(finalDate);
-        setMoneyMovement(finalMoneyMovement);
-        setNotes(finalNotes);
+        if (finalNotes) setNotes(finalNotes);
 
         // Match category
         const matchedCat = categories.find(
@@ -226,13 +200,33 @@ export const CaptureModal = ({
         if (matchedCat) {
           setCategoryId(matchedCat.id);
           setCategoryName(matchedCat.name);
-        } else if (categories[0]) {
-          setCategoryId(categories[0].id);
-          setCategoryName(categories[0].name);
         }
 
-        setAiConfidence(d.confidence || { vendor: 0.92, amount: 0.95, date: 0.88, category: 0.86 });
-        setNoticeMessage(resData.notice || "Receipt scanned! All fields automatically populated below.");
+        const realConfidence = d.confidence || { vendor: 0.85, amount: 0.85, date: 0.85, category: 0.85 };
+        setAiConfidence(realConfidence);
+
+        const isTroubled =
+          !finalVendor ||
+          !finalAmount ||
+          !finalDate ||
+          (realConfidence.vendor < 0.70) ||
+          (realConfidence.amount < 0.70) ||
+          (realConfidence.date < 0.70);
+
+        if (isTroubled) {
+          setNoticeMessage("We had trouble reading some details on this receipt — please check and fill in the missing fields below.");
+        } else {
+          setNoticeMessage("Receipt scanned! Please review the auto-populated fields below.");
+        }
+      } else {
+        // Honest error state: extraction failed or API limit reached.
+        // DO NOT populate hardcoded fake numbers ($45.00) or fake merchant names!
+        const errorText = (resData && resData.error)
+          ? resData.error
+          : "We couldn't read that receipt — try again or enter details manually below.";
+        
+        setAiConfidence(null);
+        setNoticeMessage(errorText);
       }
 
       // Store the compressed blob for upload on save
@@ -241,7 +235,8 @@ export const CaptureModal = ({
       }
     } catch (err) {
       console.error("AI photo/document extraction error:", err);
-      setNoticeMessage(`Extraction error: ${err.message}`);
+      setAiConfidence(null);
+      setNoticeMessage("We couldn't read that receipt — please enter expense details manually below.");
     } finally {
       setIsProcessingAI(false);
     }
