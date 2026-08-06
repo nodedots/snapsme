@@ -304,13 +304,61 @@ function smartExtractIncomeFromBuffer(base64Data = "", fileName = "") {
   };
 }
 
+const MAX_MONTHLY_AI_CAPTURES = 150;
+const serverUsageTracker = new Map();
+
+function checkServerAiUsage(businessId = "default") {
+  const now = new Date();
+  const currentPeriod = now.toISOString().slice(0, 7) + "-01";
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const resetDateStr = nextMonth.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  const record = serverUsageTracker.get(businessId) || { count: 0, periodStart: currentPeriod };
+  if (record.periodStart !== currentPeriod) {
+    record.count = 0;
+    record.periodStart = currentPeriod;
+  }
+
+  if (record.count >= MAX_MONTHLY_AI_CAPTURES) {
+    return {
+      allowed: false,
+      count: record.count,
+      limit: MAX_MONTHLY_AI_CAPTURES,
+      resetDate: resetDateStr
+    };
+  }
+
+  record.count += 1;
+  serverUsageTracker.set(businessId, record);
+
+  return {
+    allowed: true,
+    count: record.count,
+    limit: MAX_MONTHLY_AI_CAPTURES,
+    resetDate: resetDateStr
+  };
+}
+
 // 2. Extract Receipt from Photo or Document (Real AI Vision Pipeline)
 app.post("/api/extract-receipt", async (req, res) => {
   try {
-    const { imageBase64, mimeType = "image/jpeg", fileName } = req.body;
+    const { imageBase64, mimeType = "image/jpeg", fileName, businessId } = req.body;
 
     if (!imageBase64) {
       return res.status(400).json({ success: false, error: "Missing imageBase64 in request body" });
+    }
+
+    // Server-side Fair-Use Cap Check (150 scans/month)
+    const usageCheck = checkServerAiUsage(businessId || "default");
+    if (!usageCheck.allowed) {
+      return res.status(429).json({
+        success: false,
+        code: "ai_limit_reached",
+        limit: usageCheck.limit,
+        usageCount: usageCheck.count,
+        resetDate: usageCheck.resetDate,
+        error: `You've used your 150 AI scans for this month — you can still add expenses manually, and your limit resets on ${usageCheck.resetDate}.`
+      });
     }
 
     // TIER 1: Try Unlimited-OCR Microservice ($0 token cost)
@@ -324,7 +372,8 @@ app.post("/api/extract-receipt", async (req, res) => {
     if (!ai) {
       return res.status(503).json({
         success: false,
-        error: "Gemini API key is not configured on the server (GEMINI_API_KEY missing). Please enter details manually."
+        code: "ai_unavailable",
+        error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
       });
     }
 
@@ -355,9 +404,9 @@ JSON Schema:
 IMPORTANT: Return null for any field that you cannot clearly determine from the receipt image. Do NOT guess, fabricate, or hallucinate values.`;
 
       const candidateModels = [
+        "gemini-2.0-flash-lite", // Primary choice: Flash-Lite model tier for maximum free headroom
         process.env.GEMINI_MODEL,
         "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
         "gemini-2.5-flash-lite",
         "gemini-1.5-flash"
       ].filter(Boolean);
@@ -400,6 +449,7 @@ IMPORTANT: Return null for any field that you cannot clearly determine from the 
         return res.json({
           success: true,
           source: "ai_gemini_vision_tier",
+          aiUsage: { count: usageCheck.count, limit: usageCheck.limit },
           notice: (vendorConf < 0.7 || amountConf < 0.7 || !parsed.vendor || !parsed.amount)
             ? "We had trouble reading some details on this receipt — please check and fill in the missing fields below."
             : "Receipt scanned! Please review the auto-populated fields below.",
@@ -420,18 +470,18 @@ IMPORTANT: Return null for any field that you cannot clearly determine from the 
         });
       }
 
-      // If AI vision candidate models were exhausted (e.g. 429 rate limit or network error)
-      const errReason = lastErr?.message || "AI vision API call failed";
-      console.warn("Gemini Vision extraction failed:", errReason);
+      // Transient AI service rate limit / unavailable
       return res.status(503).json({
         success: false,
-        error: `Could not read receipt using AI Vision (${errReason.includes("429") || errReason.includes("quota") ? "API quota limit reached" : "vision service error"}). Please enter details manually.`
+        code: "ai_unavailable",
+        error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
       });
     } catch (geminiError) {
       console.error("Gemini API error during receipt extraction:", geminiError?.message || geminiError);
-      return res.status(500).json({
+      return res.status(503).json({
         success: false,
-        error: "Failed to extract receipt with AI Vision. Please enter receipt details manually."
+        code: "ai_unavailable",
+        error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
       });
     }
   } catch (error) {

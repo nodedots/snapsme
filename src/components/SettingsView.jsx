@@ -593,6 +593,48 @@ export const SettingsView = ({
           </form>
         </TornCard>
 
+        {/* CARD: AI Feature Usage & Limits */}
+        <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                  AI Feature Usage & Limits
+                </h2>
+                <p className="text-[11px] text-[#6b665c]">Monthly allocation for AI receipt & voice capture</p>
+              </div>
+            </div>
+            <span className="text-[11px] font-mono font-semibold text-[#0075de] bg-[#0075de]/10 px-2.5 py-1 rounded-md">
+              Fair-Use Plan
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            <div className="bg-[#f7f3ea]/60 border border-[#d9d4c8] rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-display font-bold text-[#1c1b19]">
+                  {workspace?.aiCaptureUsage?.count || 0} of 150 AI scans used this month
+                </span>
+                <span className="text-xs font-mono font-semibold text-[#6b665c]">
+                  {Math.round(((workspace?.aiCaptureUsage?.count || 0) / 150) * 100)}%
+                </span>
+              </div>
+              <div className="w-full bg-[#e8e4da] h-2.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-[#0075de] h-full rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, Math.round(((workspace?.aiCaptureUsage?.count || 0) / 150) * 100))}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-[#6b665c] mt-2.5 leading-relaxed">
+                AI photo scanning and voice capture reset automatically on the 1st of every calendar month. Manual entry of expenses and income is always 100% free and unlimited.
+              </p>
+            </div>
+          </div>
+        </TornCard>
+
         {/* CARD 2: Chat Bot Integrations (Telegram & WhatsApp) */}
         <TornCard headerColor="bg-[#ff5a3c]" tornBottom={true}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">

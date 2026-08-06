@@ -239,6 +239,63 @@ async function saveExpenseToFirestore(businessId, expenseData, submittedBy, subm
   return expenseRef.id;
 }
 
+const MAX_MONTHLY_AI_CAPTURES = 150;
+
+/**
+ * Checks and increments AI capture usage for a business doc in Firestore.
+ */
+async function checkAndIncrementAiUsage(businessId) {
+  const now = new Date();
+  const currentPeriod = now.toISOString().slice(0, 7) + "-01";
+
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const resetDateStr = nextMonth.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  if (!businessId) {
+    return { allowed: true, count: 1, limit: MAX_MONTHLY_AI_CAPTURES, resetDate: resetDateStr };
+  }
+
+  try {
+    const businessRef = db.doc(`businesses/${businessId}`);
+    const snap = await businessRef.get();
+
+    let currentCount = 0;
+    if (snap.exists && snap.data().aiCaptureUsage) {
+      const usage = snap.data().aiCaptureUsage;
+      if (usage.periodStart === currentPeriod) {
+        currentCount = usage.count || 0;
+      }
+    }
+
+    if (currentCount >= MAX_MONTHLY_AI_CAPTURES) {
+      return {
+        allowed: false,
+        count: currentCount,
+        limit: MAX_MONTHLY_AI_CAPTURES,
+        resetDate: resetDateStr
+      };
+    }
+
+    const updatedCount = currentCount + 1;
+    await businessRef.set({
+      aiCaptureUsage: {
+        count: updatedCount,
+        periodStart: currentPeriod
+      }
+    }, { merge: true });
+
+    return {
+      allowed: true,
+      count: updatedCount,
+      limit: MAX_MONTHLY_AI_CAPTURES,
+      resetDate: resetDateStr
+    };
+  } catch (err) {
+    console.warn("Usage cap check failed, allowing extraction:", err.message);
+    return { allowed: true, count: 1, limit: MAX_MONTHLY_AI_CAPTURES, resetDate: resetDateStr };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // 1. extractReceipt — onCall (FR1, FR4)
 // ---------------------------------------------------------------------------
@@ -257,17 +314,35 @@ export const extractReceipt = onCall(
       throw new Error("You are not a member of this business.");
     }
 
+    // Check monthly fair-use cap
+    const usageCheck = await checkAndIncrementAiUsage(businessId);
+    if (!usageCheck.allowed) {
+      return {
+        success: false,
+        code: "ai_limit_reached",
+        limit: usageCheck.limit,
+        usageCount: usageCheck.count,
+        resetDate: usageCheck.resetDate,
+        error: `You've used your 150 AI scans for this month — you can still add expenses manually, and your limit resets on ${usageCheck.resetDate}.`
+      };
+    }
+
     try {
       const data = await extractFromImage(imageBase64, mimeType);
       return {
         success: true,
         source: "ai_gemini_vision_tier",
-        notice: "Processed via Gemini 2.5 Flash AI",
+        notice: "Processed via Gemini AI Vision",
+        aiUsage: { count: usageCheck.count, limit: usageCheck.limit },
         data
       };
     } catch (err) {
       console.error("extractReceipt failed:", err.message);
-      throw new Error(`AI extraction failed: ${err.message}`);
+      return {
+        success: false,
+        code: err.message.includes("429") || err.message.includes("quota") ? "ai_unavailable" : "ai_error",
+        error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
+      };
     }
   }
 );

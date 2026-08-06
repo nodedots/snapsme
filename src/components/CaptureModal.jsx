@@ -219,14 +219,16 @@ export const CaptureModal = ({
           setNoticeMessage("Receipt scanned! Please review the auto-populated fields below.");
         }
       } else {
-        // Honest error state: extraction failed or API limit reached.
-        // DO NOT populate hardcoded fake numbers ($45.00) or fake merchant names!
-        const errorText = (resData && resData.error)
-          ? resData.error
-          : "We couldn't read that receipt — try again or enter details manually below.";
+        // Honest fallback handling: cap reached or service transiently unavailable
+        let noticeText = "We couldn't read that receipt — try again or enter details manually below.";
+        if (resData && resData.code === "ai_limit_reached") {
+          noticeText = resData.error || `You've used your 150 AI scans for this month — you can still add expenses manually, and your limit resets on ${resData.resetDate || "the 1st of next month"}.`;
+        } else if (resData && (resData.code === "ai_unavailable" || resData.error)) {
+          noticeText = resData.error || "The AI vision service is temporarily busy — you can try again or enter details manually below.";
+        }
         
         setAiConfidence(null);
-        setNoticeMessage(errorText);
+        setNoticeMessage(noticeText);
       }
 
       // Store the compressed blob for upload on save
@@ -236,7 +238,7 @@ export const CaptureModal = ({
     } catch (err) {
       console.error("AI photo/document extraction error:", err);
       setAiConfidence(null);
-      setNoticeMessage("We couldn't read that receipt — please enter expense details manually below.");
+      setNoticeMessage("The AI vision service is temporarily busy — you can try again or enter details manually below.");
     } finally {
       setIsProcessingAI(false);
     }

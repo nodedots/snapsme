@@ -48,6 +48,11 @@
       </p>
     </div>
 
+    <!-- Legal Disclaimer Notice -->
+    <div style="background: #fff8e6; border: 1px solid #ffe082; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: #856404; line-height: 1.5;">
+      <strong>Note:</strong> This is placeholder content not reviewed by a lawyer. Replace with reviewed terms before launch.
+    </div>
+
     <!-- Intro Text -->
     <p style="font-size: 15px; line-height: 1.7; color: #2c2a26; margin-bottom: 28px;">
       SnapSME ("we", "our", or "us") is committed to protecting the privacy, security, and confidentiality of small business owners and their team members. This Privacy Policy details how we collect, process, encrypt, store, and safeguard financial transaction data, paper receipt media, voice recordings, and account information across the SnapSME platform.
@@ -59,7 +64,7 @@
       <ol style="margin: 0; padding-left: 20px; font-size: 14px; color: #0075de; line-height: 1.8;">
         <li><a href="#section-1" style="color: #0075de; text-decoration: underline;">Information We Collect</a></li>
         <li><a href="#section-2" style="color: #0075de; text-decoration: underline;">How We Process Your Financial & Receipt Data</a></li>
-        <li><a href="#section-3" style="color: #0075de; text-decoration: underline;">Third-Party Infrastructure & AI Subprocessors</a></li>
+        <li><a href="#section-3" style="color: #0075de; text-decoration: underline;">Third-Party Infrastructure, AI Processing & Fair-Use Limits</a></li>
         <li><a href="#section-4" style="color: #0075de; text-decoration: underline;">Offline Storage & Browser Local Memory</a></li>
         <li><a href="#section-5" style="color: #0075de; text-decoration: underline;">Data Retention & Workspace Deletion Rights</a></li>
         <li><a href="#section-6" style="color: #0075de; text-decoration: underline;">GDPR, CCPA & User Privacy Rights</a></li>
@@ -95,9 +100,28 @@
       </section>
 
       <section id="section-3">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">3. Third-Party Infrastructure & AI Subprocessors</h2>
-        <p>SnapSME utilizes enterprise-grade subprocessor services to deliver secure cloud storage and receipt extraction:</p>
-        <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 10px; padding: 16px; margin-top: 12px;">
+        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">3. Third-Party Infrastructure, AI Processing & Fair-Use Limits</h2>
+        <p>SnapSME utilizes enterprise-grade subprocessor services to deliver secure cloud storage, database synchronization, and AI receipt extraction:</p>
+
+        <!-- AI Processing Disclosure Sub-box -->
+        <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 10px; padding: 20px; margin-top: 16px;">
+          <h3 style="font-size: 16px; font-weight: 700; color: #1c1b19; margin: 0 0 10px 0;">AI Processing & Subprocessor Data Terms</h3>
+          <p style="font-size: 14px; color: #2c2a26; margin-bottom: 12px;">
+            When you use AI-assisted receipt scanning or voice note capture, your submitted receipt photos and voice transcripts are sent server-side to <strong>Google's Gemini API</strong> for processing. Please note:
+          </p>
+          <ul style="padding-left: 20px; font-size: 13px; color: #4a4741; display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
+            <li><strong>Server-Side Processing:</strong> All AI requests are transmitted securely from our backend server or Cloud Functions. API keys and infrastructure credentials are never exposed to client browsers.</li>
+            <li><strong>Google Data Handling Terms:</strong> Free-tier Google Gemini API terms may permit Google to process submitted data to improve AI models and service performance. For detailed information, review <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style="color: #0075de; text-decoration: underline;">Google's Privacy Policy & AI Terms</a>.</li>
+            <li><strong>Independent Receipt Storage:</strong> Receipt media and attached document files are stored in SnapSME's dedicated cloud storage independently of the AI subprocessor. AI providers do not maintain long-term ownership of your uploaded files.</li>
+          </ul>
+
+          <h3 style="font-size: 16px; font-weight: 700; color: #1c1b19; margin: 16px 0 10px 0;">Fair-Use Monthly AI Scan Allocation</h3>
+          <p style="font-size: 14px; color: #2c2a26; margin: 0;">
+            To keep SnapSME 100% free and sustainable, AI-assisted receipt scanning and voice extraction are subject to a generous fair-use allocation of <strong>150 AI scans per business workspace per month</strong>. <strong>Manual expense and income entry is always 100% free and unlimited.</strong>
+          </p>
+        </div>
+
+        <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 10px; padding: 16px; margin-top: 16px;">
           <table style="width: 100%; font-size: 13px; text-align: left; border-collapse: collapse;">
             <thead>
               <tr style="border-bottom: 1px solid #d9d4c8; color: #6b665c;">
@@ -113,7 +137,7 @@
                 <td style="padding: 10px 0;">United States / Global CDN</td>
               </tr>
               <tr style="border-bottom: 1px dashed #eef2f6;">
-                <td style="padding: 10px 0; font-weight: 600; color: #1c1b19;">Google Gemini AI Vision API</td>
+                <td style="padding: 10px 0; font-weight: 600; color: #1c1b19;">Google Gemini AI Vision API (Flash-Lite)</td>
                 <td style="padding: 10px 0;">Multi-modal optical character recognition for receipt parsing</td>
                 <td style="padding: 10px 0;">United States</td>
               </tr>
