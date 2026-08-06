@@ -6,7 +6,9 @@
  * unlinking chat channels, and user session management.
  */
 
-import { recordActivityLog } from "../../src/lib/storage.js";
+import { recordActivityLog } from "./storage.js";
+import { auth } from "./firebase.js";
+import { signOut } from "firebase/auth";
 
 /**
  * Retrieves the current user's profile record from member list.
@@ -148,8 +150,6 @@ export function unlinkChatChannel(userId, channel, members = [], saveMembersFn, 
  */
 export async function signOutUser(saveCurrentUserFn) {
   try {
-    const { getAuth, signOut } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js");
-    const auth = getAuth();
     if (auth) {
       await signOut(auth);
     }
@@ -160,5 +160,5 @@ export async function signOutUser(saveCurrentUserFn) {
   if (saveCurrentUserFn) {
     saveCurrentUserFn(null);
   }
-  window.location.href = "/home";
+  window.location.href = "/";
 }

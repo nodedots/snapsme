@@ -17,19 +17,21 @@
 import { db, auth } from "./firebase.js";
 import {
   collection,
+  collectionGroup,
   doc,
   onSnapshot,
   setDoc,
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   getDoc,
   getDocs,
   writeBatch,
   serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+} from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 
 // ---------------------------------------------------------------------------
 // Auth session helpers
@@ -574,21 +576,10 @@ export async function findUserBusinesses(uid, email = null) {
 
   if (!uid) return results;
 
-  // ---- Stage 1: users/{uid} indirection (single doc read) ----
+  // ---- Stage 1: users/{uid} indirection (single doc read — instant restore) ----
   try {
     const ref = await getUserReference(uid);
     if (ref && ref.businessId) {
-      // Fetch the member doc so we return the current member record
-      try {
-        const memberSnap = await getDoc(memberDoc(ref.businessId, uid));
-        if (memberSnap.exists()) {
-          results.push({ businessId: ref.businessId, member: { userId: uid, ...memberSnap.data() } });
-          return results;
-        }
-      } catch (memberErr) {
-        console.warn("Could not fetch member doc for user reference:", memberErr.message);
-      }
-      // Member doc missing but user reference exists — return minimal member data
       results.push({
         businessId: ref.businessId,
         member: { userId: uid, role: ref.role || "staff", displayName: ref.displayName || "User", email: ref.email || email || null }
@@ -601,9 +592,6 @@ export async function findUserBusinesses(uid, email = null) {
 
   // ---- Stage 2: collection-group by userId field (member docs store userId) ----
   try {
-    const { collectionGroup, query, where } = await import(
-      "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
-    );
     const q = query(collectionGroup(db, "members"), where("userId", "==", uid));
     const snap = await getDocs(q);
     snap.forEach((s) => {
@@ -634,9 +622,6 @@ export async function findUserBusinesses(uid, email = null) {
   // ---- Stage 3: collection-group by email (pending invite) ----
   if (email) {
     try {
-      const { collectionGroup, query, where } = await import(
-        "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"
-      );
       const qEmail = query(collectionGroup(db, "members"), where("email", "==", email.toLowerCase()));
       const snapEmail = await getDocs(qEmail);
       for (const s of snapEmail.docs) {

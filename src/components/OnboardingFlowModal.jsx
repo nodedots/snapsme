@@ -3,6 +3,7 @@ import { WORLD_CURRENCIES, getCurrencyLabel } from "../lib/currencies.js";
 import {
   BUSINESS_TYPES,
   validateSignUp,
+  validateSignIn,
   validateWorkspaceInfo,
   validateStaffInvite,
   executeOnboardingPipeline
@@ -28,8 +29,8 @@ import {
   Check
 } from "lucide-react";
 import { auth, googleProvider } from "../lib/firebase.js";
-import { signInWithPopup, signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { findUserBusinesses } from "../lib/firestore.js";
+import { signInWithPopup, signInWithRedirect, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import { findUserBusinesses, getBusinessDoc } from "../lib/firestore.js";
 
 export function OnboardingFlowModal({
   isOpen,
@@ -103,9 +104,19 @@ export function OnboardingFlowModal({
       const businesses = await findUserBusinesses(user.uid, user.email);
       if (businesses && businesses.length > 0) {
         const first = businesses[0];
+        // Fetch the real workspace name so the welcome banner is correct
+        let wsName = "My Workspace";
+        try {
+          const bizDoc = await getBusinessDoc(first.businessId);
+          if (bizDoc && bizDoc.name) wsName = bizDoc.name;
+        } catch (_) {}
+
+        // Pass businessId explicitly — handleCompleteOnboarding checks for this to
+        // activate the existing workspace instead of creating a brand-new blank one.
         if (onCompleteOnboarding) {
           onCompleteOnboarding({
-            workspace: { id: first.businessId, businessId: first.businessId, name: "My Workspace" },
+            businessId: first.businessId,
+            workspace: { id: first.businessId, businessId: first.businessId, name: wsName },
             members: [first.member],
             ownerMember: first.member,
             categories: []
@@ -114,6 +125,7 @@ export function OnboardingFlowModal({
         onClose();
         return;
       }
+
 
       setCurrentStep(2);
     } catch (err) {
@@ -205,48 +217,24 @@ export function OnboardingFlowModal({
         }));
       }
 
-      // After auth, check if the user already has a workspace
-      const activeUser = user || auth.currentUser || currentUser;
+      // After auth, check if the user already has a Firestore workspace
+      const activeUser = auth.currentUser || currentUser;
       if (activeUser) {
-        const targetUid = activeUser.uid || activeUser.userId || "usr_" + Date.now();
+        const targetUid = activeUser.uid || activeUser.userId;
         const targetEmail = activeUser.email || signUpForm.emailOrPhone;
         const businesses = await findUserBusinesses(targetUid, targetEmail);
 
-        const localWsStr = localStorage.getItem("snapsme_workspace");
-        let localWs = null;
-        if (localWsStr) {
-          try { localWs = JSON.parse(localWsStr); } catch (e) {}
-        }
-
-        const isSignInFlow = authMode === "signin";
-
-        if ((businesses && businesses.length > 0) || localWs || isSignInFlow) {
-          // Returning member or sign-in -> complete auth & route straight to workspace dashboard
-          const first = (businesses && businesses.length > 0) ? businesses[0] : null;
-          const wsData = first
-            ? { id: first.businessId, businessId: first.businessId, name: first.name || "My Workspace" }
-            : (localWs || { id: "biz_default", businessId: "biz_default", name: "My Workspace" });
-          const memberData = first
-            ? first.member
-            : { userId: targetUid, email: targetEmail, displayName: signUpForm.displayName || activeUser.displayName || targetEmail.split("@")[0] || "Owner", role: "owner" };
-
-          // Save active user snapshot & set onboarding completed flag
-          const userPayload = {
-            userId: targetUid,
-            displayName: memberData.displayName || activeUser.displayName || targetEmail.split("@")[0] || "User",
-            email: targetEmail,
-            photoURL: activeUser.photoURL || null,
-            role: memberData.role || "owner",
-            businessId: wsData.businessId
-          };
-          localStorage.setItem("snapsme_current_user", JSON.stringify(userPayload));
+        if (businesses && businesses.length > 0) {
+          // Returning user — pass businessId so handleCompleteOnboarding activates
+          // their existing workspace instead of creating a new blank one.
+          const first = businesses[0];
           localStorage.setItem("snapsme_onboarding_completed", "true");
-
           if (onCompleteOnboarding) {
             onCompleteOnboarding({
-              workspace: wsData,
-              members: [memberData],
-              ownerMember: memberData,
+              businessId: first.businessId,
+              workspace: { id: first.businessId, businessId: first.businessId },
+              members: [first.member],
+              ownerMember: first.member,
               categories: []
             });
           }
@@ -255,12 +243,18 @@ export function OnboardingFlowModal({
         }
       }
 
+      // New user or no Firestore workspace yet — proceed to workspace setup
       setCurrentStep(2);
+
     } catch (err) {
       if (err.code === "auth/email-already-in-use") {
         setErrorMsg("An account already exists with this email. Please switch to Sign In.");
-      } else if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential") {
+      } else if (err.code === "auth/user-not-found" || err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
         setErrorMsg("That email or password doesn't match our records. If you are new, click 'Create Account' above.");
+      } else if (err.code === "auth/too-many-requests") {
+        setErrorMsg("Too many failed login attempts. Please wait a few moments or reset your password.");
+      } else if (err.code === "auth/network-request-failed") {
+        setErrorMsg("Network error. Please check your internet connection and try again.");
       } else {
         setErrorMsg(err.message || "Authentication failed. Please try again.");
       }

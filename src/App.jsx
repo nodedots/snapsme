@@ -34,6 +34,8 @@ import {
   deleteIncomeFirestore,
   findUserBusinesses
 } from "./lib/firestore.js";
+import { auth } from "./lib/firebase.js";
+import { getRedirectResult } from "firebase/auth";
 import { Header } from "./components/Header.jsx";
 import { OfflineBanner } from "./components/OfflineBanner.jsx";
 import { ExpenseFeed } from "./components/ExpenseFeed.jsx";
@@ -116,9 +118,14 @@ export function App() {
   }, [expenses, isFirestoreMode]);
 
   // -------------------------------------------------------------------------
-  // Firebase Auth session restore
+  // Firebase Auth session restore & redirect result processing
   // -------------------------------------------------------------------------
   useEffect(() => {
+    // Process redirect authentication (e.g., mobile Google Sign-In fallback)
+    getRedirectResult(auth).catch((err) => {
+      console.warn("Firebase redirect auth result error:", err.message);
+    });
+
     const unsubscribe = subscribeToAuth(async (user) => {
       setFirebaseUser(user);
 
@@ -259,8 +266,21 @@ export function App() {
 
     setIsOnboardingOpen(false);
 
-    // If signed in with Firebase, create the workspace in Firestore
     if (firebaseUser) {
+      // ── Returning user: workspace already exists in Firestore ──────────────
+      // result.businessId is present when the modal detected an existing workspace
+      // (Google Sign-In or email Sign-In for a returning user). Activate it directly
+      // instead of calling createBusinessWorkspaceFirestore, which would create a
+      // brand-new blank workspace and discard all existing data.
+      if (result.businessId) {
+        setBusinessId(result.businessId);
+        if (result.ownerMember) setCurrentUser(result.ownerMember);
+        setIsFirestoreMode(true);
+        setCurrentView("dashboard");
+        return;
+      }
+
+      // ── New user: create the workspace in Firestore ─────────────────────────
       try {
         const ownerUser = {
           uid: firebaseUser.uid,
@@ -325,6 +345,7 @@ export function App() {
     }
     setCurrentView("dashboard");
   }, [firebaseUser]);
+
 
   // -------------------------------------------------------------------------
   // Expense save — writes to Firestore when in Firestore mode

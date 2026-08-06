@@ -2,9 +2,15 @@
  * SnapSME Central Firebase SDK Initialization (Robust Web ES Modules)
  * Environment Variable Driven Configuration
  */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, enableIndexedDbPersistence, enableMultiTabIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAnalytics, isSupported } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+import { initializeApp } from "firebase/app";
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager
+} from "firebase/firestore";
+import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Helper to safely fetch environment variables in Vite & browser environments
 const getEnv = (key, fallback = "") => {
@@ -27,42 +33,29 @@ export const firebaseConfig = {
   measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID", "G-ZY2K7H6ZN4")
 };
 
-import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-// Initialize Firebase App & Services
+// Initialize Firebase App
 export const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+
+// Initialize Firestore with modern persistent cache (synchronous setup — no async race condition).
+// persistentLocalCache + persistentMultipleTabManager replaces the deprecated
+// enableMultiTabIndexedDbPersistence() which blocked early Firestore reads during login.
+let db;
+try {
+  db = initializeFirestore(app, {
+    cache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager()
+    })
+  });
+  console.info("[snapsme] Firestore multi-tab persistent cache initialized.");
+} catch (e) {
+  // Already initialized (e.g. HMR in dev mode) — reuse the existing instance.
+  db = getFirestore(app);
+  console.info("[snapsme] Firestore reusing existing instance.");
+}
+export { db };
+
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-
-// Enable Firestore offline persistence (Phase 4 — Offline-First Capture)
-// Uses multi-tab persistence when available so multiple tabs share the cache.
-if (typeof window !== "undefined") {
-  try {
-    enableMultiTabIndexedDbPersistence(db)
-      .then(() => {
-        console.info("[snapsme] Firestore multi-tab offline persistence enabled.");
-      })
-      .catch((err) => {
-        if (err.code === "failed-precondition") {
-          // Multi-tab not available (e.g. another tab already enabled it) — fall back to single-tab.
-          enableIndexedDbPersistence(db)
-            .then(() => {
-              console.info("[snapsme] Firestore single-tab offline persistence enabled.");
-            })
-            .catch((persistErr) => {
-              if (persistErr.code !== "already-exists") {
-                console.warn("[snapsme] Firestore offline persistence unavailable:", persistErr.message);
-              }
-            });
-        } else if (err.code !== "already-exists") {
-          console.warn("[snapsme] Firestore offline persistence unavailable:", err.message);
-        }
-      });
-  } catch (e) {
-    console.warn("[snapsme] Firestore offline persistence setup failed:", e.message);
-  }
-}
 
 export let analytics = null;
 if (typeof window !== "undefined") {
