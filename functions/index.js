@@ -433,6 +433,7 @@ export const telegramWebhook = onRequest(
       }
 
       const chatId = message.chat?.id;
+      const senderId = String(message.from?.id || chatId);
       const text = message.text || "";
       const photo = message.photo;
       const voice = message.voice;
@@ -469,27 +470,71 @@ export const telegramWebhook = onRequest(
           });
         }
 
-        // Mark as used and store the Telegram user ID on the member doc
-        await linkSnap.ref.update({ used: true, telegramChatId: chatId, linkedAt: new Date().toISOString() });
-
-        // Look up the user's business membership to store the Telegram ID
+        // Look up the user's business membership
+        let businessId = null;
+        let memberRef = null;
         const memberships = await db.collectionGroup("members").where("userId", "==", link.userId).get();
         for (const m of memberships.docs) {
-          const businessId = m.ref.parent.parent?.id;
-          if (businessId) {
-            await m.ref.update({ telegramUserId: String(chatId) });
-            await db.doc(`businesses/${businessId}`).update({ telegramChatId: chatId });
+          const bId = m.ref.parent.parent?.id;
+          if (bId) {
+            businessId = bId;
+            memberRef = m.ref;
             break;
           }
         }
+
+        if (!businessId) {
+          return res.status(200).json({
+            ok: true,
+            method: "sendMessage",
+            chat_id: chatId,
+            text: "Could not find an active workspace for your account. Please create or join a workspace first."
+          });
+        }
+
+        const existingLinkSnap = await db.collection("telegramLinks").doc(senderId).get();
+        let noticeMessage = "✅ Account linked! You can now send receipt photos or voice notes to log expenses.";
+        if (existingLinkSnap.exists && existingLinkSnap.data().businessId !== businessId) {
+          noticeMessage = "✅ Account linked to business workspace! (Previous workspace link replaced).";
+        }
+
+        const nowIso = new Date().toISOString();
+
+        // 1. Authoritative top-level lookup doc write O(1)
+        await db.collection("telegramLinks").doc(senderId).set({
+          businessId,
+          userId: link.userId,
+          linkedAt: nowIso
+        });
+
+        // 2. Member doc update for Settings UI display
+        if (memberRef) {
+          await memberRef.update({ telegramUserId: senderId });
+        }
+
+        // 3. Mark link code as used
+        await linkSnap.ref.update({ used: true, telegramUserId: senderId, linkedAt: nowIso });
 
         return res.status(200).json({
           ok: true,
           method: "sendMessage",
           chat_id: chatId,
-          text: "✅ Account linked! You can now send receipt photos or voice notes to log expenses."
+          text: noticeMessage
         });
       }
+
+      // DIRECT O(1) TOP-LEVEL LOOKUP FOR INCOMING MESSAGES
+      const linkLookupSnap = await db.collection("telegramLinks").doc(senderId).get();
+      if (!linkLookupSnap.exists) {
+        return res.status(200).json({
+          ok: true,
+          method: "sendMessage",
+          chat_id: chatId,
+          text: "You are not linked to a SnapSME business workspace yet. Please generate a 6-digit link code in the SnapSME app settings and send '/link <code>' here to connect your account."
+        });
+      }
+
+      const { businessId, userId } = linkLookupSnap.data();
 
       // Handle photo message
       if (photo && photo.length > 0) {
@@ -506,60 +551,37 @@ export const telegramWebhook = onRequest(
           const imageBase64 = imgBuffer.toString("base64");
 
           const data = await extractFromImage(imageBase64, "image/jpeg");
+          await saveExpenseToFirestore(businessId, data, userId, "Telegram Bot User");
 
           return res.status(200).json({
             ok: true,
             method: "sendMessage",
             chat_id: chatId,
-            text: `📄 Expense parsed!\n• Vendor: ${data.vendor}\n• Amount: ${data.amount} ${data.currency}\n• Date: ${data.date}\n• Category: ${data.suggestedCategory}\n\nReply "confirm" to save, or "cancel" to discard.`,
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: "✅ Confirm", callback_data: "confirm" }, { text: "❌ Cancel", callback_data: "cancel" }]
-              ]
-            }
+            text: `📄 Receipt scanned & saved!\n• Vendor: ${data.vendor || "N/A"}\n• Amount: ${data.amount ? data.amount + " " + (data.currency || "USD") : "Needs review"}\n• Date: ${data.date || "Today"}\n• Category: ${data.suggestedCategory || "Other Expenses"}`
           });
         }
       }
 
       // Handle voice message
       if (voice) {
-        const fileId = voice.file_id;
-        const botToken = TELEGRAM_BOT_TOKEN.value();
-        const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`);
-        const fileJson = await fileRes.json();
-        const filePath = fileJson?.result?.file_path;
-
-        if (filePath) {
-          const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`;
-          const audioRes = await fetch(fileUrl);
-          const audioBuffer = Buffer.from(await audioRes.arrayBuffer());
-          const audioBase64 = audioBuffer.toString("base64");
-
-          // For voice, we need speech-to-text. For now, we return a prompt
-          // asking the user to type the details, or we could use a future STT.
-          return res.status(200).json({
-            ok: true,
-            method: "sendMessage",
-            chat_id: chatId,
-            text: "🎤 Voice notes are supported! Please type the expense details (e.g. 'Paid 45 dollars for fuel at Shell')."
-          });
-        }
+        return res.status(200).json({
+          ok: true,
+          method: "sendMessage",
+          chat_id: chatId,
+          text: "🎤 Voice notes are supported! Please type your expense description (e.g. 'Paid 45 dollars for fuel at Shell')."
+        });
       }
 
       // Handle plain text (treat as expense description)
       if (text && !text.startsWith("/")) {
         const data = await extractFromTranscript(text);
+        await saveExpenseToFirestore(businessId, data, userId, "Telegram Bot User");
 
         return res.status(200).json({
           ok: true,
           method: "sendMessage",
           chat_id: chatId,
-          text: `📄 Expense parsed!\n• Vendor: ${data.vendor}\n• Amount: ${data.amount} ${data.currency}\n• Date: ${data.date}\n• Category: ${data.suggestedCategory}\n\nReply "confirm" to save, or "cancel" to discard.`,
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "✅ Confirm", callback_data: "confirm" }, { text: "❌ Cancel", callback_data: "cancel" }]
-            ]
-          }
+          text: `📄 Expense logged!\n• Vendor: ${data.vendor || "N/A"}\n• Amount: ${data.amount ? data.amount + " " + (data.currency || "USD") : "Needs review"}\n• Date: ${data.date || "Today"}\n• Category: ${data.suggestedCategory || "Other Expenses"}`
         });
       }
 
@@ -602,7 +624,7 @@ export const whatsappWebhook = onRequest(
       }
 
       const msg = messages[0];
-      const from = msg.from; // phone number
+      const from = String(msg.from); // phone-based WhatsApp user ID
       const type = msg.type;
 
       // Handle text messages
@@ -625,24 +647,64 @@ export const whatsappWebhook = onRequest(
             return res.status(200).json({ status: "ok" });
           }
 
-          await linkSnap.ref.update({ used: true, whatsappPhone: from, linkedAt: new Date().toISOString() });
-
+          let businessId = null;
+          let memberRef = null;
           const memberships = await db.collectionGroup("members").where("userId", "==", link.userId).get();
           for (const m of memberships.docs) {
-            await m.ref.update({ whatsappUserId: from });
-            break;
+            const bId = m.ref.parent.parent?.id;
+            if (bId) {
+              businessId = bId;
+              memberRef = m.ref;
+              break;
+            }
           }
+
+          if (!businessId) {
+            return res.status(200).json({ status: "ok" });
+          }
+
+          const nowIso = new Date().toISOString();
+
+          // 1. Authoritative top-level lookup doc write O(1)
+          await db.collection("whatsappLinks").doc(from).set({
+            businessId,
+            userId: link.userId,
+            linkedAt: nowIso
+          });
+
+          // 2. Member doc update for Settings UI display
+          if (memberRef) {
+            await memberRef.update({ whatsappUserId: from });
+          }
+
+          // 3. Mark link code as used
+          await linkSnap.ref.update({ used: true, whatsappUserId: from, linkedAt: nowIso });
 
           return res.status(200).json({ status: "ok" });
         }
 
-        // Treat as expense description
+        // DIRECT O(1) TOP-LEVEL LOOKUP
+        const linkLookupSnap = await db.collection("whatsappLinks").doc(from).get();
+        if (!linkLookupSnap.exists) {
+          console.warn(`WhatsApp sender ${from} is not linked.`);
+          return res.status(200).json({ status: "ok" });
+        }
+
+        const { businessId, userId } = linkLookupSnap.data();
         const data = await extractFromTranscript(text);
+        await saveExpenseToFirestore(businessId, data, userId, "WhatsApp User");
+
         return res.status(200).json({ status: "ok" });
       }
 
       // Handle image messages
       if (type === "image") {
+        const linkLookupSnap = await db.collection("whatsappLinks").doc(from).get();
+        if (!linkLookupSnap.exists) {
+          return res.status(200).json({ status: "ok" });
+        }
+
+        const { businessId, userId } = linkLookupSnap.data();
         const mediaId = msg.image?.id;
         if (mediaId) {
           const accessToken = WHATSAPP_ACCESS_TOKEN.value();
@@ -660,6 +722,7 @@ export const whatsappWebhook = onRequest(
             const imageBase64 = imgBuffer.toString("base64");
 
             const data = await extractFromImage(imageBase64, "image/jpeg");
+            await saveExpenseToFirestore(businessId, data, userId, "WhatsApp User");
             return res.status(200).json({ status: "ok" });
           }
         }
@@ -672,3 +735,38 @@ export const whatsappWebhook = onRequest(
     }
   }
 );
+
+// ---------------------------------------------------------------------------
+// 6. One-Time Migration: Move nested member chat IDs to top-level collections
+// ---------------------------------------------------------------------------
+export async function migrateChatLinksToTopLevel() {
+  const membersSnap = await db.collectionGroup("members").get();
+  let count = 0;
+
+  for (const mDoc of membersSnap.docs) {
+    const data = mDoc.data();
+    const businessId = mDoc.ref.parent.parent?.id;
+    const userId = data.userId || mDoc.id;
+
+    if (businessId && data.telegramUserId) {
+      await db.collection("telegramLinks").doc(String(data.telegramUserId)).set({
+        businessId,
+        userId,
+        linkedAt: data.invitedAt || new Date().toISOString()
+      }, { merge: true });
+      count++;
+    }
+
+    if (businessId && data.whatsappUserId) {
+      await db.collection("whatsappLinks").doc(String(data.whatsappUserId)).set({
+        businessId,
+        userId,
+        linkedAt: data.invitedAt || new Date().toISOString()
+      }, { merge: true });
+      count++;
+    }
+  }
+
+  console.log(`[Migration] Migrated ${count} chat link mappings to top-level collections.`);
+  return { success: true, count };
+}

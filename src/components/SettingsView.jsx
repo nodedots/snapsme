@@ -54,6 +54,7 @@ import {
   Layout,
   LayoutDashboard
 } from "lucide-react";
+import { unlinkChatChannelFirestore } from "../lib/firestore.js";
 
 export const SettingsView = ({
   currentUser,
@@ -337,12 +338,20 @@ export const SettingsView = ({
   };
 
   // Handle Unlink Channel
-  const handleUnlinkChannel = (channel) => {
+  const handleUnlinkChannel = async (channel) => {
     if (confirm(`Are you sure you want to disconnect your ${channel === 'telegram' ? 'Telegram' : 'WhatsApp'} account?`)) {
+      const chatUserId = channel === "telegram" ? currentUser.telegramUserId : currentUser.whatsappUserId;
       unlinkChatChannel(currentUser.userId, channel, members, setMembers, setCurrentUser);
       if (activeChannel === channel) {
         setChatLink(null);
         setActiveChannel(null);
+      }
+      if (workspace && workspace.businessId) {
+        try {
+          await unlinkChatChannelFirestore(workspace.businessId, currentUser.userId, channel, chatUserId);
+        } catch (err) {
+          console.warn("Firestore unlink chat channel failed:", err.message);
+        }
       }
       refreshLogs();
     }

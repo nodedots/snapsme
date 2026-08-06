@@ -369,6 +369,34 @@ export async function updateProfileFirestore(businessId, userId, updates) {
 }
 
 /**
+ * Unlinks a Telegram or WhatsApp channel:
+ * 1. Clears telegramUserId / whatsappUserId on the member document.
+ * 2. Deletes the top-level telegramLinks/{telegramUserId} or whatsappLinks/{whatsappUserId} lookup document.
+ */
+export async function unlinkChatChannelFirestore(businessId, userId, channel, chatUserId) {
+  if (!businessId || !userId) return;
+
+  const updateObj = {};
+  if (channel === "telegram") updateObj.telegramUserId = null;
+  if (channel === "whatsapp") updateObj.whatsappUserId = null;
+
+  try {
+    await updateDoc(memberDoc(businessId, userId), updateObj);
+  } catch (err) {
+    console.warn("Could not update member doc during unlinking:", err.message);
+  }
+
+  if (chatUserId) {
+    try {
+      const colName = channel === "telegram" ? "telegramLinks" : "whatsappLinks";
+      await deleteDoc(doc(db, colName, String(chatUserId)));
+    } catch (err) {
+      console.warn(`Could not delete top-level ${channel} link lookup doc:`, err.message);
+    }
+  }
+}
+
+/**
  * Accepts a pending staff invite: sets joinedAt + userId on the member doc,
  * and writes the users/{uid} reference so the invited user can resolve their workspace.
  */

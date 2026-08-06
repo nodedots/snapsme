@@ -108,5 +108,15 @@ service cloud.firestore {
       allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
+
+    // Top-Level Chat Link Lookup Collections (telegramLinks & whatsappLinks)
+    // Authoritative lookup tables for webhook routing. Writable/readable strictly by server-side Cloud Functions (Admin SDK).
+    match /telegramLinks/{telegramUserId} {
+      allow read, write: if false;
+    }
+
+    match /whatsappLinks/{whatsappUserId} {
+      allow read, write: if false;
+    }
   }
 }

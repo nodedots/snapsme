@@ -55,12 +55,13 @@ businesses/{businessId}
   createdAt: timestamp
   ownerUid: string
   currency: string (default currency for the workspace)
+  aiCaptureUsage: { count: number, periodStart: timestamp }  // 150 monthly AI scan cap tracking
 
   members/{userId}
     role: "owner" | "staff"
     displayName: string
-    email: string | null
-    phone: string | null
+    email: string (required for authentication)
+    phone: string | null (optional secondary contact)
     telegramUserId: string | null
     whatsappUserId: string | null
     invitedAt: timestamp
@@ -87,19 +88,32 @@ businesses/{businessId}
     duplicateOf: string | null  // expenseId if flagged as a likely duplicate
     createdAt: timestamp
 
-  chatLinks/{linkCode}
-    userId: string
-    channel: "telegram" | "whatsapp"
-    createdAt: timestamp
-    expiresAt: timestamp
-    used: boolean
+chatLinks/{linkCode}
+  userId: string
+  channel: "telegram" | "whatsapp"
+  createdAt: timestamp
+  expiresAt: timestamp
+  used: boolean
+
+// Authoritative top-level lookup tables for O(1) webhook identity resolution
+telegramLinks/{telegramUserId}
+  businessId: string
+  userId: string
+  linkedAt: timestamp
+
+whatsappLinks/{whatsappUserId}
+  businessId: string
+  userId: string
+  linkedAt: timestamp
 ```
 
 **Design notes**:
-- `categories` are per-business, not global, so each workspace's categorization can diverge (matches the "learn per-business" behavior described in the project overview)
-- `moneyMovement` is a required field per FR6 — reflects the deliberate move away from an approval-chain model
-- `source` on each expense preserves which intake channel was used, which directly feeds the "chat-channel submissions as % of total" success metric from the PRD
-- `chatLinks` is a short-lived collection: a code is generated in-app, consumed once by the bot's `/link` command, then marked used
+- `telegramLinks` and `whatsappLinks` top-level lookup collections provide direct $O(1)$ constant time document lookups for incoming Telegram and WhatsApp webhook messages, replacing collection-group searches.
+- `aiCaptureUsage` tracks monthly AI vision/voice extractions up to a 150 fair-use cap per business per calendar month. Manual logging remains 100% unlimited and free.
+- `email` is mandatory for all member documents to guarantee auth compatibility with Firebase Auth and Google Sign-In.
+- `categories` are per-business, not global, so each workspace's categorization can diverge.
+- `moneyMovement` is a required field per FR6 — reflects the deliberate move away from an approval-chain model.
+- `source` on each expense preserves which intake channel was used.
 
 ## 4. Cloud Functions
 
