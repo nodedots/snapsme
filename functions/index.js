@@ -770,3 +770,223 @@ export async function migrateChatLinksToTopLevel() {
   console.log(`[Migration] Migrated ${count} chat link mappings to top-level collections.`);
   return { success: true, count };
 }
+
+// ---------------------------------------------------------------------------
+// 7. Generic Inbound API — POST /api/v1/income & POST /api/v1/expenses
+// ---------------------------------------------------------------------------
+
+/**
+ * In-memory rate limit store.
+ * Key: API key string → { count: number, windowStart: timestamp }
+ * Resets per 60-second sliding window. Generous 100 req/min per key.
+ */
+const rateLimitStore = new Map();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX = 100;
+
+function checkRateLimit(apiKey) {
+  const now = Date.now();
+  let entry = rateLimitStore.get(apiKey);
+
+  if (!entry || (now - entry.windowStart) > RATE_LIMIT_WINDOW_MS) {
+    entry = { count: 1, windowStart: now };
+    rateLimitStore.set(apiKey, entry);
+    return true; // allowed
+  }
+
+  entry.count++;
+  if (entry.count > RATE_LIMIT_MAX) {
+    return false; // rate limited
+  }
+  return true;
+}
+
+/**
+ * Validates a JSON payload for an income or expense record.
+ * Returns { valid: true, data: {...} } or { valid: false, errors: [...] }
+ */
+function validateApiPayload(body, type) {
+  const errors = [];
+
+  // Amount — required, positive number
+  if (body.amount === undefined || body.amount === null) {
+    errors.push({ field: "amount", error: "Amount is required." });
+  } else {
+    const amount = Number(body.amount);
+    if (isNaN(amount) || amount <= 0) {
+      errors.push({ field: "amount", error: "Amount must be a positive number." });
+    }
+  }
+
+  // Date — optional, defaults to today, must be a valid date if provided
+  let parsedDate = new Date().toISOString().split("T")[0];
+  if (body.date !== undefined && body.date !== null && body.date !== "") {
+    const d = new Date(body.date);
+    if (isNaN(d.getTime())) {
+      errors.push({ field: "date", error: `Invalid date format: "${body.date}". Use YYYY-MM-DD.` });
+    } else {
+      parsedDate = d.toISOString().split("T")[0];
+    }
+  }
+
+  // Source (income) or Vendor (expenses) — optional string
+  const sourceOrVendor = typeof body.source === "string" ? body.source.trim() : "";
+
+  // Currency — optional, defaults to USD
+  const currency = typeof body.currency === "string" && body.currency.trim().length === 3
+    ? body.currency.trim().toUpperCase()
+    : "USD";
+
+  // Notes — optional string
+  const notes = typeof body.notes === "string" ? body.notes.trim() : "";
+
+  // Category — optional string
+  const category = typeof body.category === "string" ? body.category.trim() : "";
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  const data = {
+    amount: Number(body.amount),
+    currency,
+    date: parsedDate,
+    notes,
+    source: "api",
+    createdAt: new Date().toISOString(),
+    submittedBy: "api",
+    submittedByName: "API Integration",
+    syncStatus: "synced"
+  };
+
+  if (type === "income") {
+    data.source = sourceOrVendor || "API Income";
+    data.sourceType = "api";
+  } else {
+    data.vendor = sourceOrVendor || "API Expense";
+    data.categoryName = category || "Other Expenses";
+    data.moneyMovement = "company_card";
+  }
+
+  return { valid: true, data };
+}
+
+/**
+ * Authenticates an API key from the Authorization header.
+ * Returns { businessId } on success, or throws with an HTTP-appropriate message.
+ */
+async function authenticateApiKey(req) {
+  const authHeader = req.headers.authorization || req.headers.Authorization || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return { error: "Missing or malformed Authorization header. Expected: Bearer <apiKey>", status: 401 };
+  }
+
+  const apiKey = authHeader.slice(7).trim();
+  if (!apiKey || !apiKey.startsWith("sk_live_")) {
+    return { error: "Invalid API key format.", status: 401 };
+  }
+
+  // O(1) lookup in top-level apiKeys collection
+  const lookupDoc = await db.collection("apiKeys").doc(apiKey).get();
+  if (!lookupDoc.exists) {
+    return { error: "Invalid API key. Generate a new key in SnapSME Settings.", status: 401 };
+  }
+
+  // Rate limit check
+  if (!checkRateLimit(apiKey)) {
+    return {
+      error: "Rate limit exceeded (100 requests/minute). Please slow down and retry.",
+      status: 429
+    };
+  }
+
+  return { businessId: lookupDoc.data().businessId, apiKey };
+}
+
+/**
+ * POST /api/v1/income — push income records via API key auth.
+ */
+export const apiIncome = onRequest(
+  { cors: true },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed. Use POST." });
+    }
+
+    try {
+      const authResult = await authenticateApiKey(req);
+      if (authResult.error) {
+        return res.status(authResult.status).json({ error: authResult.error });
+      }
+
+      const { businessId } = authResult;
+      const validation = validateApiPayload(req.body, "income");
+
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: "Invalid payload",
+          details: validation.errors
+        });
+      }
+
+      // Write to Firestore
+      const incomeRef = db.collection(`businesses/${businessId}/income`).doc();
+      const record = { ...validation.data, id: incomeRef.id };
+      await incomeRef.set(record);
+
+      return res.status(201).json({
+        status: "created",
+        id: incomeRef.id,
+        type: "income",
+        businessId
+      });
+    } catch (err) {
+      console.error("apiIncome error:", err);
+      return res.status(500).json({ error: "Internal server error." });
+    }
+  }
+);
+
+/**
+ * POST /api/v1/expenses — push expense records via API key auth.
+ */
+export const apiExpenses = onRequest(
+  { cors: true },
+  async (req, res) => {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method not allowed. Use POST." });
+    }
+
+    try {
+      const authResult = await authenticateApiKey(req);
+      if (authResult.error) {
+        return res.status(authResult.status).json({ error: authResult.error });
+      }
+
+      const { businessId } = authResult;
+      const validation = validateApiPayload(req.body, "expenses");
+
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: "Invalid payload",
+          details: validation.errors
+        });
+      }
+
+      // Write to Firestore
+      const expenseRef = db.collection(`businesses/${businessId}/expenses`).doc();
+      const record = { ...validation.data, id: expenseRef.id };
+      await expenseRef.set(record);
+
+      return res.status(201).json({
+        status: "created",
+        id: expenseRef.id,
+        type: "expense",
+        businessId
+      });
+    } catch (err) {
+      console.error("apiExpenses error:", err);
+      return res.status(500).json({ error: "Internal server error." });
+    }
+  }
+);

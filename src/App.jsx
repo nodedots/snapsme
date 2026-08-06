@@ -48,6 +48,7 @@ import { TeamWorkspaceModal } from "./components/TeamWorkspaceModal.jsx";
 import { SettingsView } from "./components/SettingsView.jsx";
 import { CaptureModal } from "./components/CaptureModal.jsx";
 import { OnboardingFlowModal } from "./components/OnboardingFlowModal.jsx";
+import { ImportModal } from "./components/ImportModal.jsx";
 import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle } from "lucide-react";
 
 export function App() {
@@ -72,6 +73,8 @@ export function App() {
   const [isIncomeOpen, setIsIncomeOpen] = useState(false);
   const [isIncomeCaptureOpen, setIsIncomeCaptureOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importType, setImportType] = useState("expenses");
 
   // -------------------------------------------------------------------------
   // Demo-mode persistence (localStorage) — only used when NOT in Firestore mode
@@ -742,6 +745,7 @@ export function App() {
             members={members}
             onOpenCapture={() => setIsCaptureOpen(true)}
             onAddIncome={() => setIsIncomeCaptureOpen(true)}
+            onOpenImport={(type) => { setImportType(type); setIsImportOpen(true); }}
             currency={workspace?.currency || "USD"}
           />
         )}
@@ -752,6 +756,7 @@ export function App() {
             currency={workspace?.currency || "USD"}
             onAddIncome={() => setIsIncomeOpen(true)}
             onOpenIncomeCapture={() => setIsIncomeCaptureOpen(true)}
+            onOpenImport={(type) => { setImportType(type); setIsImportOpen(true); }}
             onDeleteIncome={handleDeleteIncome}
             isOwner={currentUser?.role === "owner"}
           />
@@ -854,6 +859,18 @@ export function App() {
         saveMembersFn={setMembers}
         saveCurrentUserFn={setCurrentUser}
         saveCategoriesFn={setCategories}
+      />
+
+      {/* Bulk CSV/Excel Import Modal */}
+      <ImportModal
+        isOpen={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        type={importType}
+        businessId={businessId}
+        categories={categories}
+        currency={workspace?.currency || "USD"}
+        currentUser={currentUser}
+        onImportComplete={() => { /* Firestore real-time listeners auto-refresh */ }}
       />
 
       {/* Footer */}

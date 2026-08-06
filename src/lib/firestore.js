@@ -690,3 +690,76 @@ export async function findUserBusinesses(uid, email = null) {
 
   return results;
 }
+
+// ---------------------------------------------------------------------------
+// API Key Management (Part 2 — Generic Inbound Webhook/API)
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates a cryptographically random API key with the `sk_live_` prefix.
+ * Uses `crypto.getRandomValues` — no guessable derivation from businessId.
+ */
+export function generateApiKey() {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  const hex = Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `sk_live_${hex}`;
+}
+
+/**
+ * Saves a new API key on the business doc and creates a top-level lookup doc.
+ * Returns the plain-text key (should be shown once to the owner).
+ */
+export async function saveApiKeyFirestore(businessId) {
+  if (!businessId) throw new Error("Missing businessId for API key generation.");
+
+  const apiKey = generateApiKey();
+  const now = new Date().toISOString();
+
+  const batch = writeBatch(db);
+
+  // Set key on business doc
+  const bizRef = doc(db, "businesses", businessId);
+  batch.update(bizRef, { apiKey, apiKeyCreatedAt: now });
+
+  // Create top-level lookup: apiKeys/{apiKey} → { businessId, createdAt }
+  const lookupRef = doc(db, "apiKeys", apiKey);
+  batch.set(lookupRef, { businessId, createdAt: now });
+
+  await batch.commit();
+
+  return { apiKey, createdAt: now };
+}
+
+/**
+ * Regenerates the API key for a business. Deletes old top-level lookup,
+ * creates new key and new lookup atomically.
+ */
+export async function regenerateApiKeyFirestore(businessId, oldApiKey) {
+  if (!businessId) throw new Error("Missing businessId for API key regeneration.");
+
+  const newApiKey = generateApiKey();
+  const now = new Date().toISOString();
+
+  const batch = writeBatch(db);
+
+  // Delete old lookup if present
+  if (oldApiKey) {
+    const oldLookupRef = doc(db, "apiKeys", oldApiKey);
+    batch.delete(oldLookupRef);
+  }
+
+  // Update business doc with new key
+  const bizRef = doc(db, "businesses", businessId);
+  batch.update(bizRef, { apiKey: newApiKey, apiKeyCreatedAt: now });
+
+  // Create new top-level lookup
+  const newLookupRef = doc(db, "apiKeys", newApiKey);
+  batch.set(newLookupRef, { businessId, createdAt: now });
+
+  await batch.commit();
+
+  return { apiKey: newApiKey, createdAt: now };
+}

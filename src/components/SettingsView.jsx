@@ -52,9 +52,14 @@ import {
   Upload,
   Image as ImageIcon,
   Layout,
-  LayoutDashboard
+  LayoutDashboard,
+  Key,
+  Zap,
+  Eye,
+  EyeOff,
+  AlertTriangle
 } from "lucide-react";
-import { unlinkChatChannelFirestore } from "../lib/firestore.js";
+import { unlinkChatChannelFirestore, saveApiKeyFirestore, regenerateApiKeyFirestore } from "../lib/firestore.js";
 
 export const SettingsView = ({
   currentUser,
@@ -148,6 +153,13 @@ export const SettingsView = ({
   const [catName, setCatName] = useState("");
   const [catBudget, setCatBudget] = useState("");
   const [catError, setCatError] = useState("");
+
+  // API Key state
+  const [apiKeyVisible, setApiKeyVisible] = useState(false);
+  const [apiKeyLoading, setApiKeyLoading] = useState(false);
+  const [apiKeyToast, setApiKeyToast] = useState("");
+  const [showRegenWarning, setShowRegenWarning] = useState(false);
+  const [apiKeyCopied, setApiKeyCopied] = useState(false);
 
   // Activity Log state
   const [activityLogs, setActivityLogs] = useState(() => loadActivityLogs());
@@ -1439,6 +1451,223 @@ export const SettingsView = ({
           })}
         </div>
       </TornCard>
+
+      {/* FULL WIDTH CARD: Inbound API & Webhook Automations (Owner Only) */}
+      {userIsOwner && (
+        <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold">
+                <Zap className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-base text-[#1c1b19]">
+                  Inbound API & Webhook Automations
+                </h3>
+                <p className="text-xs text-[#6b665c]">
+                  Connect Zapier, Make, or custom scripts to push records into SnapSME
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* API Key Display */}
+          <div className="space-y-4">
+            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-display font-bold text-[#1c1b19] flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-[#0075de]" />
+                  API Key
+                </label>
+                {workspace?.apiKey && (
+                  <span className="text-[10px] font-mono text-[#6b665c]">
+                    Created {workspace.apiKeyCreatedAt ? new Date(workspace.apiKeyCreatedAt).toLocaleDateString() : "—"}
+                  </span>
+                )}
+              </div>
+
+              {workspace?.apiKey ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-white border border-[#d9d4c8] rounded-lg px-3 py-2 font-mono text-xs text-[#1c1b19] flex items-center justify-between">
+                    <span>
+                      {apiKeyVisible
+                        ? workspace.apiKey
+                        : `sk_live_${'•'.repeat(20)}${workspace.apiKey.slice(-4)}`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setApiKeyVisible(!apiKeyVisible)}
+                      className="text-[#6b665c] hover:text-[#1c1b19] cursor-pointer ml-2"
+                      title={apiKeyVisible ? "Hide API key" : "Show API key"}
+                    >
+                      {apiKeyVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(workspace.apiKey);
+                      setApiKeyCopied(true);
+                      setTimeout(() => setApiKeyCopied(false), 2000);
+                    }}
+                    className="flex items-center gap-1 px-3 py-2 text-xs font-semibold bg-white border border-[#d9d4c8] hover:bg-[#e6f3fe] rounded-lg cursor-pointer transition-colors"
+                    title="Copy API key to clipboard"
+                  >
+                    {apiKeyCopied ? <Check className="w-3.5 h-3.5 text-[#0f7a52]" /> : <Copy className="w-3.5 h-3.5 text-[#0075de]" />}
+                    <span>{apiKeyCopied ? "Copied" : "Copy"}</span>
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-[#6b665c] italic">
+                  No API key generated yet. Generate one below to start accepting data from external tools.
+                </p>
+              )}
+
+              <div className="flex items-center gap-2 pt-1">
+                {!workspace?.apiKey ? (
+                  <button
+                    type="button"
+                    disabled={apiKeyLoading}
+                    onClick={async () => {
+                      setApiKeyLoading(true);
+                      setApiKeyToast("");
+                      try {
+                        const result = await saveApiKeyFirestore(workspace.businessId);
+                        onUpdateWorkspace({ ...workspace, apiKey: result.apiKey, apiKeyCreatedAt: result.createdAt });
+                        setApiKeyToast("API key generated! Copy it now — it won't be shown again in full.");
+                        setApiKeyVisible(true);
+                      } catch (err) {
+                        setApiKeyToast(`Error: ${err.message}`);
+                      } finally {
+                        setApiKeyLoading(false);
+                      }
+                    }}
+                    className="bg-[#0075de] hover:bg-[#0060b8] text-white font-display font-semibold text-xs px-4 py-2 rounded-lg transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Key className="w-3.5 h-3.5" />
+                    {apiKeyLoading ? "Generating..." : "Generate API Key"}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowRegenWarning(true)}
+                    className="bg-white hover:bg-red-50 text-red-600 border border-red-200 hover:border-red-400 font-display font-semibold text-xs px-4 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Regenerate Key
+                  </button>
+                )}
+              </div>
+
+              {apiKeyToast && (
+                <div className="bg-[#e6f3fe] border border-[#0075de]/30 text-[#0075de] p-2.5 rounded-lg text-xs font-medium flex items-center gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                  <span>{apiKeyToast}</span>
+                </div>
+              )}
+            </div>
+
+            {/* How to Connect Guide */}
+            <div className="bg-white border border-[#d9d4c8] rounded-xl p-4 space-y-3">
+              <h4 className="font-display font-bold text-xs text-[#1c1b19] flex items-center gap-1.5">
+                <HelpCircle className="w-3.5 h-3.5 text-[#0075de]" />
+                How to Connect
+              </h4>
+              <div className="text-xs text-[#6b665c] space-y-2 font-mono leading-relaxed">
+                <p className="font-sans font-medium text-[#1c1b19]">Endpoint URLs:</p>
+                <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-lg p-2.5 space-y-1">
+                  <code className="block text-[11px]">POST  /apiIncome   → push income records</code>
+                  <code className="block text-[11px]">POST  /apiExpenses → push expense records</code>
+                </div>
+
+                <p className="font-sans font-medium text-[#1c1b19] pt-1">Authentication:</p>
+                <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-lg p-2.5">
+                  <code className="block text-[11px]">Authorization: Bearer sk_live_your_key_here</code>
+                </div>
+
+                <p className="font-sans font-medium text-[#1c1b19] pt-1">Sample JSON Body:</p>
+                <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-lg p-2.5">
+                  <pre className="text-[11px] whitespace-pre-wrap">{`{
+  "amount": 120.50,
+  "currency": "USD",
+  "source": "Shopify order #1042",
+  "date": "2026-08-01",
+  "notes": "optional note"
+}`}</pre>
+                </div>
+
+                <p className="font-sans font-medium text-[#1c1b19] pt-1">Quick Setup (Zapier / Make):</p>
+                <ol className="font-sans list-decimal list-inside space-y-1 text-[#6b665c] text-[11px]">
+                  <li>Create a new Zap/Scenario with a webhook action (POST)</li>
+                  <li>Set the URL to your Cloud Function endpoint above</li>
+                  <li>Add the <code className="font-mono bg-[#f7f3ea] px-1 rounded">Authorization: Bearer</code> header with your API key</li>
+                  <li>Map your trigger data to the JSON body fields (amount, source, date, notes)</li>
+                  <li>Test the connection — a <code className="font-mono bg-[#f7f3ea] px-1 rounded">201</code> response means success</li>
+                </ol>
+
+                <p className="font-sans text-[11px] pt-1">
+                  <strong>Response codes:</strong> 201 Created, 400 Bad Request (check error details), 401 Unauthorized, 429 Rate Limited (100 req/min)
+                </p>
+              </div>
+            </div>
+          </div>
+        </TornCard>
+      )}
+
+      {/* Regenerate API Key Warning Modal */}
+      {showRegenWarning && (
+        <div className="fixed inset-0 z-50 bg-[#1c1b19]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-[#d9d4c8] rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 animate-scale-up">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-base text-[#1c1b19]">Regenerate API Key?</h3>
+                <p className="text-xs text-[#6b665c]">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 p-3 rounded-xl text-xs text-red-700 font-medium">
+              <strong>Warning:</strong> Any connected automations using the old key will immediately stop working.
+              You will need to update the API key in Zapier, Make, or any custom scripts.
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowRegenWarning(false)}
+                className="px-4 py-2 text-xs font-semibold text-[#6b665c] hover:bg-[#f7f3ea] rounded-xl border border-[#d9d4c8] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={apiKeyLoading}
+                onClick={async () => {
+                  setApiKeyLoading(true);
+                  setApiKeyToast("");
+                  try {
+                    const result = await regenerateApiKeyFirestore(workspace.businessId, workspace.apiKey);
+                    onUpdateWorkspace({ ...workspace, apiKey: result.apiKey, apiKeyCreatedAt: result.createdAt });
+                    setApiKeyToast("API key regenerated. Copy the new key — the old one is permanently invalidated.");
+                    setApiKeyVisible(true);
+                    setShowRegenWarning(false);
+                  } catch (err) {
+                    setApiKeyToast(`Error: ${err.message}`);
+                  } finally {
+                    setApiKeyLoading(false);
+                  }
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${apiKeyLoading ? 'animate-spin' : ''}`} />
+                {apiKeyLoading ? "Regenerating..." : "Confirm Regenerate"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FULL WIDTH CARD: Activity Log & Audit Trail (Owner Only) */}
       <TornCard headerColor="bg-[#1c1b19]" tornBottom={true}>

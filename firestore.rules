@@ -118,5 +118,13 @@ service cloud.firestore {
     match /whatsappLinks/{whatsappUserId} {
       allow read, write: if false;
     }
+
+    // Top-Level API Key Lookup Collection (apiKeys)
+    // Authoritative lookup table for inbound API authentication.
+    // Writable/readable strictly by server-side Cloud Functions (Admin SDK).
+    // Client-side access is completely denied.
+    match /apiKeys/{apiKey} {
+      allow read, write: if false;
+    }
   }
 }

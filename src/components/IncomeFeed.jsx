@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { getCurrencySymbol } from "../lib/currencies.js";
-import { ArrowDownLeft, Plus, Trash2, Camera } from "lucide-react";
+import { ArrowDownLeft, Plus, Trash2, Camera, Upload } from "lucide-react";
 
 /**
  * IncomeFeed — separate income list/feed (FR-I2).
  * Income entries render in their own list, distinct from the expense feed.
  * Each row is a white hairline card with a confirmed-green left accent + upward arrow.
  */
-export const IncomeFeed = ({ incomeEntries = [], currency = "USD", onAddIncome, onOpenIncomeCapture, onDeleteIncome, isOwner }) => {
+export const IncomeFeed = ({ incomeEntries = [], currency = "USD", onAddIncome, onOpenIncomeCapture, onOpenImport, onDeleteIncome, isOwner }) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   const totalIncome = incomeEntries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
@@ -49,6 +49,17 @@ export const IncomeFeed = ({ incomeEntries = [], currency = "USD", onAddIncome, 
           <span className="text-xs text-[#6b665c] font-medium bg-[#f7f3ea] border border-black/10 px-3 py-1.5 rounded-lg whitespace-nowrap">
             Total: <span className="font-mono font-bold text-[#0f7a52]">{getCurrencySymbol(currency)}{totalIncome.toFixed(2)}</span>
           </span>
+          {onOpenImport && (
+            <button
+              type="button"
+              onClick={() => onOpenImport("income")}
+              className="w-full sm:w-auto bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/10 hover:border-black/30 font-display font-semibold text-xs px-3.5 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-colors cursor-pointer min-h-[44px] sm:min-h-0"
+              title="Bulk import income records from a CSV or Excel file"
+            >
+              <Upload className="w-3.5 h-3.5 text-[#0075de]" />
+              <span>Import CSV/Excel</span>
+            </button>
+          )}
           {onOpenIncomeCapture && (
             <button
               type="button"

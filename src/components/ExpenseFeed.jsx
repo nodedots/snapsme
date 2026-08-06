@@ -23,6 +23,7 @@ import {
   X,
   Download,
   FileSpreadsheet,
+  Upload,
   Plus
 } from "lucide-react";
 
@@ -33,6 +34,7 @@ export const ExpenseFeed = ({
   members,
   onOpenCapture,
   onAddIncome,
+  onOpenImport,
   currency
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,6 +204,19 @@ export const ExpenseFeed = ({
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Income</span>
+                </button>
+              )}
+
+              {/* Import CSV / Excel Button */}
+              {onOpenImport && (
+                <button
+                  type="button"
+                  onClick={() => onOpenImport("expenses")}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/10 hover:border-black/30"
+                  title="Bulk import expenses from a CSV or Excel file"
+                >
+                  <Upload className="w-3.5 h-3.5 text-[#0075de]" />
+                  <span>Import CSV/Excel</span>
                 </button>
               )}
 
