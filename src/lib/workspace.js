@@ -114,20 +114,25 @@ export function inviteMember(members = [], { email = null, phone = null, display
     throw new Error("Access Denied: Only workspace owners can invite team members.");
   }
 
-  if (!email && !phone) {
-    throw new Error("Please provide at least an email or phone number to invite.");
+  const trimmedEmail = email ? email.trim().toLowerCase() : "";
+  if (!trimmedEmail) {
+    throw new Error("Please add an email address to invite this team member.");
+  }
+
+  if (!trimmedEmail.includes("@") || !trimmedEmail.includes(".")) {
+    throw new Error("Please enter a valid email address.");
   }
 
   const newMemberId = `usr_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
   const now = new Date().toISOString();
 
-  const nameToUse = displayName && displayName.trim() ? displayName.trim() : (email || phone);
+  const nameToUse = displayName && displayName.trim() ? displayName.trim() : trimmedEmail;
 
   const newMember = {
     userId: newMemberId,
     role: "staff",
     displayName: nameToUse,
-    email: email ? email.trim() : null,
+    email: trimmedEmail,
     phone: phone ? phone.trim() : null,
     telegramUserId: null,
     whatsappUserId: null,
@@ -146,11 +151,59 @@ export function inviteMember(members = [], { email = null, phone = null, display
     actorName: currentUser?.displayName || "Owner",
     actorRole: currentUser?.role || "owner",
     actionType: "MEMBER_INVITED",
-    description: `Invited team member "${nameToUse}" (${email || phone}) as Staff`,
+    description: `Invited team member "${nameToUse}" (${trimmedEmail}) as Staff`,
     tag: "Member Invitation"
   });
 
   return newMember;
+}
+
+/**
+ * Updates a pending invite's email or details (e.g. to fix a missing-email invite).
+ * Owner-only capability.
+ */
+export function updateMemberInvite(members = [], targetUserId, { email, phone, displayName }, currentUser, saveMembersFn) {
+  if (!isOwner(currentUser)) {
+    throw new Error("Access Denied: Only workspace owners can modify invitations.");
+  }
+
+  const targetMember = members.find((m) => m.userId === targetUserId);
+  if (!targetMember) {
+    throw new Error("Member not found.");
+  }
+
+  const trimmedEmail = email ? email.trim().toLowerCase() : "";
+  if (!trimmedEmail) {
+    throw new Error("Please add a valid email address to complete this invite.");
+  }
+  if (!trimmedEmail.includes("@") || !trimmedEmail.includes(".")) {
+    throw new Error("Please enter a valid email address.");
+  }
+
+  const updatedMembers = members.map((m) => {
+    if (m.userId !== targetUserId) return m;
+    return {
+      ...m,
+      email: trimmedEmail,
+      phone: phone !== undefined ? (phone ? phone.trim() : null) : m.phone,
+      displayName: displayName && displayName.trim() ? displayName.trim() : (m.displayName || trimmedEmail)
+    };
+  });
+
+  if (saveMembersFn) {
+    saveMembersFn(updatedMembers);
+  }
+
+  recordActivityLog({
+    actorId: currentUser?.userId,
+    actorName: currentUser?.displayName || "Owner",
+    actorRole: currentUser?.role || "owner",
+    actionType: "MEMBER_UPDATED",
+    description: `Updated invitation email for "${targetMember.displayName}" to ${trimmedEmail}`,
+    tag: "Member Invitation"
+  });
+
+  return updatedMembers;
 }
 
 /**

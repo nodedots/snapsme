@@ -787,28 +787,46 @@ export function OnboardingFlowModal({
 
             {/* Staff Input Row */}
             <div className="bg-[#f6f5f4] p-3 rounded-lg border border-black/10 space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input
-                  type="text"
-                  value={inviteInput.displayName}
-                  onChange={(e) => setInviteInput({ ...inviteInput, displayName: e.target.value })}
-                  placeholder="Staff name (e.g. Marcus)"
-                  className="w-full bg-white border border-black/10 text-xs font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#0075de]"
-                />
-                <input
-                  type="text"
-                  value={inviteInput.email || inviteInput.phone}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val.includes("@")) {
-                      setInviteInput({ ...inviteInput, email: val, phone: "" });
-                    } else {
-                      setInviteInput({ ...inviteInput, phone: val, email: "" });
-                    }
-                  }}
-                  placeholder="Email or Phone number"
-                  className="w-full bg-white border border-black/10 text-xs font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#0075de]"
-                />
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#000000] mb-0.5">
+                    Staff Name <span className="text-[#615d59] font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={inviteInput.displayName}
+                    onChange={(e) => setInviteInput({ ...inviteInput, displayName: e.target.value })}
+                    placeholder="e.g. Marcus Rivera"
+                    className="w-full bg-white border border-black/10 text-xs font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#0075de]"
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#000000] mb-0.5">
+                      Email Address <span className="text-[#f64932]">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={inviteInput.email}
+                      onChange={(e) => setInviteInput({ ...inviteInput, email: e.target.value })}
+                      placeholder="staff@company.com"
+                      className="w-full bg-white border border-black/10 text-xs font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#0075de]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#615d59] mb-0.5">
+                      Phone Number <span className="font-normal text-[10px] text-[#615d59]">(optional)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={inviteInput.phone}
+                      onChange={(e) => setInviteInput({ ...inviteInput, phone: e.target.value })}
+                      placeholder="+1 555-019-2834"
+                      className="w-full bg-white border border-black/10 text-xs font-medium rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#0075de]"
+                    />
+                  </div>
+                </div>
               </div>
 
               <button

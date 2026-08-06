@@ -137,14 +137,14 @@ export function validateWorkspaceInfo({ name, currency }) {
 }
 
 export function validateStaffInvite({ email, phone, displayName }) {
-  const trimmedEmail = email ? email.trim() : null;
+  const trimmedEmail = email ? email.trim().toLowerCase() : "";
   const trimmedPhone = phone ? phone.trim() : null;
 
-  if (!trimmedEmail && !trimmedPhone) {
-    throw new Error("Please provide at least an email or phone number for the team member.");
+  if (!trimmedEmail) {
+    throw new Error("Please add an email address to invite this team member.");
   }
-  if (trimmedEmail && (!trimmedEmail.includes("@") || !trimmedEmail.includes("."))) {
-    throw new Error("Invalid staff email address format.");
+  if (!trimmedEmail.includes("@") || !trimmedEmail.includes(".")) {
+    throw new Error("Please enter a valid staff email address.");
   }
   if (trimmedPhone && !/^[+\d\s-]{7,18}$/.test(trimmedPhone)) {
     throw new Error("Invalid staff phone number format.");

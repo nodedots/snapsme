@@ -14,6 +14,7 @@ import {
   isOwner,
   updateWorkspace,
   inviteMember,
+  updateMemberInvite,
   removeMember,
   addCategory,
   updateCategory,
@@ -134,6 +135,11 @@ export const SettingsView = ({
   const [invitePhone, setInvitePhone] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [inviteError, setInviteError] = useState("");
+
+  // Edit Missing Email state
+  const [editingMemberId, setEditingMemberId] = useState(null);
+  const [editEmail, setEditEmail] = useState("");
+  const [editError, setEditError] = useState("");
 
   // Category Add/Edit state
   const [showCatModal, setShowCatModal] = useState(false);
@@ -381,7 +387,25 @@ export const SettingsView = ({
     }
   };
 
-  // Handle Remove Member (Owner Only)
+  // Handle Update Pending Invite Email (Owner Only)
+  const handleSaveInviteEmail = (e) => {
+    e.preventDefault();
+    setEditError("");
+    try {
+      updateMemberInvite(
+        members,
+        editingMemberId,
+        { email: editEmail },
+        currentUser,
+        setMembers
+      );
+      setEditingMemberId(null);
+      setEditEmail("");
+      refreshLogs();
+    } catch (err) {
+      setEditError(err.message || "Failed to update invitation email.");
+    }
+  };
   const handleRemoveMember = (targetUserId) => {
     if (confirm("Are you sure you want to remove this staff member from the workspace?")) {
       try {
@@ -1259,7 +1283,26 @@ export const SettingsView = ({
                     {/* Status & Actions */}
                     <td className="py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {m.joinedAt ? (
+                        {!m.joinedAt && !m.email ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-mono font-bold text-[#ff5a3c] bg-[#fff0ed] border border-[#ff5a3c]/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" /> Missing email — this invite can't be completed
+                            </span>
+                            {userIsOwner && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingMemberId(m.userId);
+                                  setEditEmail(m.email || "");
+                                  setEditError("");
+                                }}
+                                className="text-xs font-semibold text-[#0075de] hover:underline cursor-pointer"
+                              >
+                                Add Email
+                              </button>
+                            )}
+                          </div>
+                        ) : m.joinedAt ? (
                           <span className="text-[10px] font-mono font-bold text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-full">
                             Joined
                           </span>
@@ -1322,6 +1365,27 @@ export const SettingsView = ({
                     </span>
                   )}
                 </div>
+
+                {!m.joinedAt && !m.email && (
+                  <div className="bg-[#fff0ed] border border-[#ff5a3c]/30 rounded-lg p-2 flex items-center justify-between gap-2 text-xs">
+                    <span className="text-[10px] font-mono font-bold text-[#ff5a3c] flex items-center gap-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Missing email — this invite can't be completed
+                    </span>
+                    {userIsOwner && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingMemberId(m.userId);
+                          setEditEmail(m.email || "");
+                          setEditError("");
+                        }}
+                        className="text-xs font-bold text-[#0075de] underline cursor-pointer shrink-0"
+                      >
+                        Add Email
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-center justify-between pt-2 border-t border-[#d9d4c8]/60 text-[11px]">
                   <div className="flex items-center gap-1.5">
@@ -1596,7 +1660,7 @@ export const SettingsView = ({
             <form onSubmit={handleSendInvite} className="space-y-3">
               <div>
                 <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                  Staff Member Name
+                  Staff Member Name <span className="text-[#6b665c] font-normal">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -1609,10 +1673,11 @@ export const SettingsView = ({
 
               <div>
                 <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                  Email Address
+                  Email Address <span className="text-[#ff5a3c]">*</span>
                 </label>
                 <input
                   type="email"
+                  required
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#ff5a3c]"
@@ -1621,8 +1686,8 @@ export const SettingsView = ({
               </div>
 
               <div>
-                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                  Phone Number (Optional)
+                <label className="block text-xs font-display font-semibold text-[#6b665c] mb-1">
+                  Phone Number <span className="font-normal text-[10px] text-[#6b665c]">(optional)</span>
                 </label>
                 <input
                   type="text"
@@ -1646,6 +1711,72 @@ export const SettingsView = ({
                   className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs"
                 >
                   Send Invitation
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Pending Invite Email Modal */}
+      {editingMemberId && (
+        <div className="fixed inset-0 z-50 bg-[#1c1b19]/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-[#d9d4c8] rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4 animate-scale-up">
+            <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8]">
+              <div className="flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-[#0075de]" />
+                <h3 className="font-display font-bold text-lg text-[#1c1b19]">
+                  Add Email to Pending Invite
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingMemberId(null)}
+                className="text-[#6b665c] hover:text-[#1c1b19] font-bold text-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-[#6b665c]">
+              An email address is required so this staff member can sign in and accept their workspace invitation.
+            </p>
+
+            {editError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-medium flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{editError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveInviteEmail} className="space-y-3">
+              <div>
+                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                  Email Address <span className="text-[#0075de]">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0075de]"
+                  placeholder="staff@company.com"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingMemberId(null)}
+                  className="px-4 py-2 text-xs font-semibold text-[#6b665c] hover:bg-[#f7f3ea] rounded-xl border border-[#d9d4c8]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="bg-[#0075de] hover:bg-[#0060b8] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all shadow-xs"
+                >
+                  Save & Complete Invite
                 </button>
               </div>
             </form>
