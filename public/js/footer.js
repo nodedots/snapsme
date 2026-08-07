@@ -11,7 +11,7 @@ export function renderFooter(targetId = "snapsme-footer") {
       <div class="snapsme-footer-grid">
         <!-- Left Column: Wordmark & Tagline -->
         <div class="snapsme-footer-brand">
-          <a href="/home" class="snapsme-footer-wordmark">
+          <a href="/" class="snapsme-footer-wordmark">
             <span class="snapsme-logo-icon" style="overflow: hidden; border-radius: 8px;">
               <img src="/logo.jpg" alt="SnapSME Logo" style="width: 100%; height: 100%; object-fit: cover;" />
             </span>
@@ -27,9 +27,9 @@ export function renderFooter(targetId = "snapsme-footer") {
             <li><a href="/home#how-it-works" class="snapsme-footer-link">How it works</a></li>
             <li><a href="/home#features" class="snapsme-footer-link">Features</a></li>
             <li><a href="/learn/" class="snapsme-footer-link">Learn & Guides</a></li>
-            <li><a href="/about.html" class="snapsme-footer-link">About</a></li>
-            <li><a href="/faq.html" class="snapsme-footer-link">FAQs</a></li>
-            <li><a href="/?auth=signin" class="snapsme-footer-link">Sign in</a></li>
+            <li><a href="/about" class="snapsme-footer-link">About</a></li>
+            <li><a href="/faq" class="snapsme-footer-link">FAQs</a></li>
+            <li><a href="/app?auth=signin" class="snapsme-footer-link">Sign in</a></li>
           </ul>
         </div>
 
@@ -37,8 +37,8 @@ export function renderFooter(targetId = "snapsme-footer") {
         <div class="snapsme-footer-col">
           <h4 class="snapsme-footer-col-title">Support</h4>
           <ul class="snapsme-footer-links">
-            <li><a href="/help.html" class="snapsme-footer-link">Help Center</a></li>
-            <li><a href="/contact.html" class="snapsme-footer-link">Contact Us</a></li>
+            <li><a href="/help" class="snapsme-footer-link">Help Center</a></li>
+            <li><a href="/contact" class="snapsme-footer-link">Contact Us</a></li>
           </ul>
         </div>
 
@@ -46,9 +46,9 @@ export function renderFooter(targetId = "snapsme-footer") {
         <div class="snapsme-footer-col">
           <h4 class="snapsme-footer-col-title">Legal</h4>
           <ul class="snapsme-footer-links">
-            <li><a href="/privacy.html" class="snapsme-footer-link">Privacy Policy</a></li>
-            <li><a href="/terms.html" class="snapsme-footer-link">Terms of Service</a></li>
-            <li><a href="/cookies.html" class="snapsme-footer-link">Cookie Policy</a></li>
+            <li><a href="/privacy" class="snapsme-footer-link">Privacy Policy</a></li>
+            <li><a href="/terms" class="snapsme-footer-link">Terms of Service</a></li>
+            <li><a href="/cookies" class="snapsme-footer-link">Cookie Policy</a></li>
           </ul>
         </div>
 

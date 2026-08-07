@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <p style="font-family: var(--font-notioninter); font-size: 14px; color: var(--color-graphite); margin: 0 0 24px 0; line-height: 1.6;">
           Thank you for reaching out, <strong>${escapeHtml(userName)}</strong>. Your support request has been logged. Our team typically responds within 24 hours.
         </p>
-        <a href="/home" class="btn-notion-primary">
+        <a href="/" class="btn-notion-primary">
           Return to Home
         </a>
       </div>

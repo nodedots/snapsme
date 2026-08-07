@@ -7,6 +7,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      input: {
+        main: './index.html',
+        app: './app.html',
+      },
+    },
+  },
   server: {
     port: 3000,
     host: '0.0.0.0',

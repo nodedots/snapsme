@@ -66,7 +66,7 @@ export async function renderHeader(targetId = "snapsme-header") {
     <div class="snapsme-landing-container">
       <header class="snapsme-nav" style="position: relative; display: flex; align-items: center; justify-content: space-between; width: 100%;">
         <!-- Left: Brand Logo & Wordmark -->
-        <a href="/home" class="snapsme-wordmark" style="flex-shrink: 0;">
+        <a href="/" class="snapsme-wordmark" style="flex-shrink: 0;">
           <span class="snapsme-logo-icon" style="overflow: hidden; border-radius: 8px;">
             <img src="/logo.jpg" alt="SnapSME Logo" style="width: 100%; height: 100%; object-fit: cover;" />
           </span>
@@ -78,8 +78,8 @@ export async function renderHeader(targetId = "snapsme-header") {
           <a href="/home#features" class="snapsme-nav-link">Features</a>
           <a href="/home#how-it-works" class="snapsme-nav-link">How it works</a>
           <a href="/learn/" class="snapsme-nav-link">Learn</a>
-          <a href="/about.html" class="snapsme-nav-link">About</a>
-          <a href="/faq.html" class="snapsme-nav-link">FAQs</a>
+          <a href="/about" class="snapsme-nav-link">About</a>
+          <a href="/faq" class="snapsme-nav-link">FAQs</a>
         </nav>
 
         <!-- Right: Actions & User Menu -->
@@ -123,7 +123,7 @@ export async function renderHeader(targetId = "snapsme-header") {
             <button type="button" class="btn-notion-ghost" id="snapsme-nav-login-btn">
               <span>Sign in</span>
             </button>
-            <a href="/?onboarding=true" class="btn-ledger-primary">
+            <a href="/app?onboarding=true" class="btn-ledger-primary">
               <span>Create Workspace</span>
             </a>
           `}
@@ -147,8 +147,8 @@ export async function renderHeader(targetId = "snapsme-header") {
       <a href="/home#features" class="mobile-nav-link mobile-close-trigger">Features</a>
       <a href="/home#how-it-works" class="mobile-nav-link mobile-close-trigger">How it works</a>
       <a href="/learn/" class="mobile-nav-link mobile-close-trigger">Learn</a>
-      <a href="/about.html" class="mobile-nav-link mobile-close-trigger">About</a>
-      <a href="/faq.html" class="mobile-nav-link mobile-close-trigger">FAQs</a>
+      <a href="/about" class="mobile-nav-link mobile-close-trigger">About</a>
+      <a href="/faq" class="mobile-nav-link mobile-close-trigger">FAQs</a>
       
       ${isSignedIn ? `
         <a href="${primaryBtnHref}" class="btn-ledger-primary" style="width: 100%; justify-content: center; margin-top: 8px;">
@@ -161,7 +161,7 @@ export async function renderHeader(targetId = "snapsme-header") {
       ` : `
         <button type="button" id="mobile-nav-login-btn" class="mobile-nav-link" style="text-align: left; background: none; border: none; font-size: 16px; padding: 12px 0; cursor: pointer; width: 100%;">Sign in</button>
         <div style="margin-top: 8px;">
-          <a href="/?onboarding=true" class="btn-notion-primary" style="width: 100%; justify-content: center;">
+          <a href="/app?onboarding=true" class="btn-notion-primary" style="width: 100%; justify-content: center;">
             <span>Create your workspace</span>
           </a>
         </div>

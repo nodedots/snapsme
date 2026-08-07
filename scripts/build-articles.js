@@ -84,7 +84,7 @@ function renderArticleBody(sections) {
 // 2. Generate Individual Article HTML Files
 articles.forEach((art) => {
   const slug = art.slug;
-  const canonicalUrl = `https://snapsme.com/learn/${slug}.html`;
+  const canonicalUrl = `https://snapsme.com/learn/${slug}`;
   const relatedArticles = articles
     .filter((a) => a.slug !== slug)
     .slice(0, 3);
@@ -251,7 +251,7 @@ articles.forEach((art) => {
         ${relatedArticles
           .map(
             (rel) => `
-          <a href="/learn/${rel.slug}.html" style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 20px; text-decoration: none; transition: border-color 0.15s ease, transform 0.15s ease;" class="hover:border-[#0075de]">
+          <a href="/learn/${rel.slug}" style="display: flex; flex-direction: column; background: #ffffff; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 20px; text-decoration: none; transition: border-color 0.15s ease, transform 0.15s ease;" class="hover:border-[#0075de]">
             <span style="font-family: var(--font-notioninter); font-size: 11px; font-weight: 700; color: #0075de; text-transform: uppercase; margin-bottom: 8px;">${escapeHtml(rel.category)}</span>
             <h4 style="font-family: var(--font-notioninter); font-size: 15px; font-weight: 700; color: #1c1b19; line-height: 1.4; margin: 0 0 8px 0;">${escapeHtml(rel.title)}</h4>
             <span style="font-family: var(--font-notioninter); font-size: 12px; color: #6b665c; margin-top: auto;">${rel.readTime || "5 min read"}</span>
@@ -400,7 +400,7 @@ const hubHtml = `<!DOCTYPE html>
           </div>
 
           <h2 style="font-family: var(--font-notioninter); font-size: 19px; font-weight: 700; color: #1c1b19; line-height: 1.35; margin: 0 0 10px 0; letter-spacing: -0.01em;">
-            <a href="/learn/${art.slug}.html" style="color: inherit; text-decoration: none;">${escapeHtml(art.title)}</a>
+            <a href="/learn/${art.slug}" style="color: inherit; text-decoration: none;">${escapeHtml(art.title)}</a>
           </h2>
 
           <p style="font-family: var(--font-notioninter); font-size: 14px; line-height: 1.6; color: #615d59; margin: 0 0 20px 0; flex-grow: 1;">
@@ -409,7 +409,7 @@ const hubHtml = `<!DOCTYPE html>
 
           <div style="display: flex; align-items: center; justify-between; pt: 14px; border-top: 1px solid #f0eee9;">
             <span style="font-family: var(--font-notioninter); font-size: 12px; color: #6b665c;">${art.publishDate}</span>
-            <a href="/learn/${art.slug}.html" style="font-family: var(--font-notioninter); font-size: 13px; font-weight: 700; color: #0f7a52; text-decoration: none; margin-left: auto;">Read guide &rarr;</a>
+            <a href="/learn/${art.slug}" style="font-family: var(--font-notioninter); font-size: 13px; font-weight: 700; color: #0f7a52; text-decoration: none; margin-left: auto;">Read guide &rarr;</a>
           </div>
         </article>
       `
@@ -439,19 +439,19 @@ console.log(`[build-articles] Generated: /public/learn/index.html`);
 
 // 4. Generate sitemap.xml
 const sitemapUrls = [
-  "https://snapsme.com/home",
-  "https://snapsme.com/about.html",
-  "https://snapsme.com/help.html",
-  "https://snapsme.com/faq.html",
-  "https://snapsme.com/contact.html",
-  "https://snapsme.com/privacy.html",
-  "https://snapsme.com/terms.html",
-  "https://snapsme.com/cookies.html",
+  "https://snapsme.com/",
+  "https://snapsme.com/about",
+  "https://snapsme.com/help",
+  "https://snapsme.com/faq",
+  "https://snapsme.com/contact",
+  "https://snapsme.com/privacy",
+  "https://snapsme.com/terms",
+  "https://snapsme.com/cookies",
   "https://snapsme.com/learn/"
 ];
 
 articles.forEach((art) => {
-  sitemapUrls.push(`https://snapsme.com/learn/${art.slug}.html`);
+  sitemapUrls.push(`https://snapsme.com/learn/${art.slug}`);
 });
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -475,9 +475,9 @@ console.log(`[build-articles] Generated: /public/sitemap.xml`);
 const robotsTxt = `User-agent: *
 Allow: /
 Allow: /learn/
-Allow: /about.html
-Allow: /help.html
-Allow: /faq.html
+Allow: /about
+Allow: /help
+Allow: /faq
 
 Sitemap: https://snapsme.com/sitemap.xml
 `;
