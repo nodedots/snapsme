@@ -606,7 +606,7 @@ export const IncomeCaptureModal = ({
                   <span>Amount & Currency *</span>
                   {aiConfidence && <ConfidenceDot score={aiConfidence.amount} fieldName="Amount" showPercent />}
                 </label>
-                <div className="flex items-center gap-2 w-full min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full min-w-0">
                   <input
                     type="number"
                     step="0.01"
@@ -620,7 +620,7 @@ export const IncomeCaptureModal = ({
                   <select
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value)}
-                    className="w-24 shrink-0 bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-mono font-bold rounded-lg px-2 py-2 focus:outline-none cursor-pointer box-border"
+                    className="w-full sm:w-24 shrink-0 bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-mono font-bold rounded-lg px-2 py-2 focus:outline-none cursor-pointer box-border"
                   >
                     {WORLD_CURRENCIES.map((c) => (
                       <option key={c.code} value={c.code}>
