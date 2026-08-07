@@ -753,6 +753,7 @@ export function App() {
         {currentView === "income" && (
           <IncomeFeed
             incomeEntries={incomeEntries}
+            members={members}
             currency={workspace?.currency || "USD"}
             onAddIncome={() => setIsIncomeOpen(true)}
             onOpenIncomeCapture={() => setIsIncomeCaptureOpen(true)}

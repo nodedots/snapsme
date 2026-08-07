@@ -177,7 +177,7 @@ export const DashboardView = ({
   };
 
   const handleTestNotification = () => {
-    const message = `[SnapSME Test Alert] Workspace spend reached ${Math.round(percentOfMonthlyBudget)}% of monthly budget ($${currentMonthSpend.toFixed(2)} / $${monthlyBudget.toFixed(2)}).`;
+    const message = `[SnapSME Test Alert] Workspace spend reached ${Math.round(percentOfMonthlyBudget)}% of monthly budget (${getCurrencySymbol(currency)}${currentMonthSpend.toFixed(2)} / ${getCurrencySymbol(currency)}${monthlyBudget.toFixed(2)}).`;
     setTestAlertToast(message);
 
     if (
@@ -209,6 +209,20 @@ export const DashboardView = ({
       count: catExpenses.length
     };
   });
+
+  // Income totals by Source
+  const sourceIncomeMap = (incomeEntries || []).reduce((acc, entry) => {
+    const source = entry.source || "Unknown Source";
+    if (!acc[source]) {
+      acc[source] = { source, earned: 0, count: 0 };
+    }
+    acc[source].earned += Number(entry.amount) || 0;
+    acc[source].count += 1;
+    return acc;
+  }, {});
+  
+  const sortedIncomeSources = Object.values(sourceIncomeMap).sort((a, b) => b.earned - a.earned);
+  const topIncomeSource = sortedIncomeSources.length > 0 ? sortedIncomeSources[0] : null;
 
   // Spend totals by Staff Member
   const memberSpendMap = members.map((m) => {
@@ -492,7 +506,7 @@ export const DashboardView = ({
               <div className="bg-[#fbf1de] border border-[#ff5a3c]/40 p-3 rounded-lg flex items-center gap-2 text-xs text-[#ff5a3c] font-medium">
                 <ShieldAlert className="w-4 h-4 shrink-0" />
                 <span>
-                  <strong>Soft Alert:</strong> Total workspace expenses (${currentMonthSpend.toFixed(2)}) have exceeded the monthly budget (${monthlyBudget.toFixed(2)}) by ${(currentMonthSpend - monthlyBudget).toFixed(2)}.
+                  <strong>Soft Alert:</strong> Total workspace expenses ({getCurrencySymbol(currency)}{currentMonthSpend.toFixed(2)}) have exceeded the monthly budget ({getCurrencySymbol(currency)}{monthlyBudget.toFixed(2)}) by {getCurrencySymbol(currency)}{(currentMonthSpend - monthlyBudget).toFixed(2)}.
                 </span>
               </div>
             )}
@@ -500,7 +514,7 @@ export const DashboardView = ({
               <div className="bg-amber-50 border border-amber-300 p-3 rounded-lg flex items-center gap-2 text-xs text-[#e0982a] font-medium">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>
-                  <strong>Warning:</strong> Total workspace spend is at {Math.round(percentOfMonthlyBudget)}% of the monthly budget limit. ${remainingMonthlyBudget.toFixed(2)} remaining.
+                  <strong>Warning:</strong> Total workspace spend is at {Math.round(percentOfMonthlyBudget)}% of the monthly budget limit. {getCurrencySymbol(currency)}{remainingMonthlyBudget.toFixed(2)} remaining.
                 </span>
               </div>
             )}
@@ -567,7 +581,7 @@ export const DashboardView = ({
                     <div className="flex items-center gap-1.5 font-semibold text-[#1c1b19]">
                       <span>80% Budget Threshold Alert</span>
                       <span className="text-[10px] font-mono font-bold text-[#0f7a52] bg-white px-1.5 py-0.5 rounded border border-[#0f7a52]/20">
-                        ${(monthlyBudget * 0.8).toFixed(0)}
+                        {getCurrencySymbol(currency)}{(monthlyBudget * 0.8).toFixed(0)}
                       </span>
                     </div>
                     <p className="text-[11px] text-[#6b665c]">
@@ -595,7 +609,7 @@ export const DashboardView = ({
                     <div className="flex items-center gap-1.5 font-semibold text-[#1c1b19]">
                       <span>95% Critical Budget Alert</span>
                       <span className="text-[10px] font-mono font-bold text-[#e0982a] bg-white px-1.5 py-0.5 rounded border border-[#e0982a]/20">
-                        ${(monthlyBudget * 0.95).toFixed(0)}
+                        {getCurrencySymbol(currency)}{(monthlyBudget * 0.95).toFixed(0)}
                       </span>
                     </div>
                     <p className="text-[11px] text-[#6b665c]">
@@ -659,7 +673,7 @@ export const DashboardView = ({
       )}
 
       {/* Summary Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         <div className="bg-white p-4 rounded-xl border border-[#d9d4c8]">
           <div className="flex items-center justify-between text-[#6b665c] mb-1">
             <span className="text-xs font-medium">Total Workspace Spend</span>
@@ -696,6 +710,17 @@ export const DashboardView = ({
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {topIncomeSource && (
+          <div className="bg-white p-4 rounded-xl border border-[#d9d4c8]">
+            <div className="flex items-center justify-between text-[#6b665c] mb-1">
+              <span className="text-xs font-medium">Top Income Source</span>
+              <ArrowDownLeft className="w-4 h-4 text-[#0f7a52]" />
+            </div>
+            <p className="font-display font-bold text-lg text-[#1c1b19] truncate">{topIncomeSource.source}</p>
+            <p className="font-mono text-xs text-[#0f7a52] font-bold mt-1">{getCurrencySymbol(currency)}{topIncomeSource.earned.toFixed(2)}</p>
           </div>
         )}
 
@@ -770,7 +795,7 @@ export const DashboardView = ({
                 {/* Soft Alert Banner */}
                 {isExceeded && (
                   <p className="text-[11px] text-[#ff5a3c] font-semibold flex items-center gap-1 mt-1">
-                    <ShieldAlert className="w-3.5 h-3.5 shrink-0" /> Soft Alert: Category budget exceeded by ${(item.spent - item.budget).toFixed(2)}
+                    <ShieldAlert className="w-3.5 h-3.5 shrink-0" /> Soft Alert: Category budget exceeded by {getCurrencySymbol(currency)}{(item.spent - item.budget).toFixed(2)}
                   </p>
                 )}
                 {isNearLimit && (

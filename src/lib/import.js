@@ -220,6 +220,7 @@ export function processImportRows(rows, columnMappings, type = "expenses", works
         source: vendorOrSource,
         date: parsedDateStr,
         sourceType: "csv_import",
+        origin: "csv_import",
         notes: record.notes ? record.notes.trim() : "",
         createdAt: now
       });

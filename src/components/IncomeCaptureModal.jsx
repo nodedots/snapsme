@@ -374,6 +374,7 @@ export const IncomeCaptureModal = ({
       aiConfidence,
       correctedFields,
       syncStatus: isOfflineMode ? "pending" : "synced",
+      origin: "manual",
       createdAt: new Date().toISOString()
     });
 

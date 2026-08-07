@@ -46,6 +46,7 @@ export const IncomeFormModal = ({ isOpen, onClose, currency = "USD", currentUser
       source: trimmedSource,
       date,
       notes: notes.trim() || null,
+      origin: "manual",
       createdAt: new Date().toISOString()
     };
 
