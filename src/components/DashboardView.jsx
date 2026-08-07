@@ -746,10 +746,19 @@ export const DashboardView = ({
       {/* Category Budgets & Soft Alert System per PRD FR17, FR18 */}
       <div className="bg-white p-5 rounded-xl border border-[#d9d4c8] space-y-4">
         <div className="flex items-center justify-between border-b border-[#d9d4c8] pb-3">
-          <h3 className="font-display font-bold text-base text-[#1c1b19] flex items-center gap-2">
-            <PieChart className="w-5 h-5 text-[#0f7a52]" /> Category Budgets & Soft Alerts
-          </h3>
-          <span className="text-xs text-[#6b665c]">Owner-configured category limits</span>
+          <div>
+            <h3 className="font-display font-bold text-base text-[#1c1b19] flex items-center gap-2">
+              <PieChart className="w-5 h-5 text-[#0f7a52]" /> Category Budgets & Soft Alerts
+            </h3>
+            <span className="text-xs text-[#6b665c]">Owner-configured category limits</span>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="text-[11px] font-semibold text-[#0f7a52] hover:underline bg-[#e7f4ec] px-2.5 py-1 rounded-md border border-[#0f7a52]/30 cursor-pointer"
+          >
+            Configure
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

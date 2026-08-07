@@ -982,7 +982,7 @@ export const SettingsView = ({
                     {cat.name}
                   </span>
                   <span className="text-[10px] font-mono text-[#6b665c]">
-                    Budget: {cat.budget ? `${currencySymbols[workspace.currency] || '$'}${cat.budget.toLocaleString()}/mo` : "Unlimited"}
+                    Budget: {cat.budget ? `${getCurrencySymbol(workspace.currency)}${cat.budget.toLocaleString()}/mo` : "Unlimited"}
                   </span>
                 </div>
 
@@ -2107,7 +2107,7 @@ export const SettingsView = ({
 
               <div>
                 <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                  Monthly Budget Limit ({currencySymbols[workspace.currency] || '$'})
+                  Monthly Budget Limit ({getCurrencySymbol(workspace.currency)})
                 </label>
                 <input
                   type="number"
