@@ -57,7 +57,8 @@ import {
   Zap,
   Eye,
   EyeOff,
-  AlertTriangle
+  AlertTriangle,
+  ChevronDown
 } from "lucide-react";
 import { unlinkChatChannelFirestore, saveApiKeyFirestore, regenerateApiKeyFirestore } from "../lib/firestore.js";
 
@@ -73,6 +74,24 @@ export const SettingsView = ({
   onBackToDashboard
 }) => {
   const userIsOwner = isOwner(currentUser);
+
+  // Collapsible sections state — keys match section IDs, true = collapsed
+  const [collapsedSections, setCollapsedSections] = useState({
+    profile: false,         // open by default
+    aiUsage: true,
+    chatBots: true,
+    workspace: true,
+    categories: true,
+    brand: true,
+    dashPrefs: true,
+    team: false,            // open by default
+    inboundApi: true,
+    activityLog: true
+  });
+
+  const toggleSection = (key) => {
+    setCollapsedSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   // Profile Form state
   const [profileName, setProfileName] = useState(currentUser?.displayName || "");
@@ -562,7 +581,7 @@ export const SettingsView = ({
         
         {/* CARD 1: User Profile & Identity */}
         <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 cursor-pointer select-none" onClick={() => toggleSection('profile')}>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
                 <User className="w-4 h-4" />
@@ -574,14 +593,17 @@ export const SettingsView = ({
                 <p className="text-[11px] text-[#6b665c]">Personal credentials and notifications</p>
               </div>
             </div>
-            {profileToast && (
-              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 animate-fade-in shrink-0">
-                <CheckCircle2 className="w-3.5 h-3.5" /> {profileToast}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {profileToast && (
+                <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 animate-fade-in shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> {profileToast}
+                </span>
+              )}
+              <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.profile ? '-rotate-90' : ''}`} />
+            </div>
           </div>
 
-          <form onSubmit={handleSaveProfile} className="space-y-3">
+          {!collapsedSections.profile && <form onSubmit={handleSaveProfile} className="space-y-3 mt-4">
             <div>
               <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
                 Display Name
@@ -635,12 +657,12 @@ export const SettingsView = ({
                 <span>Save Profile</span>
               </button>
             </div>
-          </form>
+          </form>}
         </TornCard>
 
         {/* CARD: AI Feature Usage & Limits */}
         <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 cursor-pointer select-none" onClick={() => toggleSection('aiUsage')}>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold shrink-0">
                 <Sparkles className="w-4 h-4" />
@@ -652,12 +674,15 @@ export const SettingsView = ({
                 <p className="text-[11px] text-[#6b665c]">Monthly allocation for AI receipt & voice capture</p>
               </div>
             </div>
-            <span className="text-[11px] font-mono font-semibold text-[#0075de] bg-[#0075de]/10 px-2.5 py-1 rounded-md">
-              Fair-Use Plan
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-mono font-semibold text-[#0075de] bg-[#0075de]/10 px-2.5 py-1 rounded-md">
+                Fair-Use Plan
+              </span>
+              <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.aiUsage ? '-rotate-90' : ''}`} />
+            </div>
           </div>
 
-          <div className="space-y-4">
+          {!collapsedSections.aiUsage && <div className="space-y-4 mt-4">
             <div className="bg-[#f7f3ea]/60 border border-[#d9d4c8] rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-display font-bold text-[#1c1b19]">
@@ -677,7 +702,7 @@ export const SettingsView = ({
                 AI photo scanning and voice capture reset automatically on the 1st of every calendar month. Manual entry of expenses and income is always 100% free and unlimited.
               </p>
             </div>
-          </div>
+          </div>}
         </TornCard>
 
         {/* CARD 2: Chat Bot Integrations (Telegram & WhatsApp) */}
@@ -1185,7 +1210,7 @@ export const SettingsView = ({
 
       {/* FULL WIDTH CARD: Team Members & Role Management (Owner Only) */}
       <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4 cursor-pointer select-none" onClick={() => toggleSection('team')}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
               <UserPlus className="w-4 h-4" />
@@ -1200,26 +1225,32 @@ export const SettingsView = ({
             </div>
           </div>
 
-          {userIsOwner ? (
-            <button
-              type="button"
-              onClick={() => {
-                setInviteError("");
-                setShowInviteModal(true);
-              }}
-              className="w-full sm:w-auto bg-[#ff5a3c] hover:bg-[#e0482c] text-white text-xs font-semibold px-3.5 py-2.5 sm:py-2 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-h-[44px] sm:min-h-0"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Invite Staff Member</span>
-            </button>
-          ) : (
-            <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-              <Lock className="w-3 h-3" /> Owner Gated
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {userIsOwner ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInviteError("");
+                  setShowInviteModal(true);
+                }}
+                className="w-full sm:w-auto bg-[#ff5a3c] hover:bg-[#e0482c] text-white text-xs font-semibold px-3.5 py-2.5 sm:py-2 rounded-xl flex items-center justify-center gap-1.5 cursor-pointer shadow-xs min-h-[44px] sm:min-h-0"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Invite Staff Member</span>
+              </button>
+            ) : (
+              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                <Lock className="w-3 h-3" /> Owner Gated
+              </span>
+            )}
+            <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.team ? '-rotate-90' : ''}`} />
+          </div>
         </div>
 
-        {/* Desktop Members Roster Table (>= 768px) */}
+        {!collapsedSections.team && (
+          <>
+            {/* Desktop Members Roster Table (>= 768px) */}
         <div className="hidden md:block overflow-x-auto min-w-0">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -1450,12 +1481,14 @@ export const SettingsView = ({
             );
           })}
         </div>
+          </>
+        )}
       </TornCard>
 
       {/* FULL WIDTH CARD: Inbound API & Webhook Automations (Owner Only) */}
       {userIsOwner && (
         <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4 cursor-pointer select-none" onClick={() => toggleSection('inboundApi')}>
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold">
                 <Zap className="w-4 h-4" />
@@ -1469,10 +1502,13 @@ export const SettingsView = ({
                 </p>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.inboundApi ? '-rotate-90' : ''}`} />
+            </div>
           </div>
 
-          {/* API Key Display */}
-          <div className="space-y-4">
+          {!collapsedSections.inboundApi && (
+            <div className="space-y-4">
             <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-display font-bold text-[#1c1b19] flex items-center gap-1.5">
@@ -1611,6 +1647,7 @@ export const SettingsView = ({
               </div>
             </div>
           </div>
+          )}
         </TornCard>
       )}
 
@@ -1671,7 +1708,7 @@ export const SettingsView = ({
 
       {/* FULL WIDTH CARD: Activity Log & Audit Trail (Owner Only) */}
       <TornCard headerColor="bg-[#1c1b19]" tornBottom={true}>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#d9d4c8]/60 mb-4 cursor-pointer select-none" onClick={() => toggleSection('activityLog')}>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[#1c1b19]/10 text-[#1c1b19] flex items-center justify-center font-bold">
               <History className="w-4 h-4" />
@@ -1694,7 +1731,10 @@ export const SettingsView = ({
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               type="button"
-              onClick={refreshLogs}
+              onClick={(e) => {
+                e.stopPropagation();
+                refreshLogs();
+              }}
               className="p-2.5 sm:p-1.5 text-[#6b665c] hover:text-[#1c1b19] bg-[#f7f3ea] hover:bg-white border border-[#d9d4c8] rounded-lg transition-colors cursor-pointer shrink-0 min-h-[44px] sm:min-h-0 flex items-center justify-center"
               title="Refresh activity logs"
             >
@@ -1704,7 +1744,10 @@ export const SettingsView = ({
             {userIsOwner ? (
               <button
                 type="button"
-                onClick={handleExportActivityCSV}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleExportActivityCSV();
+                }}
                 disabled={filteredLogs.length === 0}
                 className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-1.5 rounded-lg text-xs font-display font-semibold transition-all shadow-2xs whitespace-nowrap cursor-pointer min-h-[44px] sm:min-h-0 ${
                   filteredLogs.length > 0
@@ -1721,10 +1764,12 @@ export const SettingsView = ({
                 <Lock className="w-3 h-3" /> Owner Restricted
               </span>
             )}
+            <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.activityLog ? '-rotate-90' : ''}`} />
           </div>
         </div>
 
-        {!userIsOwner ? (
+        {!collapsedSections.activityLog && (
+          !userIsOwner ? (
           /* Restricted Access View for Staff */
           <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-6 text-center space-y-2">
             <Lock className="w-8 h-8 text-[#e0982a] mx-auto" />
@@ -1865,7 +1910,7 @@ export const SettingsView = ({
               </div>
             )}
           </div>
-        )}
+        ))}
       </TornCard>
 
       {/* Invite Member Modal */}
