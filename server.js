@@ -1298,9 +1298,8 @@ async function startServer() {
       server: { middlewareMode: true },
       appType: "custom"
     });
-    app.use(vite.middlewares);
 
-    // Serve React App index on root or unhandled SPA routes
+    // Serve landing page
     app.get(["/", "/index.html"], async (req, res, next) => {
       try {
         const url = req.originalUrl;
@@ -1312,11 +1311,43 @@ async function startServer() {
         next(e);
       }
     });
+
+    // Serve React App
+    app.get("/app", async (req, res, next) => {
+      try {
+        const url = req.originalUrl;
+        let template = fs.readFileSync(path.join(process.cwd(), "app.html"), "utf-8");
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
+    
+    app.get("/app.html", async (req, res, next) => {
+      try {
+        const url = req.originalUrl;
+        let template = fs.readFileSync(path.join(process.cwd(), "app.html"), "utf-8");
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ "Content-Type": "text/html" }).end(template);
+      } catch (e) {
+        vite.ssrFixStacktrace(e);
+        next(e);
+      }
+    });
+
+    app.use(vite.middlewares);
+
+
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("/", (_req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
+    });
+    app.get("/app", (_req, res) => {
+      res.sendFile(path.join(distPath, "app.html"));
     });
   }
 
