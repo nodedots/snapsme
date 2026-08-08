@@ -1263,6 +1263,14 @@ app.get(["/help", "/help.html"], (_req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "help.html"));
 });
 
+app.get(["/faq", "/faq.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "faq.html"));
+});
+
+app.get(["/about", "/about.html"], (_req, res) => {
+  res.sendFile(path.join(process.cwd(), "public", "about.html"));
+});
+
 app.get(["/contact", "/contact.html"], (_req, res) => {
   res.sendFile(path.join(process.cwd(), "public", "contact.html"));
 });

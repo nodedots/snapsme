@@ -28,7 +28,50 @@
   class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased selection:bg-[#0075de]/20 selection:text-[#000000]">
 
   <!-- Shared Reusable Nav Header -->
-  <div id="snapsme-header"></div>
+  <div id="snapsme-header">
+    <div class="snapsme-header-wrapper" style="background-color: var(--color-paper-warmth); border-bottom: var(--border-hairline); width: 100%; position: relative;">
+      <div class="snapsme-landing-container">
+        <header class="snapsme-nav" style="position: relative; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <!-- Left: Brand Logo & Wordmark -->
+          <a href="/" class="snapsme-wordmark" style="flex-shrink: 0;">
+            <span class="snapsme-logo-icon" style="overflow: hidden; border-radius: 8px;">
+              <img src="/logo.jpg" alt="SnapSME Logo" style="width: 100%; height: 100%; object-fit: cover;" />
+            </span>
+            <span>Snap<span style="color: var(--color-notion-blue);">SME</span></span>
+          </a>
+          
+          <!-- Center: Navigation Links (Centered) -->
+          <nav class="snapsme-nav-links desktop-only" style="display: flex; align-items: center; gap: 24px; position: absolute; left: 50%; transform: translateX(-50%);">
+            <a href="/#features" class="snapsme-nav-link">Features</a>
+            <a href="/#how-it-works" class="snapsme-nav-link">How it works</a>
+            <a href="/learn/" class="snapsme-nav-link">Learn</a>
+            <a href="/about" class="snapsme-nav-link">About</a>
+            <a href="/faq" class="snapsme-nav-link">FAQs</a>
+          </nav>
+  
+          <!-- Right: Actions & User Menu -->
+          <div class="snapsme-header-actions desktop-only" style="display: flex; align-items: center; gap: 16px; margin-left: auto;">
+              <!-- Logged-Out State Nav -->
+              <button type="button" class="btn-notion-ghost" id="snapsme-nav-login-btn">
+                <span>Sign in</span>
+              </button>
+              <a href="/app?onboarding=true" class="btn-ledger-primary">
+                <span>Create Workspace</span>
+              </a>
+          </div>
+  
+          <!-- Mobile Menu Toggle Button -->
+          <button type="button" class="mobile-menu-btn" id="snapsme-mobile-menu-btn" aria-label="Toggle navigation menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+      </div>
+    </div>
+  </div>
 
   <!-- Main Container -->
   <div class="snapsme-landing-container">

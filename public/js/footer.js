@@ -24,8 +24,8 @@ export function renderFooter(targetId = "snapsme-footer") {
         <div class="snapsme-footer-col">
           <h4 class="snapsme-footer-col-title">Product</h4>
           <ul class="snapsme-footer-links">
-            <li><a href="/home#how-it-works" class="snapsme-footer-link">How it works</a></li>
-            <li><a href="/home#features" class="snapsme-footer-link">Features</a></li>
+            <li><a href="/#how-it-works" class="snapsme-footer-link">How it works</a></li>
+            <li><a href="/#features" class="snapsme-footer-link">Features</a></li>
             <li><a href="/learn/" class="snapsme-footer-link">Learn & Guides</a></li>
             <li><a href="/about" class="snapsme-footer-link">About</a></li>
             <li><a href="/faq" class="snapsme-footer-link">FAQs</a></li>
