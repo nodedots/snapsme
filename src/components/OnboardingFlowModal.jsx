@@ -52,11 +52,9 @@ export function OnboardingFlowModal({
   React.useEffect(() => {
     if (isOpen) {
       if (initialStep && initialStep > 1) {
-        setCurrentStep(initialStep);
+        setCurrentStep((prev) => (prev < initialStep ? initialStep : prev));
       } else if (auth.currentUser || (currentUser && currentUser.userId)) {
-        setCurrentStep(2);
-      } else {
-        setCurrentStep(1);
+        setCurrentStep((prev) => (prev === 1 ? 2 : prev));
       }
     }
   }, [isOpen, initialStep, currentUser]);
