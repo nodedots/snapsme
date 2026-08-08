@@ -3,138 +3,210 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cookie & Local Storage Policy — SnapSME</title>
+  <title>Cookie &amp; Local Storage Policy — SnapSME</title>
 
-  <!-- SEO Meta Tags -->
-  <meta name="description" content="SnapSME Cookie & Local Storage Policy. Learn how we use local browser storage, session cookies, and offline data queueing to provide secure team expense tracking." />
+  <meta name="description" content="SnapSME Cookie &amp; Local Storage Policy. Learn how we use local browser storage, session cookies, and offline data queueing to provide secure team expense tracking." />
   <meta name="keywords" content="SnapSME cookie policy, local storage privacy, offline storage cookies, session token security" />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="Cookie & Local Storage Policy — SnapSME" />
+  <meta property="og:title" content="Cookie &amp; Local Storage Policy — SnapSME" />
   <meta property="og:description" content="Detailed information on how SnapSME uses local storage, session cookies, and offline data queueing." />
   <meta property="og:type" content="website" />
 
-  <!-- Fonts & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/jpeg" href="/logo.jpg">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/motion.css">
+
+  <style>
+    .legal-container { max-width: 820px; margin: 0 auto; padding: 48px 20px 96px; }
+    .legal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff8e7; color: #d48a00;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+      padding: 4px 12px; border-radius: 100px; margin-bottom: 14px;
+    }
+    .legal-title { font-size: clamp(24px,4vw,34px); font-weight: 800; color: #1c1b19; margin: 0 0 6px 0; letter-spacing: -0.03em; }
+    .legal-meta { font-size: 12px; color: #8c877d; font-family: 'IBM Plex Mono', monospace; margin: 0; }
+    .legal-divider { border: none; border-top: 1px solid var(--color-fiber-gray); margin: 24px 0 32px; }
+
+    .legal-sections { display: flex; flex-direction: column; gap: 36px; font-size: 15px; line-height: 1.75; color: #2c2a26; }
+    .legal-section h2 { font-size: 19px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0; letter-spacing: -0.01em; }
+    .legal-section ul { padding-left: 20px; margin: 8px 0 0; display: flex; flex-direction: column; gap: 8px; }
+    .legal-section code { font-family: 'IBM Plex Mono', monospace; background: var(--color-paper-warmth); border: 1px solid var(--color-fiber-gray); padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #1c1b19; }
+
+    .data-table-wrap { background: #fff; border: 1px solid var(--color-fiber-gray); border-radius: 12px; padding: 4px 20px; margin-top: 14px; overflow-x: auto; }
+    .data-table { width: 100%; font-size: 13px; text-align: left; border-collapse: collapse; }
+    .data-table thead tr { border-bottom: 1px solid var(--color-fiber-gray); color: #8c877d; }
+    .data-table th { padding: 10px 8px 10px 0; font-weight: 600; }
+    .data-table td { padding: 11px 8px 11px 0; border-bottom: 1px dashed rgba(0,0,0,0.06); vertical-align: top; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table td:first-child { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: #1c1b19; font-size: 12px; white-space: nowrap; }
+    .data-table .tag {
+      display: inline-block; font-family: var(--font-notioninter); font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 100px; white-space: nowrap;
+    }
+    .tag-essential { background: var(--color-mint-wash); color: var(--color-brand-accent); }
+    .tag-local { background: #e6f3fe; color: var(--color-notion-blue); }
+
+    .contact-box {
+      background: var(--color-paper-warmth); border: 1px solid var(--color-fiber-gray);
+      border-radius: 12px; padding: 20px 24px; margin-top: 16px; font-size: 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .contact-box .name { font-weight: 700; color: #1c1b19; font-size: 15px; }
+    .contact-box .email { color: var(--color-notion-blue); font-weight: 500; }
+    .contact-box .detail { color: #6b665c; }
+    .last-section { border-top: 1px solid var(--color-fiber-gray); padding-top: 32px !important; }
+
+    .note-box {
+      background: var(--color-paper-warmth); border: 1px solid var(--color-fiber-gray);
+      border-radius: 10px; padding: 13px 18px; font-size: 13px; color: #6b665c;
+      margin-top: 14px; line-height: 1.6; font-style: italic;
+    }
+  </style>
 </head>
-<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased selection:bg-[#0075de]/20 selection:text-[#000000]">
+<body>
 
-  <!-- Shared Reusable Nav Header -->
-  <div id="snapsme-header"></div>
+  <!-- Static header shell for instant render -->
+  <div id="snapsme-header">
+    <div class="snapsme-header-wrapper" style="background-color: var(--color-paper-warmth); border-bottom: var(--border-hairline); width: 100%; position: relative;">
+      <div class="snapsme-landing-container">
+        <header class="snapsme-nav" style="position: relative; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <a href="/" class="snapsme-wordmark" style="flex-shrink: 0;">
+            <span class="snapsme-logo-icon" style="overflow: hidden; border-radius: 8px;"><img src="/logo.jpg" alt="SnapSME Logo" style="width: 100%; height: 100%; object-fit: cover;" /></span>
+            <span>Snap<span style="color: var(--color-notion-blue);">SME</span></span>
+          </a>
+          <nav class="snapsme-nav-links desktop-only" style="display: flex; align-items: center; gap: 24px; position: absolute; left: 50%; transform: translateX(-50%);">
+            <a href="/#features" class="snapsme-nav-link">Features</a>
+            <a href="/#how-it-works" class="snapsme-nav-link">How it works</a>
+            <a href="/learn/" class="snapsme-nav-link">Learn</a>
+            <a href="/about" class="snapsme-nav-link">About</a>
+            <a href="/faq" class="snapsme-nav-link">FAQs</a>
+          </nav>
+          <div class="snapsme-header-actions desktop-only" style="display: flex; align-items: center; gap: 16px; margin-left: auto;">
+            <button type="button" class="btn-notion-ghost" id="snapsme-nav-login-btn"><span>Sign in</span></button>
+            <a href="/app?onboarding=true" class="btn-ledger-primary"><span>Create Workspace</span></a>
+          </div>
+          <button type="button" class="mobile-menu-btn" id="snapsme-mobile-menu-btn" aria-label="Toggle navigation menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+      </div>
+    </div>
+  </div>
 
-  <!-- Document Container -->
-  <div class="document-container" style="max-width: 820px; margin: 0 auto; padding: 40px 20px 80px;">
-    
-    <!-- Navigation Breadcrumb -->
+  <div class="legal-container">
+
     <a href="/" class="back-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       <span>Back to Home</span>
     </a>
 
-    <!-- Document Title & Header -->
-    <div style="margin: 20px 0 32px; border-bottom: 1px solid #d9d4c8; padding-bottom: 24px;">
-      <h1 class="document-title" style="font-size: 32px; font-weight: 800; color: #1c1b19; margin: 0 0 8px 0;">Cookie & Local Storage Policy</h1>
-      <p class="document-meta" style="font-size: 13px; color: #6b665c; font-family: var(--font-plex-mono); margin: 0;">
-        Effective Date: August 4, 2026 • Version 2.0 • SnapSME Storage Disclosures
-      </p>
+    <div style="margin-top: 24px;">
+      <div class="legal-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        Storage Disclosure
+      </div>
+      <h1 class="legal-title">Cookie &amp; Local Storage Policy</h1>
+      <p class="legal-meta">Effective Date: August 4, 2026 &nbsp;·&nbsp; Version 2.0 &nbsp;·&nbsp; SnapSME Storage Disclosures</p>
     </div>
+    <hr class="legal-divider">
 
-    <!-- Intro Text -->
-    <p style="font-size: 15px; line-height: 1.7; color: #2c2a26; margin-bottom: 28px;">
-      SnapSME ("we", "our", or "us") uses cookies, browser local storage (`localStorage`), and session storage to deliver an offline-first financial recording application. This policy explains what browser storage technologies we use, why they are essential for offline queueing, and how you can manage your browser preferences.
+    <p style="font-size: 15px; line-height: 1.75; color: #2c2a26; margin-bottom: 36px;">
+      SnapSME ("we", "our", or "us") uses cookies, browser local storage (<code>localStorage</code>), and session storage to deliver an offline-first financial recording application. This policy explains what browser storage technologies we use, why they are essential for offline queueing, and how you can manage your browser preferences.
     </p>
 
-    <!-- Policy Sections -->
-    <div style="display: flex; flex-direction: column; gap: 32px; font-size: 15px; line-height: 1.7; color: #2c2a26;">
+    <div class="legal-sections">
 
-      <section>
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">1. What Are Cookies & Browser Local Storage</h2>
-        <p><strong>Cookies</strong> are small text files stored by your browser when you visit a website. <strong>Local Storage (`localStorage`)</strong> is a secure browser memory partition that allows modern web applications to store structured data locally on your device without transmitting it to external tracking servers.</p>
+      <section class="legal-section">
+        <h2>1. What Are Cookies &amp; Browser Local Storage</h2>
+        <p><strong>Cookies</strong> are small text files stored by your browser when you visit a website. <strong>Local Storage (<code>localStorage</code>)</strong> is a secure browser memory partition that allows modern web applications to store structured data locally on your device without transmitting it to external tracking servers.</p>
       </section>
 
-      <section>
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">2. How SnapSME Uses Storage Technologies</h2>
+      <section class="legal-section">
+        <h2>2. How SnapSME Uses Storage Technologies</h2>
         <p>SnapSME relies on essential local storage keys and session tokens to provide seamless offline capture and security:</p>
 
-        <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 12px; padding: 20px; margin-top: 12px;">
-          <table style="width: 100%; font-size: 13px; text-align: left; border-collapse: collapse;">
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
-              <tr style="border-bottom: 1px solid #d9d4c8; color: #6b665c;">
-                <th style="padding: 8px 0;">Storage Key / Cookie</th>
-                <th style="padding: 8px 0;">Type</th>
-                <th style="padding: 8px 0;">Purpose & Function</th>
+              <tr>
+                <th>Storage Key / Cookie</th>
+                <th>Type</th>
+                <th>Purpose &amp; Function</th>
               </tr>
             </thead>
             <tbody>
-              <tr style="border-bottom: 1px dashed #eef2f6;">
-                <td style="padding: 10px 0; font-family: var(--font-plex-mono); font-weight: 600; color: #1c1b19;">Firebase Auth Session Token</td>
-                <td style="padding: 10px 0;">Essential Cookie</td>
-                <td style="padding: 10px 0;">Maintains your authenticated session so you stay signed in to your workspace.</td>
-              </tr>
-              <tr style="border-bottom: 1px dashed #eef2f6;">
-                <td style="padding: 10px 0; font-family: var(--font-plex-mono); font-weight: 600; color: #1c1b19;">snapsme_current_user</td>
-                <td style="padding: 10px 0;">Local Storage</td>
-                <td style="padding: 10px 0;">Stores active user profile info (name, role, business ID) for instant rendering.</td>
-              </tr>
-              <tr style="border-bottom: 1px dashed #eef2f6;">
-                <td style="padding: 10px 0; font-family: var(--font-plex-mono); font-weight: 600; color: #1c1b19;">snapsme_offline_queue</td>
-                <td style="padding: 10px 0;">Local Storage</td>
-                <td style="padding: 10px 0;">Holds unsynced expense entries captured offline until cellular/Wi-Fi connection is restored.</td>
+              <tr>
+                <td>Firebase Auth Session Token</td>
+                <td><span class="tag tag-essential">Essential Cookie</span></td>
+                <td>Maintains your authenticated session so you stay signed in to your workspace.</td>
               </tr>
               <tr>
-                <td style="padding: 10px 0; font-family: var(--font-plex-mono); font-weight: 600; color: #1c1b19;">snapsme_onboarding_completed</td>
-                <td style="padding: 10px 0;">Local Storage</td>
-                <td style="padding: 10px 0;">Remembers workspace onboarding status to prevent repeated onboarding prompts.</td>
+                <td>snapsme_current_user</td>
+                <td><span class="tag tag-local">Local Storage</span></td>
+                <td>Stores active user profile info (name, role, business ID) for instant rendering without network requests.</td>
+              </tr>
+              <tr>
+                <td>snapsme_offline_queue</td>
+                <td><span class="tag tag-local">Local Storage</span></td>
+                <td>Holds unsynced expense entries captured offline until cellular or Wi-Fi connection is restored.</td>
+              </tr>
+              <tr>
+                <td>snapsme_onboarding_completed</td>
+                <td><span class="tag tag-local">Local Storage</span></td>
+                <td>Remembers workspace onboarding status to prevent repeated onboarding prompts on login.</td>
+              </tr>
+              <tr>
+                <td>snapsme_workspace</td>
+                <td><span class="tag tag-local">Local Storage</span></td>
+                <td>Caches your active workspace context (name, currency, settings) for fast offline access.</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <section>
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">3. Third-Party Analytics & Advertising Cookies</h2>
-        <p>SnapSME does <strong>not</strong> use third-party cross-site advertising cookies or tracking pixels. Optional usage telemetry (Google Analytics for Firebase) is used strictly to monitor app reliability, page load performance, and error crash logs.</p>
+      <section class="legal-section">
+        <h2>3. Third-Party Analytics &amp; Advertising Cookies</h2>
+        <p>SnapSME does <strong>not</strong> use third-party cross-site advertising cookies, tracking pixels, or behavioral profiling tools. Optional usage telemetry (Google Analytics for Firebase) is used strictly to monitor app reliability, page load performance, and error crash logs — never for advertising purposes.</p>
       </section>
 
-      <section>
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">4. How to Manage or Clear Local Storage</h2>
+      <section class="legal-section">
+        <h2>4. How to Manage or Clear Local Storage</h2>
         <p>You can manage, inspect, or clear local storage and cookies anytime through your browser's developer tools or security settings:</p>
-        <ul style="padding-left: 20px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
-          <li><strong>Google Chrome:</strong> Settings &rarr; Privacy and security &rarr; Third-party cookies & site data.</li>
-          <li><strong>Mozilla Firefox:</strong> Options &rarr; Privacy & Security &rarr; Cookies and Site Data.</li>
+        <ul>
+          <li><strong>Google Chrome:</strong> Settings &rarr; Privacy and security &rarr; Third-party cookies &amp; site data.</li>
+          <li><strong>Mozilla Firefox:</strong> Options &rarr; Privacy &amp; Security &rarr; Cookies and Site Data.</li>
           <li><strong>Apple Safari:</strong> Preferences &rarr; Privacy &rarr; Manage Website Data.</li>
         </ul>
-        <p style="margin-top: 12px;"><em>Note: Clearing local storage while offline will sign you out of your account and clear any unsynced offline receipt drafts currently queued on your device.</em></p>
+        <div class="note-box">
+          Note: Clearing local storage while offline will sign you out of your account and clear any unsynced offline receipt drafts currently queued on your device.
+        </div>
       </section>
 
-      <section style="border-top: 1px solid #d9d4c8; padding-top: 24px;">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">5. Support & Cookie Questions</h2>
+      <section class="legal-section last-section">
+        <h2>5. Support &amp; Cookie Questions</h2>
         <p>If you have questions about our use of local storage or session cookies, please contact us:</p>
-        <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 10px; padding: 20px; margin-top: 12px; font-size: 14px;">
-          <div style="font-weight: 700; color: #1c1b19;">SnapSME Technical Support</div>
-          <div style="color: #6b665c; margin-top: 4px;">NodeDots Product Studio</div>
-          <div style="color: #0075de; margin-top: 4px; font-weight: 500;">Email: support@snapsme.co • Telegram: @nodedots</div>
-          <div style="margin-top: 12px;"><a href="/contact" class="btn-notion-primary" style="padding: 8px 16px; font-size: 13px; display: inline-flex;">Contact Support &rarr;</a></div>
+        <div class="contact-box">
+          <div class="name">SnapSME Technical Support</div>
+          <div class="email">support@snapsme.com</div>
+          <div class="detail">Telegram: @snapsmeapp</div>
+          <div style="margin-top: 8px;">
+            <a href="/contact" class="btn-notion-primary" style="padding: 9px 18px; font-size: 13px; display: inline-flex;">Contact Support &rarr;</a>
+          </div>
         </div>
       </section>
 
     </div>
-
   </div>
 
-  <!-- Reusable Footer & Scripts -->
   <div id="snapsme-footer"></div>
   <script type="module" src="/js/header.js"></script>
   <script type="module" src="/js/footer.js"></script>
-
 </body>
 </html>

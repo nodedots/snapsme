@@ -5,187 +5,256 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy Policy — SnapSME</title>
 
-  <!-- SEO Meta Tags -->
   <meta name="description" content="SnapSME Privacy Policy. Details on how we collect, store, encrypt, and protect workspace financial data, paper receipts, voice notes, and user account information." />
   <meta name="keywords" content="SnapSME privacy policy, expense tracking privacy, financial data security, GDPR compliance, CCPA privacy" />
-
-  <!-- Open Graph -->
   <meta property="og:title" content="Privacy Policy — SnapSME" />
   <meta property="og:description" content="Learn how SnapSME collects, processes, encrypts, and protects financial data for small business teams." />
   <meta property="og:type" content="website" />
 
-  <!-- Fonts & Styles -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/jpeg" href="/logo.jpg">
   <link rel="stylesheet" href="/css/components.css">
   <link rel="stylesheet" href="/css/layout.css">
   <link rel="stylesheet" href="/css/motion.css">
+
+  <style>
+    .legal-container { max-width: 820px; margin: 0 auto; padding: 48px 20px 96px; }
+    .legal-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--color-mint-wash); color: var(--color-brand-accent);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase;
+      padding: 4px 12px; border-radius: 100px; margin-bottom: 14px;
+    }
+    .legal-title { font-size: clamp(24px,4vw,34px); font-weight: 800; color: #1c1b19; margin: 0 0 6px 0; letter-spacing: -0.03em; }
+    .legal-meta { font-size: 12px; color: #8c877d; font-family: 'IBM Plex Mono', monospace; margin: 0; }
+    .legal-divider { border: none; border-top: 1px solid var(--color-fiber-gray); margin: 24px 0 32px; }
+
+    .toc-card {
+      background: #fff; border: 1px solid var(--color-fiber-gray);
+      border-radius: 12px; padding: 20px 24px; margin-bottom: 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+    }
+    .toc-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #8c877d; margin-bottom: 12px; }
+    .toc-card ol { margin: 0; padding-left: 20px; font-size: 14px; line-height: 2; }
+    .toc-card a { color: var(--color-notion-blue); text-decoration: none; }
+    .toc-card a:hover { text-decoration: underline; }
+
+    .legal-sections { display: flex; flex-direction: column; gap: 36px; font-size: 15px; line-height: 1.75; color: #2c2a26; }
+    .legal-section h2 { font-size: 19px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0; letter-spacing: -0.01em; }
+    .legal-section ul { padding-left: 20px; margin: 8px 0 0; display: flex; flex-direction: column; gap: 8px; }
+
+    .info-box {
+      background: #fff; border: 1px solid var(--color-fiber-gray);
+      border-radius: 12px; padding: 20px 24px; margin-top: 16px;
+      font-size: 14px;
+    }
+    .info-box h3 { font-size: 15px; font-weight: 700; color: #1c1b19; margin: 0 0 10px 0; }
+    .info-box ul { padding-left: 18px; font-size: 13px; color: #4a4741; display: flex; flex-direction: column; gap: 8px; margin-bottom: 0; }
+
+    .data-table-wrap { background: #fff; border: 1px solid var(--color-fiber-gray); border-radius: 12px; padding: 4px 20px; margin-top: 16px; overflow-x: auto; }
+    .data-table { width: 100%; font-size: 13px; text-align: left; border-collapse: collapse; }
+    .data-table thead tr { border-bottom: 1px solid var(--color-fiber-gray); color: #8c877d; }
+    .data-table th { padding: 10px 8px 10px 0; font-weight: 600; }
+    .data-table td { padding: 11px 8px 11px 0; border-bottom: 1px dashed rgba(0,0,0,0.06); vertical-align: top; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table td:first-child { font-weight: 600; color: #1c1b19; white-space: nowrap; }
+
+    .contact-box {
+      background: var(--color-paper-warmth); border: 1px solid var(--color-fiber-gray);
+      border-radius: 12px; padding: 20px 24px; margin-top: 16px; font-size: 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .contact-box .name { font-weight: 700; color: #1c1b19; font-size: 15px; }
+    .contact-box .detail { color: #6b665c; }
+    .contact-box .email { color: var(--color-notion-blue); font-weight: 500; }
+    .last-section { border-top: 1px solid var(--color-fiber-gray); padding-top: 32px !important; }
+  </style>
 </head>
-<body class="bg-[#f6f5f4] text-[#000000] font-body min-h-screen antialiased selection:bg-[#0075de]/20 selection:text-[#000000]">
+<body>
 
-  <!-- Shared Reusable Nav Header -->
-  <div id="snapsme-header"></div>
+  <!-- Static header shell for instant render -->
+  <div id="snapsme-header">
+    <div class="snapsme-header-wrapper" style="background-color: var(--color-paper-warmth); border-bottom: var(--border-hairline); width: 100%; position: relative;">
+      <div class="snapsme-landing-container">
+        <header class="snapsme-nav" style="position: relative; display: flex; align-items: center; justify-content: space-between; width: 100%;">
+          <a href="/" class="snapsme-wordmark" style="flex-shrink: 0;">
+            <span class="snapsme-logo-icon" style="overflow: hidden; border-radius: 8px;"><img src="/logo.jpg" alt="SnapSME Logo" style="width: 100%; height: 100%; object-fit: cover;" /></span>
+            <span>Snap<span style="color: var(--color-notion-blue);">SME</span></span>
+          </a>
+          <nav class="snapsme-nav-links desktop-only" style="display: flex; align-items: center; gap: 24px; position: absolute; left: 50%; transform: translateX(-50%);">
+            <a href="/#features" class="snapsme-nav-link">Features</a>
+            <a href="/#how-it-works" class="snapsme-nav-link">How it works</a>
+            <a href="/learn/" class="snapsme-nav-link">Learn</a>
+            <a href="/about" class="snapsme-nav-link">About</a>
+            <a href="/faq" class="snapsme-nav-link">FAQs</a>
+          </nav>
+          <div class="snapsme-header-actions desktop-only" style="display: flex; align-items: center; gap: 16px; margin-left: auto;">
+            <button type="button" class="btn-notion-ghost" id="snapsme-nav-login-btn"><span>Sign in</span></button>
+            <a href="/app?onboarding=true" class="btn-ledger-primary"><span>Create Workspace</span></a>
+          </div>
+          <button type="button" class="mobile-menu-btn" id="snapsme-mobile-menu-btn" aria-label="Toggle navigation menu">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </header>
+      </div>
+    </div>
+  </div>
 
-  <!-- Document Container -->
-  <div class="document-container" style="max-width: 820px; margin: 0 auto; padding: 40px 20px 80px;">
-    
-    <!-- Navigation Breadcrumb -->
+  <div class="legal-container">
+
+    <!-- Back -->
     <a href="/" class="back-link">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="19" y1="12" x2="5" y2="12"></line>
-        <polyline points="12 19 5 12 12 5"></polyline>
-      </svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
       <span>Back to Home</span>
     </a>
 
-    <!-- Document Title & Header -->
-    <div style="margin: 20px 0 32px; border-bottom: 1px solid #d9d4c8; padding-bottom: 24px;">
-      <h1 class="document-title" style="font-size: 32px; font-weight: 800; color: #1c1b19; margin: 0 0 8px 0;">Privacy Policy</h1>
-      <p class="document-meta" style="font-size: 13px; color: #6b665c; font-family: var(--font-plex-mono); margin: 0;">
-        Effective Date: August 4, 2026 • Version 2.0 • Applicable to SnapSME Web & Mobile Services
-      </p>
+    <!-- Header -->
+    <div style="margin-top: 24px;">
+      <div class="legal-badge">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        Legal Document
+      </div>
+      <h1 class="legal-title">Privacy Policy</h1>
+      <p class="legal-meta">Effective Date: August 4, 2026 &nbsp;·&nbsp; Version 2.0 &nbsp;·&nbsp; Applicable to SnapSME Web &amp; Mobile Services</p>
     </div>
+    <hr class="legal-divider">
 
-    <!-- Intro Text -->
-    <p style="font-size: 15px; line-height: 1.7; color: #2c2a26; margin-bottom: 28px;">
+    <!-- Intro -->
+    <p style="font-size: 15px; line-height: 1.75; color: #2c2a26; margin-bottom: 32px;">
       SnapSME ("we", "our", or "us") is committed to protecting the privacy, security, and confidentiality of small business owners and their team members. This Privacy Policy details how we collect, process, encrypt, store, and safeguard financial transaction data, paper receipt media, voice recordings, and account information across the SnapSME platform.
     </p>
 
-    <!-- Table of Contents Card -->
-    <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 12px; padding: 20px 24px; margin-bottom: 36px; box-shadow: 0 2px 8px rgba(0,0,0,0.02);">
-      <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #6b665c; margin-bottom: 12px;">Contents</div>
-      <ol style="margin: 0; padding-left: 20px; font-size: 14px; color: #0075de; line-height: 1.8;">
-        <li><a href="#section-1" style="color: #0075de; text-decoration: underline;">Information We Collect</a></li>
-        <li><a href="#section-2" style="color: #0075de; text-decoration: underline;">How We Process Your Financial & Receipt Data</a></li>
-        <li><a href="#section-3" style="color: #0075de; text-decoration: underline;">Third-Party Infrastructure, AI Processing & Fair-Use Limits</a></li>
-        <li><a href="#section-4" style="color: #0075de; text-decoration: underline;">Offline Storage & Browser Local Memory</a></li>
-        <li><a href="#section-5" style="color: #0075de; text-decoration: underline;">Data Retention & Workspace Deletion Rights</a></li>
-        <li><a href="#section-6" style="color: #0075de; text-decoration: underline;">GDPR, CCPA & User Privacy Rights</a></li>
-        <li><a href="#section-7" style="color: #0075de; text-decoration: underline;">Contact Information & Privacy Office</a></li>
+    <!-- Table of Contents -->
+    <div class="toc-card">
+      <div class="toc-label">Contents</div>
+      <ol>
+        <li><a href="#section-1">Information We Collect</a></li>
+        <li><a href="#section-2">How We Process Your Financial &amp; Receipt Data</a></li>
+        <li><a href="#section-3">Third-Party Infrastructure, AI Processing &amp; Fair-Use Limits</a></li>
+        <li><a href="#section-4">Offline Storage &amp; Browser Local Memory</a></li>
+        <li><a href="#section-5">Data Retention &amp; Workspace Deletion Rights</a></li>
+        <li><a href="#section-6">GDPR, CCPA &amp; User Privacy Rights</a></li>
+        <li><a href="#section-7">Contact Information &amp; Privacy Office</a></li>
       </ol>
     </div>
 
-    <!-- Policy Sections -->
-    <div style="display: flex; flex-direction: column; gap: 32px; font-size: 15px; line-height: 1.7; color: #2c2a26;">
+    <!-- Sections -->
+    <div class="legal-sections">
 
-      <section id="section-1">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">1. Information We Collect</h2>
+      <section id="section-1" class="legal-section">
+        <h2>1. Information We Collect</h2>
         <p>To provide team expense and income tracking, SnapSME collects information in the following categories:</p>
-        <ul style="padding-left: 20px; margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
-          <li><strong>Account & Organization Information:</strong> Name, work email address, user ID (UID), photo URL (from Google Sign-In or Firebase Auth), workspace name, primary accounting currency, and assigned role (Owner or Staff).</li>
+        <ul>
+          <li><strong>Account &amp; Organization Information:</strong> Name, work email address, user ID (UID), photo URL (from Google Sign-In or Firebase Auth), workspace name, primary accounting currency, and assigned role (Owner or Staff).</li>
           <li><strong>Financial Transaction Records:</strong> Merchant/vendor names, transaction amounts, original currencies, converted base amounts, transaction dates, expense/income categories, money movement channels (Company Card, Reimbursement, Petty Cash, Supplier Direct), and user notes.</li>
-          <li><strong>Receipt Media & Documents:</strong> Compressed image photos (JPG, PNG, WEBP) of physical paper receipts and digital document uploads (PDF, DOCX) attached to expense entries.</li>
-          <li><strong>Voice Note Audio Transcripts:</strong> Transcribed text generated when team members record voice notes ("Paid $45 cash for fuel at Shell"). Audio recordings are processed in memory and transcribed text is retained with the entry.</li>
-          <li><strong>Messaging Bot Tokens & Identifiers:</strong> Telegram user IDs, chat IDs, or WhatsApp phone numbers linked via the SnapSME Telegram / WhatsApp intake bots.</li>
+          <li><strong>Receipt Media &amp; Documents:</strong> Compressed image photos (JPG, PNG, WEBP) of physical paper receipts and digital document uploads (PDF, DOCX) attached to expense entries.</li>
+          <li><strong>Voice Note Audio Transcripts:</strong> Transcribed text generated when team members record voice notes (e.g., "Paid $45 cash for fuel at Shell"). Audio recordings are processed in memory and transcribed text is retained with the entry.</li>
+          <li><strong>Messaging Bot Tokens &amp; Identifiers:</strong> Telegram user IDs, chat IDs, or WhatsApp phone numbers linked via the SnapSME Telegram / WhatsApp intake bots.</li>
         </ul>
       </section>
 
-      <section id="section-2">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">2. How We Process Your Financial & Receipt Data</h2>
+      <section id="section-2" class="legal-section">
+        <h2>2. How We Process Your Financial &amp; Receipt Data</h2>
         <p>We process your data strictly to operate and deliver core workspace features:</p>
-        <ul style="padding-left: 20px; margin-top: 8px; display: flex; flex-direction: column; gap: 8px;">
+        <ul>
           <li>Extracting merchant names, amounts, currencies, and dates from uploaded receipt photos using Optical Character Recognition (OCR).</li>
           <li>Converting foreign currency transactions to your workspace base currency using live rates.</li>
           <li>Rendering your team's real-time shared ledger feed and category budget progress.</li>
           <li>Generating downloadable CSV accounting exports formatted for tax preparation and bookkeeping.</li>
         </ul>
-        <p style="margin-top: 12px;"><strong>We never sell, rent, or monetize your business financial data or receipt records to third-party advertisers or data brokers.</strong></p>
+        <p style="margin-top: 14px; padding: 14px 18px; background: var(--color-mint-wash); border-radius: 10px; font-size: 14px; color: var(--color-brand-accent); font-weight: 600;">
+          We never sell, rent, or monetize your business financial data or receipt records to third-party advertisers or data brokers.
+        </p>
       </section>
 
-      <section id="section-3">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">3. Third-Party Infrastructure, AI Processing & Fair-Use Limits</h2>
+      <section id="section-3" class="legal-section">
+        <h2>3. Third-Party Infrastructure, AI Processing &amp; Fair-Use Limits</h2>
         <p>SnapSME utilizes enterprise-grade subprocessor services to deliver secure cloud storage, database synchronization, and AI receipt extraction:</p>
 
-        <!-- AI Processing Disclosure Sub-box -->
-        <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 10px; padding: 20px; margin-top: 16px;">
-          <h3 style="font-size: 16px; font-weight: 700; color: #1c1b19; margin: 0 0 10px 0;">AI Processing & Subprocessor Data Terms</h3>
-          <p style="font-size: 14px; color: #2c2a26; margin-bottom: 12px;">
-            When you use AI-assisted receipt scanning or voice note capture, your submitted receipt photos and voice transcripts are sent server-side to <strong>Google's Gemini API</strong> for processing. Please note:
-          </p>
-          <ul style="padding-left: 20px; font-size: 13px; color: #4a4741; display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px;">
-            <li><strong>Server-Side Processing:</strong> All AI requests are transmitted securely from our backend server or Cloud Functions. API keys and infrastructure credentials are never exposed to client browsers.</li>
-            <li><strong>Google Data Handling Terms:</strong> Free-tier Google Gemini API terms may permit Google to process submitted data to improve AI models and service performance. For detailed information, review <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style="color: #0075de; text-decoration: underline;">Google's Privacy Policy & AI Terms</a>.</li>
-            <li><strong>Independent Receipt Storage:</strong> Receipt media and attached document files are stored in SnapSME's dedicated cloud storage independently of the AI subprocessor. AI providers do not maintain long-term ownership of your uploaded files.</li>
+        <div class="info-box">
+          <h3>AI Processing &amp; Subprocessor Data Terms</h3>
+          <p style="font-size: 14px; color: #2c2a26; margin-bottom: 12px;">When you use AI-assisted receipt scanning or voice note capture, your submitted receipt photos and voice transcripts are sent server-side to <strong>Google's Gemini API</strong> for processing. Please note:</p>
+          <ul>
+            <li><strong>Server-Side Processing:</strong> All AI requests are transmitted securely from our backend server. API keys and infrastructure credentials are never exposed to client browsers.</li>
+            <li><strong>Google Data Handling Terms:</strong> Free-tier Google Gemini API terms may permit Google to process submitted data to improve AI models. Review <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" style="color: var(--color-notion-blue);">Google's Privacy Policy &amp; AI Terms</a>.</li>
+            <li><strong>Independent Receipt Storage:</strong> Receipt media is stored in SnapSME's dedicated cloud storage independently of the AI subprocessor. AI providers do not maintain long-term ownership of your files.</li>
           </ul>
-
-          <h3 style="font-size: 16px; font-weight: 700; color: #1c1b19; margin: 16px 0 10px 0;">Fair-Use Monthly AI Scan Allocation</h3>
-          <p style="font-size: 14px; color: #2c2a26; margin: 0;">
-            To keep SnapSME 100% free and sustainable, AI-assisted receipt scanning and voice extraction are subject to a generous fair-use allocation of <strong>150 AI scans per business workspace per month</strong>. <strong>Manual expense and income entry is always 100% free and unlimited.</strong>
-          </p>
+          <p style="margin-top: 16px; font-size: 14px; color: #2c2a26; padding-top: 14px; border-top: 1px solid var(--color-fiber-gray);"><strong>Fair-Use Allocation:</strong> AI-assisted receipt scanning and voice extraction are subject to a fair-use limit of <strong>150 AI scans per workspace per month</strong>. Manual expense entry is always free and unlimited.</p>
         </div>
 
-        <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 10px; padding: 16px; margin-top: 16px;">
-          <table style="width: 100%; font-size: 13px; text-align: left; border-collapse: collapse;">
+        <div class="data-table-wrap">
+          <table class="data-table">
             <thead>
-              <tr style="border-bottom: 1px solid #d9d4c8; color: #6b665c;">
-                <th style="padding: 8px 0;">Subprocessor</th>
-                <th style="padding: 8px 0;">Purpose</th>
-                <th style="padding: 8px 0;">Location</th>
+              <tr>
+                <th>Subprocessor</th>
+                <th>Purpose</th>
+                <th>Location</th>
               </tr>
             </thead>
             <tbody>
-              <tr style="border-bottom: 1px dashed #eef2f6;">
-                <td style="padding: 10px 0; font-weight: 600; color: #1c1b19;">Google Firebase (Cloud Firestore & Auth)</td>
-                <td style="padding: 10px 0;">Database storage, user authentication, and TLS security</td>
-                <td style="padding: 10px 0;">United States / Global CDN</td>
-              </tr>
-              <tr style="border-bottom: 1px dashed #eef2f6;">
-                <td style="padding: 10px 0; font-weight: 600; color: #1c1b19;">Google Gemini AI Vision API (Flash-Lite)</td>
-                <td style="padding: 10px 0;">Multi-modal optical character recognition for receipt parsing</td>
-                <td style="padding: 10px 0;">United States</td>
+              <tr>
+                <td>Google Firebase (Cloud Firestore &amp; Auth)</td>
+                <td>Database storage, user authentication, and TLS security</td>
+                <td>United States / Global CDN</td>
               </tr>
               <tr>
-                <td style="padding: 10px 0; font-weight: 600; color: #1c1b19;">ExchangeRate API</td>
-                <td style="padding: 10px 0;">Live multi-currency exchange rate conversions</td>
-                <td style="padding: 10px 0;">Global API</td>
+                <td>Google Gemini AI Vision API</td>
+                <td>Multi-modal optical character recognition for receipt parsing</td>
+                <td>United States</td>
+              </tr>
+              <tr>
+                <td>ExchangeRate API</td>
+                <td>Live multi-currency exchange rate conversions</td>
+                <td>Global API</td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <section id="section-4">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">4. Offline Storage & Browser Local Memory</h2>
-        <p>To enable offline receipt capture in dead zones without internet signal, SnapSME temporarily stores unsynced expense entries and active user session tokens in your browser's local storage (`localStorage` & `IndexedDB`). Once your connection is restored, pending entries sync automatically to the cloud and local queue state is cleared.</p>
+      <section id="section-4" class="legal-section">
+        <h2>4. Offline Storage &amp; Browser Local Memory</h2>
+        <p>To enable offline receipt capture in areas without internet signal, SnapSME temporarily stores unsynced expense entries and active user session tokens in your browser's local storage (<code>localStorage</code> &amp; <code>IndexedDB</code>). Once your connection is restored, pending entries sync automatically to the cloud and local queue state is cleared.</p>
       </section>
 
-      <section id="section-5">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">5. Data Retention & Workspace Deletion Rights</h2>
+      <section id="section-5" class="legal-section">
+        <h2>5. Data Retention &amp; Workspace Deletion Rights</h2>
         <p>Your workspace expense and income records remain stored in your account as long as your workspace remains active. As the Workspace Owner, you have full authority to delete individual transactions at any time.</p>
-        <p style="margin-top: 8px;">To request permanent deletion of your entire workspace and all associated receipt files and user records, submit a deletion request via our <a href="/contact" style="color: #0075de; text-decoration: underline;">Contact Page</a>. Workspace purges are completed within 48 hours.</p>
+        <p style="margin-top: 8px;">To request permanent deletion of your entire workspace and all associated receipt files and user records, submit a deletion request via our <a href="/contact" style="color: var(--color-notion-blue);">Contact Page</a>. Workspace purges are completed within 48 hours.</p>
       </section>
 
-      <section id="section-6">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">6. GDPR, CCPA & User Privacy Rights</h2>
-        <p>Under global data protection regulations (including General Data Protection Regulation and California Consumer Privacy Act), users have the right to:</p>
-        <ul style="padding-left: 20px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
-          <li><strong>Access & Export:</strong> Export a full CSV dataset of all financial records at any time.</li>
+      <section id="section-6" class="legal-section">
+        <h2>6. GDPR, CCPA &amp; User Privacy Rights</h2>
+        <p>Under global data protection regulations (GDPR and CCPA), users have the right to:</p>
+        <ul>
+          <li><strong>Access &amp; Export:</strong> Export a full CSV dataset of all financial records at any time.</li>
           <li><strong>Rectification:</strong> Correct or update inaccurate transaction details or user profile info.</li>
           <li><strong>Erasure ("Right to be Forgotten"):</strong> Request full deletion of personal and business financial data.</li>
         </ul>
       </section>
 
-      <section id="section-7" style="border-top: 1px solid #d9d4c8; padding-top: 24px;">
-        <h2 style="font-size: 20px; font-weight: 700; color: #1c1b19; margin: 0 0 12px 0;">7. Contact Information & Privacy Office</h2>
-        <p>For questions or formal data inquiries regarding this Privacy Policy, please contact our privacy officer:</p>
-        <div style="background: #ffffff; border: 1px solid #d9d4c8; border-radius: 10px; padding: 20px; margin-top: 12px; font-size: 14px;">
-          <div style="font-weight: 700; color: #1c1b19;">SnapSME Privacy & Data Office</div>
-          <div style="color: #6b665c; margin-top: 4px;">NodeDots Product Studio</div>
-          <div style="color: #0075de; margin-top: 4px; font-weight: 500;">Email: support@snapsme.co • Telegram: @nodedots</div>
-          <div style="margin-top: 12px;"><a href="/contact" class="btn-notion-primary" style="padding: 8px 16px; font-size: 13px; display: inline-flex;">Send Support Inquiry &rarr;</a></div>
+      <section id="section-7" class="legal-section last-section">
+        <h2>7. Contact Information &amp; Privacy Office</h2>
+        <p>For questions or formal data inquiries regarding this Privacy Policy, please contact our privacy team:</p>
+        <div class="contact-box">
+          <div class="name">SnapSME Privacy &amp; Data Office</div>
+          <div class="email">support@snapsme.com</div>
+          <div class="detail">Telegram: @snapsmeapp</div>
+          <div style="margin-top: 8px;">
+            <a href="/contact" class="btn-notion-primary" style="padding: 9px 18px; font-size: 13px; display: inline-flex;">Send Support Inquiry &rarr;</a>
+          </div>
         </div>
       </section>
 
     </div>
-
   </div>
 
-  <!-- Reusable Footer & Scripts -->
   <div id="snapsme-footer"></div>
   <script type="module" src="/js/header.js"></script>
   <script type="module" src="/js/footer.js"></script>
-
 </body>
 </html>
