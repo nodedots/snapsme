@@ -54,7 +54,7 @@ export async function renderHeader(targetId = "snapsme-header") {
   const isFullyOnboarded = (status.hasMemberDoc && status.hasWorkspace) || wasOnboardedLocally;
 
   const primaryBtnText = isFullyOnboarded ? "Go to Workspace" : "Continue Setup";
-  const primaryBtnHref = isFullyOnboarded ? "/" : "/?onboarding=true";
+  const primaryBtnHref = isFullyOnboarded ? "/app" : "/?onboarding=true";
 
   const displayName = user?.displayName || user?.name || user?.email?.split("@")[0] || "User";
   const email = user?.email || "";
@@ -190,7 +190,7 @@ async function updateHomePageHero(user, status) {
     if (!status) status = await checkUserMemberStatus(user);
     const isFullyOnboarded = status.hasMemberDoc && status.hasWorkspace;
     const btnText = isFullyOnboarded ? "Go to Workspace" : "Continue Setup";
-    const btnHref = isFullyOnboarded ? "/" : "/?onboarding=true";
+    const btnHref = isFullyOnboarded ? "/app" : "/?onboarding=true";
 
     heroCtaWrapper.innerHTML = `
       <a href="${btnHref}" class="btn-ledger-primary" style="padding: 12px 28px; font-size: 16px;">
