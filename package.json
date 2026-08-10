@@ -6,15 +6,18 @@
     "dev": "node server.js",
     "build": "node scripts/build-articles.js && vite build && node scripts/copy-public.mjs",
     "start": "node server.js",
-    "lint": "node -c server.js"
+    "lint": "node -c server.js",
+    "telegram:status": "node scripts/telegram-setup.js status",
+    "telegram:set-webhook": "node scripts/telegram-setup.js set-webhook"
   },
   "dependencies": {
     "@google/genai": "^2.15.0",
     "clsx": "^2.1.1",
     "cors": "^2.8.6",
+    "deploy": "^1.1.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "firebase": "^10.8.0",
+    "firebase": "^10.14.1",
     "lucide-react": "^1.28.0",
     "motion": "^12.43.0",
     "react": "^19.2.8",

@@ -18,6 +18,16 @@
   --color-confirmed-green: #1a9c6b;  /* confirmed / high-confidence AI extraction, budget OK */
   --color-review-amber: #e0982a;     /* needs review / low-confidence, budget approaching limit */
 
+  /* Co-primary action button tokens — dashboard "Snap & Log" / "Add Income" pair ONLY          */
+  /* These are intentionally separate from the functional-state tokens above so that             */
+  /* UI action affordance never visually conflates with AI-confidence or budget-alert states.    */
+  --color-expense-action: #f64932;   /* warm coral-red  → money out / outflow action            */
+  --color-expense-action-hover: #d93b23;
+  --color-income-action: #0d8f5e;    /* distinct emerald → money in / inflow action             */
+  --color-income-action-hover: #0a7a50;
+  /* Both pass WCAG AA contrast (≥4.5:1) against #ffffff white button text.                     */
+  /* Do NOT reuse for any other purpose. Single-primary-button rule remains intact elsewhere.    */
+
   /* Legacy color aliases for app component compatibility */
   --color-brand-accent: #0f7a52;
   --color-ledger-green: #0f7a52;

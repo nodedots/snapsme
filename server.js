@@ -974,7 +974,7 @@ function buildBotReply(parsed, captureType, channel, workspaceCurrency = "USD") 
     return `❌ I couldn't find an amount in your message.\n\nTry something like:\n• Expense: "Paid $45 for fuel at Shell"\n• Income: "Received $500 from Acme Corp for sales"`;
   }
   const conversion = convertCurrency(amount, currency, workspaceCurrency);
-  return `✅ ${captureType === "expense" ? "Expense" : "Income"} Captured!\n• ${captureType === "expense" ? "Vendor" : "Source"}: ${label}\n• Original: ${getCurrencySymbol(currency)}${amount.toFixed(2)} ${currency}\n• Accounting Ledger: ${getCurrencySymbol(workspaceCurrency)}${conversion.convertedAmount.toFixed(2)} ${workspaceCurrency}\n• Source: ${channel}\nSaved to workspace feed instantly!`;
+  return `Saved! That's in the books. 📑\n✅ ${captureType === "expense" ? "Expense" : "Income"} Captured!\n• ${captureType === "expense" ? "Vendor" : "Source"}: ${label}\n• Original: ${getCurrencySymbol(currency)}${amount.toFixed(2)} ${currency}\n• Accounting Ledger: ${getCurrencySymbol(workspaceCurrency)}${conversion.convertedAmount.toFixed(2)} ${workspaceCurrency}\n• Source: ${channel}\nSaved to your workspace feed!`;
 }
 
 // Helper: Process an incoming bot message (shared by Telegram & WhatsApp)

@@ -438,6 +438,16 @@ export const telegramWebhook = onRequest(
       const photo = message.photo;
       const voice = message.voice;
 
+      // Handle /start or /help command
+      if (text.startsWith("/start") || text.startsWith("/help")) {
+        return res.status(200).json({
+          ok: true,
+          method: "sendMessage",
+          chat_id: chatId,
+          text: "👋 Welcome to SnapSME Bot!\n\nTo link your Telegram account to your workspace:\n1. Open the SnapSME app → Settings (or Chat Bot tab)\n2. Generate a 6-digit Link Code\n3. Send /link <code> here (e.g. /link 123456)\n\nOnce linked, simply send:\n• 📷 Receipt or invoice photos\n• 🎤 Voice notes\n• 💬 Text like \"Paid $45 for fuel at Shell\" or \"Received $500 from Acme Corp\""
+        });
+      }
+
       // Handle /link command
       if (text.startsWith("/link")) {
         const code = text.split(" ")[1]?.trim();
@@ -493,7 +503,7 @@ export const telegramWebhook = onRequest(
         }
 
         const existingLinkSnap = await db.collection("telegramLinks").doc(senderId).get();
-        let noticeMessage = "✅ Account linked! You can now send receipt photos or voice notes to log expenses.";
+        let noticeMessage = "✅ You're all set — account linked! You can now send photos, voice notes, or text to log expenses and income.";
         if (existingLinkSnap.exists && existingLinkSnap.data().businessId !== businessId) {
           noticeMessage = "✅ Account linked to business workspace! (Previous workspace link replaced).";
         }
@@ -557,7 +567,7 @@ export const telegramWebhook = onRequest(
             ok: true,
             method: "sendMessage",
             chat_id: chatId,
-            text: `📄 Receipt scanned & saved!\n• Vendor: ${data.vendor || "N/A"}\n• Amount: ${data.amount ? data.amount + " " + (data.currency || "USD") : "Needs review"}\n• Date: ${data.date || "Today"}\n• Category: ${data.suggestedCategory || "Other Expenses"}`
+            text: `Got your receipt — scanned & saved! 📄\n• Vendor: ${data.vendor || "N/A"}\n• Amount: ${data.amount ? data.amount + " " + (data.currency || "USD") : "Needs review"}\n• Date: ${data.date || "Today"}\n• Category: ${data.suggestedCategory || "Other Expenses"}\nThat's in the books!`
           });
         }
       }
@@ -568,7 +578,7 @@ export const telegramWebhook = onRequest(
           ok: true,
           method: "sendMessage",
           chat_id: chatId,
-          text: "🎤 Voice notes are supported! Please type your expense description (e.g. 'Paid 45 dollars for fuel at Shell')."
+          text: "🎤 Voice note received! Send a voice note or type your entry (e.g. 'Paid $45 for fuel at Shell' or 'Received $500 from Acme Corp')."
         });
       }
 

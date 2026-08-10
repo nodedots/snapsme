@@ -349,10 +349,13 @@ export const DashboardView = ({
           {onAddIncome && (
             <button
               onClick={onAddIncome}
-              className="w-full sm:w-auto bg-white hover:bg-[#e6f3fe] text-[#0075de] border border-[#0075de]/40 hover:border-[#0075de] font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-colors cursor-pointer min-h-[44px] sm:min-h-0"
-              title="Log money that came in (secondary action)"
+              aria-label="Add an income entry"
+              className="w-full sm:w-auto font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer text-white min-h-[44px] sm:min-h-0"
+              style={{ backgroundColor: 'var(--color-income-action)' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action-hover)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action)'}
             >
-              <Plus className="w-4 h-4 shrink-0" />
+              <TrendingUp className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Add Income</span>
             </button>
           )}

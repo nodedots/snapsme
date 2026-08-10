@@ -17,7 +17,7 @@ export function renderFooter(targetId = "snapsme-footer") {
             </span>
             <span>Snap<span style="color: var(--color-notion-blue);">SME</span></span>
           </a>
-          <p class="snapsme-footer-tagline">Never lose track of team spend again</p>
+          <p class="snapsme-footer-tagline">Every naira in. Every naira out. All in one place.</p>
         </div>
 
         <!-- Middle Column 1: Product -->

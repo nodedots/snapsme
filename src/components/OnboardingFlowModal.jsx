@@ -439,8 +439,8 @@ export function OnboardingFlowModal({
                     {authMode === "reset"
                       ? "Enter your email address and we'll send a link to reset your password"
                       : authMode === "signup"
-                      ? "Get started managing team expenses with real-time receipt capture"
-                      : "Welcome back — never lose track of team spend again"}
+                      ? "Get started tracking expenses and income in one shared view"
+                      : "Welcome back — see your full money picture in real time"}
                   </p>
                 </div>
 
@@ -897,10 +897,10 @@ export function OnboardingFlowModal({
 
             <div>
               <h2 className="font-display font-bold text-2xl text-[#000000]">
-                Your Workspace is Ready!
+                You're all set — welcome to SnapSME!
               </h2>
               <p className="text-xs text-[#615d59] mt-1">
-                Workspace <strong>"{createdResult.workspace.name}"</strong> has been created with default currency <strong>{createdResult.workspace.currency}</strong>.
+                Workspace <strong>"{createdResult.workspace.name}"</strong> is ready to track expenses and income in <strong>{createdResult.workspace.currency}</strong>.
               </p>
             </div>
 

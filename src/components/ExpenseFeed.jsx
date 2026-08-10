@@ -24,7 +24,8 @@ import {
   Download,
   FileSpreadsheet,
   Upload,
-  Plus
+  Plus,
+  TrendingUp
 } from "lucide-react";
 
 export const ExpenseFeed = ({
@@ -194,15 +195,19 @@ export const ExpenseFeed = ({
               </span>
             </div>
 
-              {/* Add Income secondary-styled button (distinct from Snap Expense primary) */}
+              {/* Add Income — co-primary income action, equal weight to Snap & Log */}
               {onAddIncome && (
                 <button
                   type="button"
                   onClick={onAddIncome}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer bg-white hover:bg-[#e6f3fe] text-[#0075de] border border-[#0075de]/40 hover:border-[#0075de]"
+                  aria-label="Add an income entry"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white transition-all whitespace-nowrap cursor-pointer"
+                  style={{ backgroundColor: 'var(--color-income-action)' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action)'}
                   title="Log money that came in"
                 >
-                  <Plus className="w-3.5 h-3.5" />
+                  <TrendingUp className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Add Income</span>
                 </button>
               )}
@@ -434,15 +439,15 @@ export const ExpenseFeed = ({
           <div className="w-12 h-12 bg-[#f7f3ea] text-[#6b665c] rounded-full mx-auto flex items-center justify-center">
             <Receipt className="w-6 h-6" />
           </div>
-          <h3 className="font-display font-bold text-lg text-[#1c1b19]">No expenses found</h3>
+          <h3 className="font-display font-bold text-lg text-[#1c1b19]">Nothing here yet</h3>
           <p className="text-xs text-[#6b665c] max-w-sm mx-auto">
-            Try adjusting your search query or filters, or snap a new expense receipt now.
+            {expenses.length === 0 ? "Nothing here yet — snap your first receipt to get started." : "No expenses match your search query or filters. Try adjusting your search."}
           </p>
           <button
             onClick={onOpenCapture}
             className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-bold text-xs px-4 py-2 rounded-xl transition-transform active:scale-95 cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
           >
-            Snap Expense Now
+            Snap Receipt Now
           </button>
         </div>
       )}

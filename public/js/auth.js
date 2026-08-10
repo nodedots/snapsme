@@ -372,7 +372,7 @@ export function mountAuthModal() {
           ${isReset ? "Reset your password" : isSignUp ? "Create your account" : "Sign in to SnapSME"}
         </h2>
         <p class="auth-modal-subtext">
-          ${isReset ? "Enter your email address and we'll send you a link to reset your password." : isSignUp ? "Get started in seconds. No credit card required." : "Never lose track of team spend again."}
+          ${isReset ? "Enter your email address and we'll send you a link to reset your password." : isSignUp ? "Get started in seconds. No credit card required." : "Your team's expenses and income — captured, organised, always up to date."}
         </p>
 
         <!-- Error Banner -->

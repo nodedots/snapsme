@@ -36,7 +36,7 @@
 
     <!-- Page Title & Subtitle -->
     <h1 class="document-title">Frequently Asked Questions</h1>
-    <p class="document-meta">Everything you need to know about setting up your workspace, capturing expenses, and tracking team spend with SnapSME.</p>
+    <p class="document-meta">Everything you need to know about setting up your workspace, capturing expenses and income, and seeing your full money picture with SnapSME.</p>
 
     <!-- Client-Side Search Input -->
     <div class="faq-search-box" style="position: relative; margin-top: 24px; margin-bottom: 24px;">
@@ -138,10 +138,66 @@
         </div>
       </section>
 
-      <!-- Category 2: Capturing Expenses -->
+      <!-- Category 2: Capturing Expenses & Income -->
       <section id="cat-capturing-expenses" class="faq-category-section">
-        <h2 class="faq-category-heading">Capturing Expenses</h2>
+        <h2 class="faq-category-heading">Capturing Expenses & Income</h2>
         <div class="faq-list">
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How do I log my first sale or income entry?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Click <strong>+ Add Income</strong> on your workspace feed (or use the camera icon or voice note tab). Enter the source name, amount, date, and optional notes — or snap an invoice photo — and your sale is posted instantly to the shared feed.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">Can I import income transactions via CSV?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Yes! Under <strong>Import / Export</strong>, select <strong>Import CSV</strong>, switch to the <strong>Income</strong> tab, and upload your spreadsheet file. Map your columns for source, amount, and date to preview and bulk import your sales in seconds.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How does the Telegram & WhatsApp bot handle income vs. expenses?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                When chatting with your linked bot, send <code>/income</code> to switch to income mode or <code>/expense</code> for expense mode. You can also text natural messages like <em>"Received $500 from Acme Corp"</em> or <em>"Paid $45 for fuel"</em>, and the bot will categorize and log it to your workspace automatically.
+              </div>
+            </div>
+          </div>
+
+          <div class="faq-card torn-receipt-card">
+            <div class="faq-header">
+              <h3 class="faq-question">How are income and expenses visually distinguished in the shared feed?</h3>
+              <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </div>
+            <div class="faq-answer">
+              <div class="faq-answer-inner">
+                Expenses appear as torn-paper receipt cards with money movement tags and merchant badges. Income entries display a clean green left-border accent and an <strong>Income</strong> badge. Your dashboard header calculates Total Expenses, Total Income, and Net Cash Flow side-by-side.
+              </div>
+            </div>
+          </div>
 
           <div class="faq-card torn-receipt-card">
             <div class="faq-header">
@@ -507,7 +563,7 @@
     <!-- Still Have Questions Banner -->
     <div style="margin-top: 56px; text-align: center; background-color: var(--color-pure-white); border-radius: 12px; border: var(--border-hairline); padding: 32px 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
       <h3 style="font-family: var(--font-notioninter); font-size: 18px; font-weight: 600; color: var(--color-ink-black); margin: 0 0 8px 0;">Still have questions?</h3>
-      <p style="font-family: var(--font-notioninter); font-size: 14px; color: var(--color-graphite); margin: 0 0 20px 0;">We're here to help you set up effortless expense tracking for your team.</p>
+      <p style="font-family: var(--font-notioninter); font-size: 14px; color: var(--color-graphite); margin: 0 0 20px 0;">We're here to help you set up effortless tracking for expenses and income in one shared view.</p>
       <a href="/contact" class="btn-ledger-primary" style="padding: 10px 22px; font-size: 15px;">Contact Support</a>
     </div>
 

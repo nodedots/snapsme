@@ -49,7 +49,7 @@ import { SettingsView } from "./components/SettingsView.jsx";
 import { CaptureModal } from "./components/CaptureModal.jsx";
 import { OnboardingFlowModal } from "./components/OnboardingFlowModal.jsx";
 import { ImportModal } from "./components/ImportModal.jsx";
-import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle } from "lucide-react";
+import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle, TrendingUp } from "lucide-react";
 
 export function App() {
   // Demo (localStorage) state — used when not signed in
@@ -707,30 +707,50 @@ export function App() {
           <div className="mb-6 bg-white border border-[#d9d4c8] rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
             <div className="space-y-1 z-10 max-w-xl">
               <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-0.5 rounded-full inline-block mb-1">
-                Zero-Friction Team Expense Capture
+                Your team's money, all in one place
               </span>
               <h1 className="font-display font-bold text-2xl sm:text-3xl text-[#1c1b19] leading-tight">
-                Never lose track of team spend again
+                Every penny in. Every penny out. Nothing slips through.
               </h1>
               <p className="text-xs sm:text-sm text-[#6b665c] leading-relaxed">
-                No more chasing receipts. Your team snaps a photo or sends a quick voice note — we handle the rest, and you see it all as it happens.
+                Snap a receipt, say it out loud, or type it in — expenses and income land in your shared ledger instantly. No chasing, no guessing, no spreadsheet nightmares.
               </p>
             </div>
 
-            <div className="flex items-center gap-3 shrink-0 z-10 flex-wrap">
-              <button
-                onClick={() => setCurrentView("settings")}
-                className="bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0f7a52] font-display font-semibold text-xs sm:text-sm px-4 py-3 rounded-[10px] shadow-2xs flex items-center gap-2 cursor-pointer transition-all"
-              >
-                <Building2 className="w-4 h-4 text-[#0f7a52]" />
-                Workspace Settings
-              </button>
+            {/* Co-primary action pair — intentional design exception, scoped to this button pair only */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 z-10 w-full sm:w-auto">
+              {/* Snap & Log — expense outflow action */}
               <button
                 onClick={() => setIsCaptureOpen(true)}
-                className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-semibold text-xs sm:text-sm px-5 py-3 rounded-[10px] shadow-sm flex items-center gap-2 cursor-pointer transition-transform active:scale-95"
+                aria-label="Snap and log an expense"
+                className="flex items-center justify-center gap-2 font-display font-semibold text-sm px-5 py-3 rounded-[10px] text-white shadow-sm cursor-pointer transition-transform active:scale-95"
+                style={{ backgroundColor: 'var(--color-expense-action)' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action-hover)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action)'}
               >
-                <Camera className="w-4 h-4" />
-                Snap Expense
+                <Camera className="w-4 h-4" aria-hidden="true" />
+                <span>Snap &amp; Log</span>
+              </button>
+              {/* Add Income — income inflow action */}
+              <button
+                onClick={() => setIsIncomeCaptureOpen(true)}
+                aria-label="Add an income entry"
+                className="flex items-center justify-center gap-2 font-display font-semibold text-sm px-5 py-3 rounded-[10px] text-white shadow-sm cursor-pointer transition-transform active:scale-95"
+                style={{ backgroundColor: 'var(--color-income-action)' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action-hover)'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action)'}
+              >
+                <TrendingUp className="w-4 h-4" aria-hidden="true" />
+                <span>Add Income</span>
+              </button>
+              {/* Workspace Settings — tertiary, not part of the co-primary pair */}
+              <button
+                onClick={() => setCurrentView("settings")}
+                aria-label="Open workspace settings"
+                className="flex items-center justify-center gap-2 bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#615d59] font-display font-medium text-xs px-4 py-3 rounded-[10px] shadow-2xs cursor-pointer transition-all"
+              >
+                <Building2 className="w-4 h-4 text-[#615d59]" aria-hidden="true" />
+                <span>Settings</span>
               </button>
             </div>
           </div>

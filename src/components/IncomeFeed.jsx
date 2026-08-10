@@ -241,9 +241,9 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
           <div className="w-12 h-12 bg-[#e7f4ec] text-[#0f7a52] rounded-full mx-auto flex items-center justify-center">
             <ArrowDownLeft className="w-6 h-6" />
           </div>
-          <h3 className="font-display font-bold text-lg text-[#1c1b19]">No income matches filters</h3>
+          <h3 className="font-display font-bold text-lg text-[#1c1b19]">{incomeEntries.length === 0 ? "No income logged yet" : "No matching income"}</h3>
           <p className="text-xs text-[#6b665c] max-w-sm mx-auto">
-            {incomeEntries.length === 0 ? "No income logged yet. Use + Add Income when money comes in." : "Try adjusting your search or filter settings."}
+            {incomeEntries.length === 0 ? "No income logged yet — add your first sale whenever you're ready." : "Try adjusting your search or filter settings."}
           </p>
           <div className="flex items-center gap-2 justify-center flex-wrap">
             {onOpenIncomeCapture && (

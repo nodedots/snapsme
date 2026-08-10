@@ -1,10 +1,10 @@
 # snapsme
 
-**Know where every dollar went. Without chasing anyone for a receipt.**
+**Track what comes in and what goes out. See your full money picture in one shared view.**
 
-`snapsme` is a friction-free expense tracking application for small teams (2–10 people). Snap a receipt photo, speak a voice note, or log spend manually — AI extracts vendor, amount, date, and category, placing the entry directly into a real-time team feed visible to workspace owners and staff.
+`snapsme` is a friction-free finance tracking application for small teams (2–10 people). Snap a receipt photo, speak a voice note, or log entries manually — AI extracts details, placing expenses and income into a real-time team feed visible to workspace owners and staff.
 
-It is **not** a heavy accounting suite. No invoicing, complex approval workflows, or bank syncing. One job: capture team expenses the moment they happen with minimal friction.
+It is **not** a heavy enterprise accounting suite. No complex approval workflows or bank syncing. One job: capture expenses and income the moment they happen with minimal friction.
 
 ---
 
