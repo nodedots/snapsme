@@ -1238,7 +1238,7 @@ app.post("/api/bot/whatsapp/send", async (req, res) => {
 
 // Static page routes
 app.get(["/home", "/home.html", "/landing", "/landing.html"], (_req, res) => {
-  res.sendFile(path.join(process.cwd(), "public", "home.html"));
+  res.redirect("/");
 });
 
 app.get(["/about", "/about.html"], (_req, res) => {

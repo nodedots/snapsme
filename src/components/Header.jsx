@@ -12,7 +12,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Settings,
-  LogOut
+  LogOut,
+  TrendingUp
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -28,6 +29,7 @@ export const Header = ({
   setIsOfflineMode,
   pendingSyncCount,
   onOpenCapture,
+  onAddIncome,
   onOpenOnboarding
 }) => {
   const scrollRef = useRef(null);
@@ -384,14 +386,27 @@ export const Header = ({
               </button>
             )}
 
-            {/* Primary Notion Blue "Snap Expense" Button */}
+            {/* Record Expense — expense outflow action */}
             <button
               type="button"
               onClick={onOpenCapture}
               className="flex items-center justify-center gap-1.5 bg-[#0075de] hover:bg-[#0060b8] text-white font-semibold text-xs sm:text-sm px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all active:scale-95 whitespace-nowrap cursor-pointer shrink-0 min-h-[38px] shadow-xs"
             >
               <Camera className="w-4 h-4 shrink-0" />
-              <span>Snap Expense</span>
+              <span>Record Expense</span>
+            </button>
+
+            {/* Add Income — income inflow action */}
+            <button
+              type="button"
+              onClick={onAddIncome}
+              className="flex items-center justify-center gap-1.5 text-white font-semibold text-xs sm:text-sm px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all active:scale-95 whitespace-nowrap cursor-pointer shrink-0 min-h-[38px] shadow-xs"
+              style={{ backgroundColor: 'var(--color-income-action)' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action-hover)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action)'}
+            >
+              <TrendingUp className="w-4 h-4 shrink-0" />
+              <span>Add Income</span>
             </button>
           </div>
         </div>

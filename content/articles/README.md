@@ -14,13 +14,13 @@ Use the following template:
 ```json
 {
   "slug": "managing-petty-cash-for-small-teams",
-  "title": "How to Manage Petty Cash Without Losing Track of Team Spend",
+  "title": "How to Manage Petty Cash Without Losing Track of Cash Flow",
   "summary": "A practical guide for small business owners on setting up a simple, accountable petty cash system for day-to-day team expenses.",
   "category": "Cash Flow & Control",
   "publishDate": "2026-08-04",
   "readTime": "5 min read",
   "author": "The SnapSME Team",
-  "keywords": ["petty cash", "small business expense tracking", "receipt capture", "team spend"],
+  "keywords": ["petty cash", "small business expense tracking", "receipt capture", "cash flow"],
   "sections": [
     {
       "heading": "Why Petty Cash Quickly Becomes a Black Hole",

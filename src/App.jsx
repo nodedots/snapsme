@@ -667,6 +667,7 @@ export function App() {
         setIsOfflineMode={setIsOfflineMode}
         pendingSyncCount={pendingSyncCount}
         onOpenCapture={() => setIsCaptureOpen(true)}
+        onAddIncome={() => setIsIncomeCaptureOpen(true)}
         onOpenOnboarding={() => {
           localStorage.removeItem("snapsme_onboarding_skipped");
           setIsOnboardingOpen(true);
@@ -719,17 +720,17 @@ export function App() {
 
             {/* Co-primary action pair — intentional design exception, scoped to this button pair only */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 z-10 w-full sm:w-auto">
-              {/* Snap & Log — expense outflow action */}
+              {/* Record Expense — expense outflow action */}
               <button
                 onClick={() => setIsCaptureOpen(true)}
-                aria-label="Snap and log an expense"
+                aria-label="Record an expense"
                 className="flex items-center justify-center gap-2 font-display font-semibold text-sm px-5 py-3 rounded-[10px] text-white shadow-sm cursor-pointer transition-transform active:scale-95"
                 style={{ backgroundColor: 'var(--color-expense-action)' }}
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action-hover)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action)'}
               >
                 <Camera className="w-4 h-4" aria-hidden="true" />
-                <span>Snap &amp; Log</span>
+                <span>Record Expense</span>
               </button>
               {/* Add Income — income inflow action */}
               <button

@@ -25,7 +25,8 @@ import {
   FileSpreadsheet,
   Upload,
   Plus,
-  TrendingUp
+  TrendingUp,
+  Camera
 } from "lucide-react";
 
 export const ExpenseFeed = ({
@@ -195,7 +196,24 @@ export const ExpenseFeed = ({
               </span>
             </div>
 
-              {/* Add Income — co-primary income action, equal weight to Snap & Log */}
+              {/* Record Expense — co-primary expense action */}
+              {onOpenCapture && (
+                <button
+                  type="button"
+                  onClick={onOpenCapture}
+                  aria-label="Record an expense"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white transition-all whitespace-nowrap cursor-pointer"
+                  style={{ backgroundColor: 'var(--color-expense-action)' }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action-hover)'}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action)'}
+                  title="Snap, say, or type an expense"
+                >
+                  <Camera className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>Record Expense</span>
+                </button>
+              )}
+
+              {/* Add Income — co-primary income action, equal weight to Record Expense */}
               {onAddIncome && (
                 <button
                   type="button"
@@ -447,7 +465,7 @@ export const ExpenseFeed = ({
             onClick={onOpenCapture}
             className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-bold text-xs px-4 py-2 rounded-xl transition-transform active:scale-95 cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
           >
-            Snap Receipt Now
+            Record Expense
           </button>
         </div>
       )}

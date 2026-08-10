@@ -296,7 +296,7 @@ const hubHtml = `<!DOCTYPE html>
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="SnapSME Learn — Practical Small Business Expense Guides" />
-  <meta property="og:description" content="Free, jargon-free guides on tracking team spend, managing receipts, and keeping your business cash flow organized." />
+  <meta property="og:description" content="Free, jargon-free guides on tracking money in and money out, managing receipts, and keeping your business cash flow organized." />
   <meta property="og:url" content="https://snapsme.com/learn/" />
   <meta property="og:site_name" content="SnapSME" />
 
