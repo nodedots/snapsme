@@ -77,13 +77,9 @@ export const SettingsView = ({
 
   // Collapsible sections state — keys match section IDs, true = collapsed
   const [collapsedSections, setCollapsedSections] = useState({
-    profile: false,         // open by default
-    aiUsage: true,
-    chatBots: true,
-    workspace: true,
-    categories: true,
-    brand: true,
-    dashPrefs: true,
+    profile: false,         // Profile, Brand & Workspace — open by default
+    aiUsage: true,          // AI Usage & Chat Bots
+    categories: true,       // Categories & Dashboard Preferences
     team: false,            // open by default
     inboundApi: true,
     activityLog: true
@@ -576,390 +572,505 @@ export const SettingsView = ({
         </div>
       </div>
 
-      {/* Grid Layout for Settings Cards */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* CARD 1: User Profile & Identity */}
-        <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 cursor-pointer select-none" onClick={() => toggleSection('profile')}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
-                <User className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-display font-bold text-base text-[#1c1b19]">
-                  My Profile & Identity
-                </h2>
-                <p className="text-[11px] text-[#6b665c]">Personal credentials and notifications</p>
-              </div>
+      {/* MERGED CARD 1: Profile, Brand & Workspace */}
+      <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 cursor-pointer select-none" onClick={() => toggleSection('profile')}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
+              <User className="w-4 h-4" />
             </div>
-            <div className="flex items-center gap-2">
-              {profileToast && (
-                <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 animate-fade-in shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> {profileToast}
-                </span>
-              )}
-              <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.profile ? '-rotate-90' : ''}`} />
-            </div>
-          </div>
-
-          {!collapsedSections.profile && <form onSubmit={handleSaveProfile} className="space-y-3 mt-4">
             <div>
-              <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                Display Name
-              </label>
-              <input
-                type="text"
-                value={profileName}
-                onChange={(e) => setProfileName(e.target.value)}
-                required
-                className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
-                placeholder="e.g. Alex Rivera"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={profileEmail}
-                  onChange={(e) => setProfileEmail(e.target.value)}
-                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
-                  placeholder="alex@acme.com"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  value={profilePhone}
-                  onChange={(e) => setProfilePhone(e.target.value)}
-                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
-                  placeholder="+1 555-019-2834"
-                />
-              </div>
-            </div>
-
-            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <span className="text-[11px] text-[#6b665c] font-mono truncate">
-                User ID: <span className="font-semibold text-[#1c1b19]">{currentUser?.userId || "Unassigned"}</span>
-              </span>
-              <button
-                type="submit"
-                className="w-full sm:w-auto bg-[#0f7a52] hover:bg-[#0b5e3f] text-white font-display font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>Save Profile</span>
-              </button>
-            </div>
-          </form>}
-        </TornCard>
-
-        {/* CARD: AI Feature Usage & Limits */}
-        <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 cursor-pointer select-none" onClick={() => toggleSection('aiUsage')}>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold shrink-0">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-display font-bold text-base text-[#1c1b19]">
-                  AI Feature Usage & Limits
-                </h2>
-                <p className="text-[11px] text-[#6b665c]">Monthly allocation for AI receipt & voice capture</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-semibold text-[#0075de] bg-[#0075de]/10 px-2.5 py-1 rounded-md">
-                Fair-Use Plan
-              </span>
-              <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.aiUsage ? '-rotate-90' : ''}`} />
+              <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                Profile, Brand & Workspace
+              </h2>
+              <p className="text-[11px] text-[#6b665c]">Personal identity, workspace branding, and financial defaults</p>
             </div>
           </div>
-
-          {!collapsedSections.aiUsage && <div className="space-y-4 mt-4">
-            <div className="bg-[#f7f3ea]/60 border border-[#d9d4c8] rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-display font-bold text-[#1c1b19]">
-                  {workspace?.aiCaptureUsage?.count || 0} of 150 AI scans used this month
-                </span>
-                <span className="text-xs font-mono font-semibold text-[#6b665c]">
-                  {Math.round(((workspace?.aiCaptureUsage?.count || 0) / 150) * 100)}%
-                </span>
-              </div>
-              <div className="w-full bg-[#e8e4da] h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-[#0075de] h-full rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, Math.round(((workspace?.aiCaptureUsage?.count || 0) / 150) * 100))}%` }}
-                />
-              </div>
-              <p className="text-[11px] text-[#6b665c] mt-2.5 leading-relaxed">
-                AI photo scanning and voice capture reset automatically on the 1st of every calendar month. Manual entry of expenses and income is always 100% free and unlimited.
-              </p>
-            </div>
-          </div>}
-        </TornCard>
-
-        {/* CARD 2: Chat Bot Integrations (Telegram & WhatsApp) */}
-        <TornCard headerColor="bg-[#ff5a3c]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#ff5a3c]/10 text-[#ff5a3c] flex items-center justify-center font-bold shrink-0">
-                <MessageSquare className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-display font-bold text-base text-[#1c1b19]">
-                  Chat Bot Integrations
-                </h2>
-                <p className="text-[11px] text-[#6b665c]">Link Telegram or WhatsApp to snap expenses on the go</p>
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            {profileToast && (
+              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-1 rounded-md font-semibold flex items-center gap-1 animate-fade-in shrink-0">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {profileToast}
+              </span>
+            )}
+            <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.profile ? '-rotate-90' : ''}`} />
           </div>
+        </div>
 
-          <div className="space-y-4">
-            {/* Telegram Channel Status */}
-            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#0088cc]/10 text-[#0088cc] flex items-center justify-center font-bold text-xs shrink-0">
-                  TG
+        {!collapsedSections.profile && (
+          <div className="space-y-6 mt-4">
+            {/* Sub-section: My Profile & Identity */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
+                  <User className="w-3.5 h-3.5" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-display font-bold text-xs text-[#1c1b19]">Telegram Bot</span>
-                    {currentUser?.telegramUserId ? (
-                      <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
-                        Connected
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-mono bg-gray-200 text-[#6b665c] px-2 py-0.2 rounded-full">
-                        Not Linked
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-[#6b665c]">
-                    {currentUser?.telegramUserId ? `@${currentUser.telegramUserId}` : "Snap photos & audio directly to @snapsme_bot"}
-                  </p>
-                </div>
+                <h3 className="font-display font-bold text-sm text-[#1c1b19]">
+                  My Profile & Identity
+                </h3>
+                <span className="text-[10px] font-mono text-[#6b665c]">Personal credentials</span>
               </div>
-
-              {currentUser?.telegramUserId ? (
-                <button
-                  type="button"
-                  onClick={() => handleUnlinkChannel("telegram")}
-                  className="w-full sm:w-auto text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-3 py-2 rounded-lg cursor-pointer text-center min-h-[40px] sm:min-h-0"
-                >
-                  Unlink
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleGenerateLink("telegram")}
-                  className="w-full sm:w-auto text-xs font-semibold text-[#0088cc] bg-white border border-[#0088cc]/30 hover:border-[#0088cc] px-3 py-2 rounded-lg cursor-pointer flex items-center justify-center gap-1 min-h-[40px] sm:min-h-0"
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>Connect</span>
-                </button>
-              )}
-            </div>
-
-            {/* WhatsApp Channel Status */}
-            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center font-bold text-xs shrink-0">
-                  WA
-                </div>
+              <form onSubmit={handleSaveProfile} className="space-y-3">
                 <div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-display font-bold text-xs text-[#1c1b19]">WhatsApp Bot</span>
-                    {currentUser?.whatsappUserId ? (
-                      <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
-                        Connected
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-mono bg-gray-200 text-[#6b665c] px-2 py-0.2 rounded-full">
-                        Not Linked
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-[#6b665c]">
-                    {currentUser?.whatsappUserId ? currentUser.whatsappUserId : "Send receipts to +1-800-SNAPSME"}
-                  </p>
-                </div>
-              </div>
-
-              {currentUser?.whatsappUserId ? (
-                <button
-                  type="button"
-                  onClick={() => handleUnlinkChannel("whatsapp")}
-                  className="w-full sm:w-auto text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-3 py-2 rounded-lg cursor-pointer text-center min-h-[40px] sm:min-h-0"
-                >
-                  Unlink
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleGenerateLink("whatsapp")}
-                  className="w-full sm:w-auto text-xs font-semibold text-[#0f7a52] bg-white border border-[#0f7a52]/30 hover:border-[#0f7a52] px-3 py-2 rounded-lg cursor-pointer flex items-center justify-center gap-1 min-h-[40px] sm:min-h-0"
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>Connect</span>
-                </button>
-              )}
-            </div>
-
-            {/* Active Link Code Display with Countdown Timer */}
-            {chatLink && (
-              <div className="bg-[#fff9f0] border-2 border-[#e0982a]/50 rounded-xl p-4 space-y-3 animate-fade-in">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-display font-bold text-[#e0982a]">
-                    <Sparkles className="w-4 h-4 shrink-0" />
-                    <span>Active {activeChannel === 'telegram' ? 'Telegram' : 'WhatsApp'} Link Code</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-[11px] font-mono text-[#6b665c]">
-                    <Clock className="w-3 h-3 text-[#e0982a]" />
-                    <span>Expires in {formatTimeLeft(timeLeft)}</span>
-                  </div>
+                  <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                    Display Name
+                  </label>
+                  <input
+                    type="text"
+                    value={profileName}
+                    onChange={(e) => setProfileName(e.target.value)}
+                    required
+                    className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
+                    placeholder="e.g. Alex Rivera"
+                  />
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-white border border-[#d9d4c8] rounded-xl p-3 sm:px-4 sm:py-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <span className="text-[10px] uppercase font-mono tracking-widest text-[#6b665c] block">
-                      Pairing Code
-                    </span>
-                    <span className="font-mono font-bold text-xl text-[#1c1b19] tracking-wider">
-                      {chatLink.linkCode}
-                    </span>
+                    <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      value={profileEmail}
+                      onChange={(e) => setProfileEmail(e.target.value)}
+                      className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
+                      placeholder="alex@acme.com"
+                    />
                   </div>
+                  <div>
+                    <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={profilePhone}
+                      onChange={(e) => setProfilePhone(e.target.value)}
+                      className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
+                      placeholder="+1 555-019-2834"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <span className="text-[11px] text-[#6b665c] font-mono truncate">
+                    User ID: <span className="font-semibold text-[#1c1b19]">{currentUser?.userId || "Unassigned"}</span>
+                  </span>
                   <button
-                    type="button"
-                    onClick={() => handleCopyCode(chatLink.linkCode)}
-                    className="w-full sm:w-auto bg-[#1c1b19] hover:bg-[#ff5a3c] text-white text-xs font-semibold px-3.5 py-2.5 sm:py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
+                    type="submit"
+                    className="w-full sm:w-auto bg-[#0f7a52] hover:bg-[#0b5e3f] text-white font-display font-semibold text-xs px-4 py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
                   >
-                    {copiedCode ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedCode ? "Copied!" : "Copy Code"}</span>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Profile</span>
                   </button>
                 </div>
+              </form>
+            </div>
 
-                <p className="text-[11px] text-[#6b665c] leading-relaxed">
-                  <strong>Instructions:</strong> Open {activeChannel === 'telegram' ? 'Telegram' : 'WhatsApp'} and send: <code className="bg-[#f7f3ea] px-1.5 py-0.5 rounded font-mono font-bold text-[#1c1b19]">/start {chatLink.linkCode}</code> to automatically pair your expense account.
+            {/* Divider */}
+            <div className="border-t border-[#d9d4c8]/60 pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
+                  <Palette className="w-3.5 h-3.5" />
+                </div>
+                <h3 className="font-display font-bold text-sm text-[#1c1b19]">
+                  Brand Basics
+                </h3>
+                <span className="text-[10px] font-mono text-[#6b665c]">Workspace logo & accent color</span>
+                {!userIsOwner && (
+                  <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                    <Lock className="w-3 h-3" /> Owner Gated
+                  </span>
+                )}
+                {brandToast && (
+                  <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {brandToast}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {/* Logo Upload Section */}
+                <div>
+                  <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1.5">
+                    Business Logo
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                    <div className="w-14 h-14 rounded-xl border border-[#d9d4c8] bg-[#f7f3ea] flex items-center justify-center overflow-hidden shrink-0 relative group">
+                      {brandLogoUrl ? (
+                        <img src={brandLogoUrl} alt="Workspace Logo Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon className="w-6 h-6 text-[#6b665c]" />
+                      )}
+                    </div>
+
+                    {userIsOwner && (
+                      <div className="space-y-1.5 w-full sm:w-auto">
+                        <label className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-[#d9d4c8] text-[#1c1b19] text-xs font-semibold px-3 py-2.5 sm:py-1.5 rounded-lg inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors min-h-[44px] sm:min-h-0">
+                          <Upload className="w-3.5 h-3.5 text-[#0f7a52]" />
+                          <span>{brandLogoUrl ? "Replace Logo" : "Upload Logo"}</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                          />
+                        </label>
+                        {brandLogoUrl && (
+                          <button
+                            type="button"
+                            onClick={handleRemoveLogo}
+                            className="text-xs text-red-600 hover:underline block font-medium cursor-pointer"
+                          >
+                            Remove Logo
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Accent Color Picker */}
+                <div>
+                  <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                    Brand Accent Color
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={brandAccentColor}
+                      disabled={!userIsOwner}
+                      onChange={handleAccentColorChange}
+                      className="w-10 h-10 rounded-lg border border-[#d9d4c8] p-0.5 bg-white cursor-pointer disabled:opacity-60 shrink-0"
+                    />
+                    <div>
+                      <span className="font-mono text-xs font-bold text-[#1c1b19] block">
+                        {brandAccentColor}
+                      </span>
+                      <span className="text-[10px] text-[#6b665c] block">
+                        Controls primary buttons & active nav highlights
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-lg text-[11px] text-[#6b665c]">
+                  <strong>Note:</strong> Status alerts, confidence dots, and budget flags remain fixed to carry standard operational meanings.
+                </div>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-[#d9d4c8]/60 pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-[#e0982a]/10 text-[#e0982a] flex items-center justify-center font-bold shrink-0">
+                  <Building2 className="w-3.5 h-3.5" />
+                </div>
+                <h3 className="font-display font-bold text-sm text-[#1c1b19]">
+                  Workspace Settings
+                </h3>
+                <span className="text-[10px] font-mono text-[#6b665c]">Name & financial currency</span>
+                {!userIsOwner && (
+                  <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                    <Lock className="w-3 h-3" /> Owner Gated
+                  </span>
+                )}
+                {wsToast && (
+                  <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {wsToast}
+                  </span>
+                )}
+              </div>
+
+              {!userIsOwner ? (
+                /* Access Restricted Banner for Staff Users */
+                <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-4 text-center space-y-2">
+                  <Lock className="w-8 h-8 text-[#e0982a] mx-auto" />
+                  <h3 className="font-display font-bold text-xs text-[#1c1b19]">
+                    Owner Privileges Required
+                  </h3>
+                  <p className="text-[11px] text-[#6b665c] max-w-sm mx-auto">
+                    Workspace name and currency settings are managed exclusively by the workspace owner.
+                  </p>
+                  <div className="bg-white border border-[#d9d4c8] rounded-lg p-2 text-left text-[11px] font-mono space-y-1">
+                    <div><strong>Current Workspace:</strong> {workspace.name}</div>
+                    <div><strong>Default Currency:</strong> {workspace.currency} ({getCurrencySymbol(workspace.currency)})</div>
+                  </div>
+                </div>
+              ) : (
+                /* Owner Editable Form */
+                <form onSubmit={handleSaveWorkspace} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                      Workspace Name
+                    </label>
+                    <input
+                      type="text"
+                      value={wsName}
+                      onChange={(e) => setWsName(e.target.value)}
+                      required
+                      className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
+                      placeholder="e.g. Acme Agency"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
+                      Default Accounting Currency
+                    </label>
+                    <select
+                      value={wsCurrency}
+                      onChange={(e) => setWsCurrency(e.target.value)}
+                      className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-semibold text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors cursor-pointer min-h-[44px] sm:min-h-0"
+                    >
+                      {WORLD_CURRENCIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {getCurrencyLabel(c)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="submit"
+                      className="w-full sm:w-auto bg-[#1c1b19] hover:bg-[#ff5a3c] text-white font-display font-semibold text-xs px-4 py-2.5 sm:py-2 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Update Workspace Settings</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        )}
+      </TornCard>
+
+      {/* MERGED CARD 2: AI Usage & Chat Bots */}
+      <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 cursor-pointer select-none" onClick={() => toggleSection('aiUsage')}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                AI Usage & Chat Bots
+              </h2>
+              <p className="text-[11px] text-[#6b665c]">Monthly AI allocation and messaging bot connections</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono font-semibold text-[#0075de] bg-[#0075de]/10 px-2.5 py-1 rounded-md">
+              Fair-Use Plan
+            </span>
+            <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.aiUsage ? '-rotate-90' : ''}`} />
+          </div>
+        </div>
+
+        {!collapsedSections.aiUsage && (
+          <div className="space-y-6 mt-4">
+            {/* Sub-section: AI Feature Usage & Limits */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold shrink-0">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                <h3 className="font-display font-bold text-sm text-[#1c1b19]">
+                  AI Feature Usage & Limits
+                </h3>
+                <span className="text-[10px] font-mono text-[#6b665c]">Monthly allocation for AI receipt & voice capture</span>
+              </div>
+              <div className="bg-[#f7f3ea]/60 border border-[#d9d4c8] rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-display font-bold text-[#1c1b19]">
+                    {workspace?.aiCaptureUsage?.count || 0} of 150 AI scans used this month
+                  </span>
+                  <span className="text-xs font-mono font-semibold text-[#6b665c]">
+                    {Math.round(((workspace?.aiCaptureUsage?.count || 0) / 150) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full bg-[#e8e4da] h-2.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-[#0075de] h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.round(((workspace?.aiCaptureUsage?.count || 0) / 150) * 100))}%` }}
+                  />
+                </div>
+                <p className="text-[11px] text-[#6b665c] mt-2.5 leading-relaxed">
+                  AI photo scanning and voice capture reset automatically on the 1st of every calendar month. Manual entry of expenses and income is always 100% free and unlimited.
                 </p>
               </div>
-            )}
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-[#d9d4c8]/60 pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-[#ff5a3c]/10 text-[#ff5a3c] flex items-center justify-center font-bold shrink-0">
+                  <MessageSquare className="w-3.5 h-3.5" />
+                </div>
+                <h3 className="font-display font-bold text-sm text-[#1c1b19]">
+                  Chat Bot Integrations
+                </h3>
+                <span className="text-[10px] font-mono text-[#6b665c]">Link Telegram or WhatsApp to snap expenses on the go</span>
+              </div>
+
+              <div className="space-y-4">
+                {/* Telegram Channel Status */}
+                <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-[#0088cc]/10 text-[#0088cc] flex items-center justify-center font-bold text-xs shrink-0">
+                      TG
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-display font-bold text-xs text-[#1c1b19]">Telegram Bot</span>
+                        {currentUser?.telegramUserId ? (
+                          <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
+                            Connected
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono bg-gray-200 text-[#6b665c] px-2 py-0.2 rounded-full">
+                            Not Linked
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#6b665c]">
+                        {currentUser?.telegramUserId ? `@${currentUser.telegramUserId}` : "Snap photos & audio directly to @snapsme_bot"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {currentUser?.telegramUserId ? (
+                    <button
+                      type="button"
+                      onClick={() => handleUnlinkChannel("telegram")}
+                      className="w-full sm:w-auto text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-3 py-2 rounded-lg cursor-pointer text-center min-h-[40px] sm:min-h-0"
+                    >
+                      Unlink
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateLink("telegram")}
+                      className="w-full sm:w-auto text-xs font-semibold text-[#0088cc] bg-white border border-[#0088cc]/30 hover:border-[#0088cc] px-3 py-2 rounded-lg cursor-pointer flex items-center justify-center gap-1 min-h-[40px] sm:min-h-0"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>Connect</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* WhatsApp Channel Status */}
+                <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-[#25D366]/10 text-[#25D366] flex items-center justify-center font-bold text-xs shrink-0">
+                      WA
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-display font-bold text-xs text-[#1c1b19]">WhatsApp Bot</span>
+                        {currentUser?.whatsappUserId ? (
+                          <span className="text-[10px] font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] px-2 py-0.2 rounded-full">
+                            Connected
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-mono bg-gray-200 text-[#6b665c] px-2 py-0.2 rounded-full">
+                            Not Linked
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[#6b665c]">
+                        {currentUser?.whatsappUserId ? currentUser.whatsappUserId : "Send receipts to +1-800-SNAPSME"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {currentUser?.whatsappUserId ? (
+                    <button
+                      type="button"
+                      onClick={() => handleUnlinkChannel("whatsapp")}
+                      className="w-full sm:w-auto text-xs font-semibold text-red-600 hover:text-red-800 bg-white border border-red-200 px-3 py-2 rounded-lg cursor-pointer text-center min-h-[40px] sm:min-h-0"
+                    >
+                      Unlink
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateLink("whatsapp")}
+                      className="w-full sm:w-auto text-xs font-semibold text-[#0f7a52] bg-white border border-[#0f7a52]/30 hover:border-[#0f7a52] px-3 py-2 rounded-lg cursor-pointer flex items-center justify-center gap-1 min-h-[40px] sm:min-h-0"
+                    >
+                      <QrCode className="w-3.5 h-3.5" />
+                      <span>Connect</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Active Link Code Display with Countdown Timer */}
+                {chatLink && (
+                  <div className="bg-[#fff9f0] border-2 border-[#e0982a]/50 rounded-xl p-4 space-y-3 animate-fade-in">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5">
+                      <div className="flex items-center gap-1.5 text-xs font-display font-bold text-[#e0982a]">
+                        <Sparkles className="w-4 h-4 shrink-0" />
+                        <span>Active {activeChannel === 'telegram' ? 'Telegram' : 'WhatsApp'} Link Code</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-[11px] font-mono text-[#6b665c]">
+                        <Clock className="w-3 h-3 text-[#e0982a]" />
+                        <span>Expires in {formatTimeLeft(timeLeft)}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between bg-white border border-[#d9d4c8] rounded-xl p-3 sm:px-4 sm:py-3 gap-2">
+                      <div>
+                        <span className="text-[10px] uppercase font-mono tracking-widest text-[#6b665c] block">
+                          Pairing Code
+                        </span>
+                        <span className="font-mono font-bold text-xl text-[#1c1b19] tracking-wider">
+                          {chatLink.linkCode}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCode(chatLink.linkCode)}
+                        className="w-full sm:w-auto bg-[#1c1b19] hover:bg-[#ff5a3c] text-white text-xs font-semibold px-3.5 py-2.5 sm:py-2 rounded-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
+                      >
+                        {copiedCode ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedCode ? "Copied!" : "Copy Code"}</span>
+                      </button>
+                    </div>
+
+                    <p className="text-[11px] text-[#6b665c] leading-relaxed">
+                      <strong>Instructions:</strong> Open {activeChannel === 'telegram' ? 'Telegram' : 'WhatsApp'} and send: <code className="bg-[#f7f3ea] px-1.5 py-0.5 rounded font-mono font-bold text-[#1c1b19]">/start {chatLink.linkCode}</code> to automatically pair your expense account.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </TornCard>
+        )}
+      </TornCard>
 
-        {/* CARD 3: Workspace & Default Currency Settings (Owner Only) */}
-        <TornCard headerColor="bg-[#e0982a]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#e0982a]/10 text-[#e0982a] flex items-center justify-center font-bold shrink-0">
-                <Building2 className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-display font-bold text-base text-[#1c1b19]">
-                  Workspace Settings
-                </h2>
-                <p className="text-[11px] text-[#6b665c]">Workspace name & financial currency</p>
-              </div>
+      {/* MERGED CARD 3: Categories & Dashboard Preferences */}
+      <TornCard headerColor="bg-[#1c1b19]" tornBottom={true}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 cursor-pointer select-none" onClick={() => toggleSection('categories')}>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#1c1b19]/10 text-[#1c1b19] flex items-center justify-center font-bold shrink-0">
+              <DollarSign className="w-4 h-4" />
             </div>
-            {!userIsOwner && (
-              <span className="text-[10px] font-mono font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                <Lock className="w-3 h-3" /> Owner Gated
-              </span>
-            )}
-            {wsToast && (
-              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
-                <CheckCircle2 className="w-3.5 h-3.5" /> {wsToast}
-              </span>
-            )}
+            <div>
+              <h2 className="font-display font-bold text-base text-[#1c1b19]">
+                Categories & Dashboard Preferences
+              </h2>
+              <p className="text-[11px] text-[#6b665c]">Expense categories, spending limits, and dashboard module visibility</p>
+            </div>
           </div>
-
-          {!userIsOwner ? (
-            /* Access Restricted Banner for Staff Users */
-            <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-4 text-center space-y-2">
-              <Lock className="w-8 h-8 text-[#e0982a] mx-auto" />
-              <h3 className="font-display font-bold text-xs text-[#1c1b19]">
-                Owner Privileges Required
-              </h3>
-              <p className="text-[11px] text-[#6b665c] max-w-sm mx-auto">
-                Workspace name and currency settings are managed exclusively by the workspace owner.
-              </p>
-              <div className="bg-white border border-[#d9d4c8] rounded-lg p-2 text-left text-[11px] font-mono space-y-1">
-                <div><strong>Current Workspace:</strong> {workspace.name}</div>
-                <div><strong>Default Currency:</strong> {workspace.currency} ({getCurrencySymbol(workspace.currency)})</div>
-              </div>
-            </div>
-          ) : (
-            /* Owner Editable Form */
-            <form onSubmit={handleSaveWorkspace} className="space-y-4">
-              <div>
-                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                  Workspace Name
-                </label>
-                <input
-                  type="text"
-                  value={wsName}
-                  onChange={(e) => setWsName(e.target.value)}
-                  required
-                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors min-h-[44px] sm:min-h-0"
-                  placeholder="e.g. Acme Agency"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                  Default Accounting Currency
-                </label>
-                <select
-                  value={wsCurrency}
-                  onChange={(e) => setWsCurrency(e.target.value)}
-                  className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-xl px-3 py-2.5 sm:py-2 text-xs font-semibold text-[#1c1b19] focus:outline-none focus:border-[#0f7a52] focus:bg-white transition-colors cursor-pointer min-h-[44px] sm:min-h-0"
-                >
-                  {WORLD_CURRENCIES.map((c) => (
-                    <option key={c.code} value={c.code}>
-                      {getCurrencyLabel(c)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  className="w-full sm:w-auto bg-[#1c1b19] hover:bg-[#ff5a3c] text-white font-display font-semibold text-xs px-4 py-2.5 sm:py-2 rounded-xl transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer min-h-[44px] sm:min-h-0"
-                >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Update Workspace Settings</span>
-                </button>
-              </div>
-            </form>
-          )}
-        </TornCard>
-
-        {/* CARD 4: Category & Budget Limits (Owner Only) */}
-        <TornCard headerColor="bg-[#1c1b19]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#1c1b19]/10 text-[#1c1b19] flex items-center justify-center font-bold shrink-0">
-                <DollarSign className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-display font-bold text-base text-[#1c1b19]">
-                  Category & Budget Control
-                </h2>
-                <p className="text-[11px] text-[#6b665c]">Monthly expense categories and spending limits</p>
-              </div>
-            </div>
-
+          <div className="flex items-center gap-2">
             {userIsOwner ? (
               <button
                 type="button"
-                onClick={() => handleOpenCatModal(null)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenCatModal(null);
+                }}
                 className="w-full sm:w-auto bg-[#0f7a52] hover:bg-[#0b5e3f] text-white text-xs font-semibold px-3 py-2 sm:py-1.5 rounded-lg flex items-center justify-center gap-1 cursor-pointer min-h-[40px] sm:min-h-0"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Category
@@ -969,244 +1080,160 @@ export const SettingsView = ({
                 <Lock className="w-3 h-3" /> Owner Gated
               </span>
             )}
+            <ChevronDown className={`w-4 h-4 text-[#6b665c] transition-transform duration-200 shrink-0 ${collapsedSections.categories ? '-rotate-90' : ''}`} />
           </div>
+        </div>
 
-          <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
-            {categories.map((cat) => (
-              <div
-                key={cat.id}
-                className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 sm:p-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2"
-              >
-                <div>
-                  <span className="font-display font-bold text-xs text-[#1c1b19] block">
-                    {cat.name}
-                  </span>
-                  <span className="text-[10px] font-mono text-[#6b665c]">
-                    Budget: {cat.budget ? `${getCurrencySymbol(workspace.currency)}${cat.budget.toLocaleString()}/mo` : "Unlimited"}
-                  </span>
-                </div>
-
-                {userIsOwner && (
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-1 sm:pt-0 border-t sm:border-0 border-[#d9d4c8]/50">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenCatModal(cat)}
-                      className="text-[11px] font-semibold text-[#0f7a52] hover:underline px-2.5 py-1 bg-white border border-[#d9d4c8] rounded-lg cursor-pointer"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCategory(cat.id)}
-                      className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                      title="Delete category"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </TornCard>
-
-        {/* CARD 5: Brand Basics (Owner Only) */}
-        <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#0f7a52]/10 text-[#0f7a52] flex items-center justify-center font-bold shrink-0">
-                <Palette className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-display font-bold text-base text-[#1c1b19]">
-                  Brand Basics
-                </h2>
-                <p className="text-[11px] text-[#6b665c]">Workspace logo & primary accent color</p>
-              </div>
-            </div>
-            {brandToast && (
-              <span className="text-xs font-mono text-[#0f7a52] bg-[#e7f4ec] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
-                <CheckCircle2 className="w-3.5 h-3.5" /> {brandToast}
-              </span>
-            )}
-            {!userIsOwner && (
-              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                <Lock className="w-3 h-3" /> Owner Gated
-              </span>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            {/* Logo Upload Section */}
+        {!collapsedSections.categories && (
+          <div className="space-y-6 mt-4">
+            {/* Sub-section: Category & Budget Control */}
             <div>
-              <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1.5">
-                Business Logo
-              </label>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <div className="w-14 h-14 rounded-xl border border-[#d9d4c8] bg-[#f7f3ea] flex items-center justify-center overflow-hidden shrink-0 relative group">
-                  {brandLogoUrl ? (
-                    <img src={brandLogoUrl} alt="Workspace Logo Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <ImageIcon className="w-6 h-6 text-[#6b665c]" />
-                  )}
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-[#1c1b19]/10 text-[#1c1b19] flex items-center justify-center font-bold shrink-0">
+                  <DollarSign className="w-3.5 h-3.5" />
                 </div>
+                <h3 className="font-display font-bold text-sm text-[#1c1b19]">
+                  Category & Budget Control
+                </h3>
+                <span className="text-[10px] font-mono text-[#6b665c]">Monthly expense categories and spending limits</span>
+              </div>
 
-                {userIsOwner && (
-                  <div className="space-y-1.5 w-full sm:w-auto">
-                    <label className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-[#d9d4c8] text-[#1c1b19] text-xs font-semibold px-3 py-2.5 sm:py-1.5 rounded-lg inline-flex items-center justify-center gap-1.5 cursor-pointer transition-colors min-h-[44px] sm:min-h-0">
-                      <Upload className="w-3.5 h-3.5 text-[#0f7a52]" />
-                      <span>{brandLogoUrl ? "Replace Logo" : "Upload Logo"}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="hidden"
-                      />
-                    </label>
-                    {brandLogoUrl && (
-                      <button
-                        type="button"
-                        onClick={handleRemoveLogo}
-                        className="text-xs text-red-600 hover:underline block font-medium cursor-pointer"
-                      >
-                        Remove Logo
-                      </button>
+              <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1">
+                {categories.map((cat) => (
+                  <div
+                    key={cat.id}
+                    className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 sm:p-2.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2"
+                  >
+                    <div>
+                      <span className="font-display font-bold text-xs text-[#1c1b19] block">
+                        {cat.name}
+                      </span>
+                      <span className="text-[10px] font-mono text-[#6b665c]">
+                        Budget: {cat.budget ? `${getCurrencySymbol(workspace.currency)}${cat.budget.toLocaleString()}/mo` : "Unlimited"}
+                      </span>
+                    </div>
+
+                    {userIsOwner && (
+                      <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-1 sm:pt-0 border-t sm:border-0 border-[#d9d4c8]/50">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCatModal(cat)}
+                          className="text-[11px] font-semibold text-[#0f7a52] hover:underline px-2.5 py-1 bg-white border border-[#d9d4c8] rounded-lg cursor-pointer"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="p-1.5 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                          title="Delete category"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     )}
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-[#d9d4c8]/60 pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-md bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold shrink-0">
+                  <Layout className="w-3.5 h-3.5" />
+                </div>
+                <h3 className="font-display font-bold text-sm text-[#1c1b19]">
+                  Dashboard Card Preferences
+                </h3>
+                <span className="text-[10px] font-mono text-[#6b665c]">Toggle visibility of spend dashboard modules</span>
+                {!userIsOwner && (
+                  <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                    <Lock className="w-3 h-3" /> Owner Gated
+                  </span>
+                )}
+                {dashPrefsToast && (
+                  <span className="text-xs font-mono text-[#0075de] bg-[#e6f3fe] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> {dashPrefsToast}
+                  </span>
                 )}
               </div>
-            </div>
 
-            {/* Accent Color Picker */}
-            <div>
-              <label className="block text-xs font-display font-semibold text-[#1c1b19] mb-1">
-                Brand Accent Color
-              </label>
-              <div className="flex items-center gap-3">
-                <input
-                  type="color"
-                  value={brandAccentColor}
-                  disabled={!userIsOwner}
-                  onChange={handleAccentColorChange}
-                  className="w-10 h-10 rounded-lg border border-[#d9d4c8] p-0.5 bg-white cursor-pointer disabled:opacity-60 shrink-0"
-                />
-                <div>
-                  <span className="font-mono text-xs font-bold text-[#1c1b19] block">
-                    {brandAccentColor}
-                  </span>
-                  <span className="text-[10px] text-[#6b665c] block">
-                    Controls primary buttons & active nav highlights
-                  </span>
-                </div>
+              <div className="space-y-2.5">
+                <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
+                  <div className="pr-2">
+                    <span className="font-display font-bold text-xs text-[#1c1b19] block">Net Cash Figure</span>
+                    <span className="text-[11px] text-[#6b665c] block">Show income minus expenses for the selected period on the dashboard</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={dashboardPrefs.showNetCashFigure !== false}
+                    disabled={!userIsOwner}
+                    onChange={() => handleToggleDashPref("showNetCashFigure")}
+                    className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
+                  />
+                </label>
+
+                <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
+                  <div className="pr-2">
+                    <span className="font-display font-bold text-xs text-[#1c1b19] block">Top Vendor Stat</span>
+                    <span className="text-[11px] text-[#6b665c] block">Show top vendor and spend category summary</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={dashboardPrefs.showTopVendor}
+                    disabled={!userIsOwner}
+                    onChange={() => handleToggleDashPref("showTopVendor")}
+                    className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
+                  />
+                </label>
+
+                <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
+                  <div className="pr-2">
+                    <span className="font-display font-bold text-xs text-[#1c1b19] block">Team Leaderboard</span>
+                    <span className="text-[11px] text-[#6b665c] block">Show spend ranking by team member</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={dashboardPrefs.showTeamLeaderboard}
+                    disabled={!userIsOwner}
+                    onChange={() => handleToggleDashPref("showTeamLeaderboard")}
+                    className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
+                  />
+                </label>
+
+                <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
+                  <div className="pr-2">
+                    <span className="font-display font-bold text-xs text-[#1c1b19] block">Budget vs. Actual</span>
+                    <span className="text-[11px] text-[#6b665c] block">Show workspace monthly budget & ceiling progress bar</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={dashboardPrefs.showBudgetVsActual}
+                    disabled={!userIsOwner}
+                    onChange={() => handleToggleDashPref("showBudgetVsActual")}
+                    className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
+                  />
+                </label>
+
+                <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
+                  <div className="pr-2">
+                    <span className="font-display font-bold text-xs text-[#1c1b19] block">Spend by Day of Week</span>
+                    <span className="text-[11px] text-[#6b665c] block">Show daily spending distribution chart card</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={dashboardPrefs.showSpendByDay}
+                    disabled={!userIsOwner}
+                    onChange={() => handleToggleDashPref("showSpendByDay")}
+                    className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
+                  />
+                </label>
               </div>
-            </div>
-
-            <div className="p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-lg text-[11px] text-[#6b665c]">
-              <strong>Note:</strong> Status alerts, confidence dots, and budget flags remain fixed to carry standard operational meanings.
             </div>
           </div>
-        </TornCard>
-
-        {/* CARD 6: Dashboard Card Preferences (Owner Only) */}
-        <TornCard headerColor="bg-[#0075de]" tornBottom={true}>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#d9d4c8]/60 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold shrink-0">
-                <Layout className="w-4 h-4" />
-              </div>
-              <div>
-                <h2 className="font-display font-bold text-base text-[#1c1b19]">
-                  Dashboard Card Preferences
-                </h2>
-                <p className="text-[11px] text-[#6b665c]">Toggle visibility of spend dashboard modules</p>
-              </div>
-            </div>
-            {dashPrefsToast && (
-              <span className="text-xs font-mono text-[#0075de] bg-[#e6f3fe] px-2 py-0.5 rounded-md font-semibold flex items-center gap-1 shrink-0">
-                <CheckCircle2 className="w-3.5 h-3.5" /> {dashPrefsToast}
-              </span>
-            )}
-            {!userIsOwner && (
-              <span className="text-[10px] font-mono text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
-                <Lock className="w-3 h-3" /> Owner Gated
-              </span>
-            )}
-          </div>
-
-          <div className="space-y-2.5">
-            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
-              <div className="pr-2">
-                <span className="font-display font-bold text-xs text-[#1c1b19] block">Net Cash Figure</span>
-                <span className="text-[11px] text-[#6b665c] block">Show income minus expenses for the selected period on the dashboard</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={dashboardPrefs.showNetCashFigure !== false}
-                disabled={!userIsOwner}
-                onChange={() => handleToggleDashPref("showNetCashFigure")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
-              />
-            </label>
-
-            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
-              <div className="pr-2">
-                <span className="font-display font-bold text-xs text-[#1c1b19] block">Top Vendor Stat</span>
-                <span className="text-[11px] text-[#6b665c] block">Show top vendor and spend category summary</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={dashboardPrefs.showTopVendor}
-                disabled={!userIsOwner}
-                onChange={() => handleToggleDashPref("showTopVendor")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
-              />
-            </label>
-
-            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
-              <div className="pr-2">
-                <span className="font-display font-bold text-xs text-[#1c1b19] block">Team Leaderboard</span>
-                <span className="text-[11px] text-[#6b665c] block">Show spend ranking by team member</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={dashboardPrefs.showTeamLeaderboard}
-                disabled={!userIsOwner}
-                onChange={() => handleToggleDashPref("showTeamLeaderboard")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
-              />
-            </label>
-
-            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
-              <div className="pr-2">
-                <span className="font-display font-bold text-xs text-[#1c1b19] block">Budget vs. Actual</span>
-                <span className="text-[11px] text-[#6b665c] block">Show workspace monthly budget & ceiling progress bar</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={dashboardPrefs.showBudgetVsActual}
-                disabled={!userIsOwner}
-                onChange={() => handleToggleDashPref("showBudgetVsActual")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
-              />
-            </label>
-
-            <label className="flex items-start sm:items-center justify-between p-2.5 bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl cursor-pointer gap-2">
-              <div className="pr-2">
-                <span className="font-display font-bold text-xs text-[#1c1b19] block">Spend by Day of Week</span>
-                <span className="text-[11px] text-[#6b665c] block">Show daily spending distribution chart card</span>
-              </div>
-              <input
-                type="checkbox"
-                checked={dashboardPrefs.showSpendByDay}
-                disabled={!userIsOwner}
-                onChange={() => handleToggleDashPref("showSpendByDay")}
-                className="h-4 w-4 rounded text-[#0075de] focus:ring-[#0075de] border-[#d9d4c8] cursor-pointer mt-0.5 sm:mt-0 shrink-0"
-              />
-            </label>
-          </div>
-        </TornCard>
-
-      </div>
+        )}
+      </TornCard>
 
       {/* FULL WIDTH CARD: Team Members & Role Management (Owner Only) */}
       <TornCard headerColor="bg-[#0f7a52]" tornBottom={true}>
