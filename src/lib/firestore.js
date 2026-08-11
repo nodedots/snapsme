@@ -493,7 +493,10 @@ export async function updateExpenseFirestore(businessId, expenseId, updates) {
   if (!businessId || !expenseId) throw new Error("Missing businessId or expenseId");
   const clean = { ...updates };
   delete clean.id;
-  await updateDoc(expenseDoc(businessId, expenseId), clean);
+  const payload = Object.fromEntries(
+    Object.entries(clean).map(([k, v]) => [k, v === undefined ? null : v])
+  );
+  await updateDoc(expenseDoc(businessId, expenseId), payload);
 }
 
 /**
@@ -531,7 +534,43 @@ export async function addIncomeFirestore(businessId, income) {
 }
 
 /**
- * Deletes an income entry.
+ * Updates an existing income entry.
+ */
+export async function updateIncomeFirestore(businessId, incomeId, updates) {
+  if (!businessId || !incomeId) throw new Error("Missing businessId or incomeId");
+  const clean = { ...updates };
+  delete clean.id;
+  const payload = Object.fromEntries(
+    Object.entries(clean).map(([k, v]) => [k, v === undefined ? null : v])
+  );
+  await updateDoc(incomeDoc(businessId, incomeId), payload);
+}
+
+/**
+ * Soft-deletes a record by setting deletedAt (owner restore possible).
+ */
+export async function softDeleteExpenseFirestore(businessId, expenseId) {
+  await updateExpenseFirestore(businessId, expenseId, {
+    deletedAt: new Date().toISOString()
+  });
+}
+
+export async function softDeleteIncomeFirestore(businessId, incomeId) {
+  await updateIncomeFirestore(businessId, incomeId, {
+    deletedAt: new Date().toISOString()
+  });
+}
+
+export async function restoreExpenseFirestore(businessId, expenseId) {
+  await updateExpenseFirestore(businessId, expenseId, { deletedAt: null });
+}
+
+export async function restoreIncomeFirestore(businessId, incomeId) {
+  await updateIncomeFirestore(businessId, incomeId, { deletedAt: null });
+}
+
+/**
+ * Permanently deletes an income entry.
  */
 export async function deleteIncomeFirestore(businessId, incomeId) {
   if (!businessId || !incomeId) throw new Error("Missing businessId or incomeId");

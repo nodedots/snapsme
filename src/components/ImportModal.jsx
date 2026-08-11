@@ -8,16 +8,19 @@ import {
   X,
   FileText,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Layers
 } from "lucide-react";
 import {
   parseCSV,
-  parseExcel,
+  openWorkbook,
+  extractSheetRows,
+  prepareRowsFromGrid,
   suggestColumnMappings,
-  processImportRows,
-  batchSaveImportRecords
+  processImportRowsAsync,
+  batchSaveImportRecords,
+  PROGRESS_THRESHOLD
 } from "../lib/import.js";
-import { getCurrencySymbol } from "../lib/currencies.js";
 
 export const ImportModal = ({
   isOpen,
@@ -29,13 +32,21 @@ export const ImportModal = ({
   currentUser,
   onImportComplete
 }) => {
-  const [step, setStep] = useState(1); // 1: Select File, 2: Map Columns & Preview, 3: Validation Summary, 4: Success
+  // Steps: 1 file → 1.5 sheet → 2 map → 3 validate → 4 success
+  const [step, setStep] = useState(1);
   const [file, setFile] = useState(null);
+  const [workbookMeta, setWorkbookMeta] = useState(null); // { workbook, sheetNames, XLSX }
+  const [sheetNames, setSheetNames] = useState([]);
+  const [selectedSheet, setSelectedSheet] = useState("");
+  const [rawGrid, setRawGrid] = useState([]);
   const [headers, setHeaders] = useState([]);
   const [rows, setRows] = useState([]);
+  const [headerRowIndex, setHeaderRowIndex] = useState(0);
+  const [noHeaderRow, setNoHeaderRow] = useState(false);
   const [columnMappings, setColumnMappings] = useState({});
   const [validationResult, setValidationResult] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(null); // { processed, total }
   const [importError, setImportError] = useState("");
   const [savedCount, setSavedCount] = useState(0);
 
@@ -44,11 +55,18 @@ export const ImportModal = ({
   const resetState = () => {
     setStep(1);
     setFile(null);
+    setWorkbookMeta(null);
+    setSheetNames([]);
+    setSelectedSheet("");
+    setRawGrid([]);
     setHeaders([]);
     setRows([]);
+    setHeaderRowIndex(0);
+    setNoHeaderRow(false);
     setColumnMappings({});
     setValidationResult(null);
     setIsProcessing(false);
+    setProgress(null);
     setImportError("");
     setSavedCount(0);
   };
@@ -58,6 +76,21 @@ export const ImportModal = ({
     onClose();
   };
 
+  const applyGridToMappingStep = (grid, opts = {}) => {
+    const prepared = prepareRowsFromGrid(grid, {
+      hasHeader: opts.noHeader ? false : true,
+      autoDetectHeader: opts.noHeader ? false : true,
+      headerRowIndex: opts.headerRowIndex != null ? opts.headerRowIndex : null
+    });
+    setRawGrid(grid);
+    setHeaders(prepared.headers);
+    setRows(prepared.rows);
+    setHeaderRowIndex(prepared.headerRowIndex);
+    setNoHeaderRow(prepared.detectedNoHeader || !!opts.noHeader);
+    setColumnMappings(suggestColumnMappings(prepared.headers));
+    setStep(2);
+  };
+
   const handleFileSelect = async (e) => {
     const selectedFile = e.target.files?.[0];
     if (!selectedFile) return;
@@ -65,57 +98,113 @@ export const ImportModal = ({
     setImportError("");
     setIsProcessing(true);
     setFile(selectedFile);
+    setProgress(null);
 
     try {
       const fileName = selectedFile.name.toLowerCase();
-      let parsedHeaders = [];
-      let parsedRows = [];
 
       if (fileName.endsWith(".csv")) {
         const text = await selectedFile.text();
         const res = parseCSV(text);
-        parsedHeaders = res.headers;
-        parsedRows = res.rows;
+        setWorkbookMeta(null);
+        setSheetNames([]);
+        setSelectedSheet("");
+        setRawGrid(res.rawGrid || []);
+        setHeaders(res.headers);
+        setRows(res.rows);
+        setHeaderRowIndex(res.headerRowIndex);
+        setNoHeaderRow(!!res.detectedNoHeader);
+        setColumnMappings(suggestColumnMappings(res.headers));
+        if (res.rows.length === 0) {
+          throw new Error("The selected file does not contain any data rows.");
+        }
+        setStep(2);
       } else if (fileName.endsWith(".xlsx") || fileName.endsWith(".xls")) {
         const buffer = await selectedFile.arrayBuffer();
-        const res = await parseExcel(buffer);
-        parsedHeaders = res.headers;
-        parsedRows = res.rows;
+        const { workbook, sheetNames: names, XLSX } = await openWorkbook(buffer);
+        setWorkbookMeta({ workbook, sheetNames: names, XLSX });
+        setSheetNames(names);
+
+        if (names.length > 1) {
+          setSelectedSheet(names[0]);
+          setStep(1.5);
+        } else {
+          setSelectedSheet(names[0]);
+          const { rows: grid } = extractSheetRows(workbook, names[0], XLSX);
+          if (!grid.length) throw new Error("Excel worksheet is empty.");
+          applyGridToMappingStep(grid);
+        }
       } else {
         throw new Error("Unsupported file format. Please select a .csv or .xlsx file.");
       }
-
-      if (parsedRows.length === 0) {
-        throw new Error("The selected file does not contain any data rows.");
-      }
-
-      setHeaders(parsedHeaders);
-      setRows(parsedRows);
-      const suggested = suggestColumnMappings(parsedHeaders);
-      setColumnMappings(suggested);
-      setStep(2);
     } catch (err) {
       setImportError(err.message || "Failed to parse file.");
+      setStep(1);
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const handleConfirmSheet = () => {
+    if (!workbookMeta || !selectedSheet) return;
+    setImportError("");
+    try {
+      const { rows: grid } = extractSheetRows(
+        workbookMeta.workbook,
+        selectedSheet,
+        workbookMeta.XLSX
+      );
+      if (!grid.length) {
+        setImportError("That sheet is empty. Pick another sheet.");
+        return;
+      }
+      applyGridToMappingStep(grid);
+    } catch (err) {
+      setImportError(err.message || "Failed to read sheet.");
+    }
+  };
+
+  const handleToggleNoHeader = (checked) => {
+    setNoHeaderRow(checked);
+    if (!rawGrid || rawGrid.length === 0) return;
+    applyGridToMappingStep(rawGrid, {
+      noHeader: checked,
+      headerRowIndex: checked ? -1 : null
+    });
+  };
+
   const handleMappingChange = (colIndex, targetField) => {
-    setColumnMappings(prev => ({
+    setColumnMappings((prev) => ({
       ...prev,
       [colIndex]: targetField
     }));
   };
 
-  const handleProceedToValidation = () => {
+  const handleProceedToValidation = async () => {
     setImportError("");
+    setIsProcessing(true);
+    setProgress(rows.length >= PROGRESS_THRESHOLD ? { processed: 0, total: rows.length } : null);
+
     try {
-      const res = processImportRows(rows, columnMappings, type, categories, currency, currentUser);
+      const res = await processImportRowsAsync(
+        rows,
+        columnMappings,
+        type,
+        categories,
+        currency,
+        currentUser,
+        { headerRowIndex },
+        rows.length >= PROGRESS_THRESHOLD
+          ? (p) => setProgress(p)
+          : null
+      );
       setValidationResult(res);
       setStep(3);
     } catch (err) {
       setImportError(err.message || "Validation failed.");
+    } finally {
+      setIsProcessing(false);
+      setProgress(null);
     }
   };
 
@@ -130,10 +219,8 @@ export const ImportModal = ({
       if (businessId) {
         count = await batchSaveImportRecords(businessId, validationResult.validRecords, type);
       } else {
-        // Fallback for offline demo mode
         count = validationResult.validRecords.length;
       }
-
       setSavedCount(count);
       setStep(4);
       if (typeof onImportComplete === "function") {
@@ -146,27 +233,30 @@ export const ImportModal = ({
     }
   };
 
-  // Target Field Labels
-  const targetFieldOptions = type === "expenses" ? [
-    { value: "ignore", label: "— Ignore Column —" },
-    { value: "amount", label: "Amount *" },
-    { value: "date", label: "Date *" },
-    { value: "vendorSource", label: "Vendor / Merchant *" },
-    { value: "category", label: "Category" },
-    { value: "notes", label: "Notes / Memo" }
-  ] : [
-    { value: "ignore", label: "— Ignore Column —" },
-    { value: "amount", label: "Amount *" },
-    { value: "date", label: "Date *" },
-    { value: "vendorSource", label: "Source / Client *" },
-    { value: "category", label: "Category" },
-    { value: "notes", label: "Notes / Memo" }
-  ];
+  const targetFieldOptions =
+    type === "expenses"
+      ? [
+          { value: "ignore", label: "— Ignore Column —" },
+          { value: "amount", label: "Amount *" },
+          { value: "date", label: "Date *" },
+          { value: "vendorSource", label: "Vendor / Merchant *" },
+          { value: "category", label: "Category" },
+          { value: "notes", label: "Notes / Memo" }
+        ]
+      : [
+          { value: "ignore", label: "— Ignore Column —" },
+          { value: "amount", label: "Amount *" },
+          { value: "date", label: "Date *" },
+          { value: "vendorSource", label: "Source / Client *" },
+          { value: "category", label: "Category" },
+          { value: "notes", label: "Notes / Memo" }
+        ];
+
+  const summary = validationResult?.summary;
 
   return (
     <div className="fixed inset-0 z-50 bg-[#1c1b19]/60 backdrop-blur-xs flex items-center justify-center p-4">
       <div className="bg-white border border-[#d9d4c8] rounded-2xl max-w-2xl w-full p-6 shadow-xl space-y-5 animate-scale-up max-h-[90vh] flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-[#d9d4c8] shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-[#0075de]/10 text-[#0075de] flex items-center justify-center font-bold">
@@ -177,7 +267,7 @@ export const ImportModal = ({
                 Bulk Import {type === "expenses" ? "Expenses" : "Income"}
               </h3>
               <p className="text-xs text-[#6b665c]">
-                Import CSV or Excel (.xlsx) records directly into your workspace
+                Import CSV or Excel (.xlsx) — multi-sheet, real-world formats supported
               </p>
             </div>
           </div>
@@ -190,7 +280,6 @@ export const ImportModal = ({
           </button>
         </div>
 
-        {/* Global Error Banner */}
         {importError && (
           <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-xl text-xs font-medium flex items-center gap-2 shrink-0">
             <AlertCircle className="w-4 h-4 shrink-0" />
@@ -210,7 +299,7 @@ export const ImportModal = ({
                   Choose a CSV or Excel file to upload
                 </span>
                 <span className="text-xs text-[#6b665c] block mt-0.5">
-                  Supports .csv and .xlsx files (up to 2,000 rows max)
+                  Supports .csv and .xlsx (multi-sheet OK · up to 5,000 rows)
                 </span>
               </div>
               <input
@@ -231,34 +320,109 @@ export const ImportModal = ({
           </div>
         )}
 
+        {/* STEP 1.5: Sheet selector */}
+        {step === 1.5 && (
+          <div className="space-y-4 flex-1">
+            <div className="bg-[#e6f3fe] border border-[#0075de]/25 p-3 rounded-xl flex items-start gap-2.5 text-xs">
+              <Layers className="w-4 h-4 text-[#0075de] shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-[#1c1b19]">
+                  This workbook has {sheetNames.length} sheets
+                </p>
+                <p className="text-[#615d59] mt-0.5">
+                  Choose which sheet holds the line-item rows you want to import. Summary sheets
+                  are selectable too — you decide.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-display font-bold text-[#1c1b19]">
+                Sheet to import
+              </label>
+              <select
+                value={selectedSheet}
+                onChange={(e) => setSelectedSheet(e.target.value)}
+                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl px-3 py-2.5 text-sm font-medium text-[#1c1b19] focus:outline-none focus:border-[#0075de]"
+              >
+                {sheetNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <ul className="text-[11px] text-[#6b665c] font-mono space-y-0.5 pl-1">
+                {sheetNames.map((name) => (
+                  <li key={name}>
+                    {name === selectedSheet ? "→ " : "  "}
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
         {/* STEP 2: Column Mapping & Preview */}
         {step === 2 && (
           <div className="space-y-4 flex-1 overflow-y-auto pr-1">
-            <div className="bg-[#f7f3ea] p-3 rounded-xl border border-[#d9d4c8] flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#0075de]" />
-                <span className="font-semibold text-[#1c1b19]">{file?.name}</span>
+            <div className="bg-[#f7f3ea] p-3 rounded-xl border border-[#d9d4c8] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <FileText className="w-4 h-4 text-[#0075de] shrink-0" />
+                <span className="font-semibold text-[#1c1b19] truncate">{file?.name}</span>
+                {selectedSheet && (
+                  <span className="font-mono text-[#0075de] bg-white border border-[#0075de]/20 px-1.5 py-0.5 rounded shrink-0">
+                    {selectedSheet}
+                  </span>
+                )}
               </div>
-              <span className="font-mono text-[#6b665c] font-medium">{rows.length} rows detected</span>
+              <span className="font-mono text-[#6b665c] font-medium shrink-0">
+                {rows.length} data rows
+              </span>
             </div>
+
+            <label className="flex items-start gap-2.5 p-3 bg-white border border-[#d9d4c8] rounded-xl cursor-pointer">
+              <input
+                type="checkbox"
+                checked={noHeaderRow}
+                onChange={(e) => handleToggleNoHeader(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded text-[#0075de] border-[#d9d4c8]"
+              />
+              <div>
+                <span className="font-display font-bold text-xs text-[#1c1b19] block">
+                  My file doesn't have a header row
+                </span>
+                <span className="text-[11px] text-[#6b665c] block">
+                  Use when the first row is already data (dates, amounts). Columns become
+                  Column 1, Column 2, …
+                </span>
+              </div>
+            </label>
 
             <div>
               <h4 className="font-display font-bold text-xs text-[#1c1b19] mb-2">
                 1. Map File Columns to SnapSME Fields
               </h4>
+              <p className="text-[11px] text-[#6b665c] mb-2">
+                Headers are auto-suggested when names match (Amount, Date, …). You can override any
+                column.
+              </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {headers.map((header, idx) => (
                   <div key={idx} className="bg-white border border-[#d9d4c8] p-2.5 rounded-xl space-y-1">
                     <label className="block text-[11px] font-mono text-[#6b665c] truncate">
-                      Column {idx + 1}: <strong className="text-[#1c1b19]">{header || `Header ${idx + 1}`}</strong>
+                      Column {idx + 1}:{" "}
+                      <strong className="text-[#1c1b19]">{header || `Header ${idx + 1}`}</strong>
                     </label>
                     <select
                       value={columnMappings[idx] || "ignore"}
                       onChange={(e) => handleMappingChange(idx, e.target.value)}
                       className="w-full bg-[#f7f3ea]/50 border border-[#d9d4c8] rounded-lg px-2.5 py-1.5 text-xs font-medium text-[#1c1b19] focus:outline-none focus:border-[#0075de]"
                     >
-                      {targetFieldOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      {targetFieldOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -289,7 +453,11 @@ export const ImportModal = ({
                       <tr key={rIdx} className="hover:bg-[#f7f3ea]/30">
                         {headers.map((_, cIdx) => (
                           <td key={cIdx} className="p-2 text-[#1c1b19] truncate max-w-[140px]">
-                            {row[cIdx] || "—"}
+                            {row[cIdx] instanceof Date
+                              ? row[cIdx].toISOString().slice(0, 10)
+                              : row[cIdx] === "" || row[cIdx] == null
+                                ? "—"
+                                : String(row[cIdx])}
                           </td>
                         ))}
                       </tr>
@@ -298,10 +466,32 @@ export const ImportModal = ({
                 </table>
               </div>
             </div>
+
+            {isProcessing && progress && (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-[#0075de]">
+                  <span className="flex items-center gap-1.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Validating rows…
+                  </span>
+                  <span className="font-mono">
+                    {progress.processed} / {progress.total}
+                  </span>
+                </div>
+                <div className="h-1.5 bg-[#e6f3fe] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#0075de] transition-all"
+                    style={{
+                      width: `${Math.round((progress.processed / Math.max(progress.total, 1)) * 100)}%`
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* STEP 3: Pre-Import Validation Summary */}
+        {/* STEP 3: Categorized validation summary */}
         {step === 3 && validationResult && (
           <div className="space-y-4 flex-1 overflow-y-auto pr-1">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -309,10 +499,10 @@ export const ImportModal = ({
                 <CheckCircle2 className="w-6 h-6 text-[#0f7a52] shrink-0" />
                 <div>
                   <span className="font-display font-bold text-base text-[#0f7a52] block">
-                    {validationResult.validRecords.length} Ready to Import
+                    {summary?.imported ?? 0} Ready to Import
                   </span>
                   <span className="text-xs text-[#0f7a52]/80 block">
-                    Valid records ready for batch writing
+                    Valid transaction rows
                   </span>
                 </div>
               </div>
@@ -321,49 +511,96 @@ export const ImportModal = ({
                 <AlertTriangle className="w-6 h-6 text-[#e0982a] shrink-0" />
                 <div>
                   <span className="font-display font-bold text-base text-[#e0982a] block">
-                    {validationResult.skippedRows.length} Rows Skipped
+                    {(summary?.skippedUnparseableDates || 0) +
+                      (summary?.skippedUnparseableAmounts || 0) +
+                      (summary?.skippedNonData || 0) +
+                      (summary?.skippedOther || 0)}{" "}
+                    Rows Skipped
                   </span>
                   <span className="text-xs text-[#e0982a]/90 block">
-                    Rows with missing/invalid amount or parsing errors
+                    Broken out by reason below
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Skipped Rows Error Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="bg-white border border-[#d9d4c8] rounded-xl p-3">
+                <span className="font-mono text-[10px] uppercase text-[#6b665c] tracking-wider">
+                  Unparseable dates
+                </span>
+                <p className="font-display font-bold text-lg text-[#1c1b19]">
+                  {summary?.skippedUnparseableDates ?? 0}
+                </p>
+              </div>
+              <div className="bg-white border border-[#d9d4c8] rounded-xl p-3">
+                <span className="font-mono text-[10px] uppercase text-[#6b665c] tracking-wider">
+                  Unparseable amounts
+                </span>
+                <p className="font-display font-bold text-lg text-[#1c1b19]">
+                  {summary?.skippedUnparseableAmounts ?? 0}
+                </p>
+              </div>
+              <div className="bg-white border border-[#d9d4c8] rounded-xl p-3">
+                <span className="font-mono text-[10px] uppercase text-[#6b665c] tracking-wider">
+                  Totals / non-data rows
+                </span>
+                <p className="font-display font-bold text-lg text-[#1c1b19]">
+                  {summary?.skippedNonData ?? 0}
+                </p>
+              </div>
+              <div className="bg-white border border-[#d9d4c8] rounded-xl p-3">
+                <span className="font-mono text-[10px] uppercase text-[#6b665c] tracking-wider">
+                  Empty rows ignored
+                </span>
+                <p className="font-display font-bold text-lg text-[#1c1b19]">
+                  {summary?.emptyRowsIgnored ?? 0}
+                </p>
+              </div>
+            </div>
+
             {validationResult.skippedRows.length > 0 && (
               <div className="space-y-2">
                 <h4 className="font-display font-bold text-xs text-[#1c1b19]">
-                  Skipped Rows & Error Reasons
+                  Skip details (sample)
                 </h4>
                 <div className="bg-[#f7f3ea] border border-[#d9d4c8] rounded-xl p-3 max-h-40 overflow-y-auto space-y-1.5 font-mono text-[11px]">
-                  {validationResult.skippedRows.map((errRow, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-amber-800 bg-white p-2 rounded-lg border border-amber-200">
-                      <span>Row {errRow.rowNumber}: {errRow.reason}</span>
+                  {validationResult.skippedRows.slice(0, 40).map((errRow, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between text-amber-900 bg-white p-2 rounded-lg border border-amber-200"
+                    >
+                      <span>
+                        Row {errRow.rowNumber}: {errRow.reason}
+                      </span>
                     </div>
                   ))}
+                  {validationResult.skippedRows.length > 40 && (
+                    <p className="text-[#6b665c] text-center pt-1">
+                      +{validationResult.skippedRows.length - 40} more…
+                    </p>
+                  )}
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* STEP 4: Success Screen */}
+        {/* STEP 4: Success */}
         {step === 4 && (
           <div className="py-8 text-center space-y-3 flex-1 flex flex-col items-center justify-center">
             <div className="w-14 h-14 rounded-2xl bg-[#e7f4ec] text-[#0f7a52] flex items-center justify-center shadow-xs">
               <CheckCircle2 className="w-8 h-8" />
             </div>
-            <h3 className="font-display font-bold text-xl text-[#1c1b19]">
-              Import Complete!
-            </h3>
+            <h3 className="font-display font-bold text-xl text-[#1c1b19]">Import Complete!</h3>
             <p className="text-xs text-[#6b665c] max-w-sm">
-              Successfully imported <strong>{savedCount}</strong> {type === "expenses" ? "expense" : "income"} records into your workspace.
+              Successfully imported <strong>{savedCount}</strong>{" "}
+              {type === "expenses" ? "expense" : "income"} records into your workspace.
             </p>
           </div>
         )}
 
-        {/* Modal Action Buttons */}
+        {/* Actions */}
         <div className="pt-3 border-t border-[#d9d4c8] flex items-center justify-end gap-2 shrink-0">
           {step === 1 && (
             <button
@@ -375,7 +612,7 @@ export const ImportModal = ({
             </button>
           )}
 
-          {step === 2 && (
+          {step === 1.5 && (
             <>
               <button
                 type="button"
@@ -386,11 +623,41 @@ export const ImportModal = ({
               </button>
               <button
                 type="button"
-                onClick={handleProceedToValidation}
+                onClick={handleConfirmSheet}
                 className="bg-[#0075de] hover:bg-[#0060b8] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-xs"
               >
-                <span>Validate Mapping</span>
+                <span>Use “{selectedSheet}”</span>
                 <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setStep(sheetNames.length > 1 ? 1.5 : 1)}
+                className="px-4 py-2 text-xs font-semibold text-[#6b665c] hover:bg-[#f7f3ea] rounded-xl border border-[#d9d4c8]"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                onClick={handleProceedToValidation}
+                disabled={isProcessing}
+                className="bg-[#0075de] hover:bg-[#0060b8] disabled:opacity-60 text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-xs"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Validating…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Validate Mapping</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
               </button>
             </>
           )}
@@ -416,7 +683,9 @@ export const ImportModal = ({
                     <span>Importing Records...</span>
                   </>
                 ) : (
-                  <span>Confirm & Import {validationResult?.validRecords.length} Records</span>
+                  <span>
+                    Confirm & Import {validationResult?.validRecords.length} Records
+                  </span>
                 )}
               </button>
             </>

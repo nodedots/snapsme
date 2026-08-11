@@ -30,10 +30,24 @@ import {
   deleteCategoryFirestore,
   addExpenseFirestore,
   updateExpenseFirestore,
+  deleteExpenseFirestore,
   addIncomeFirestore,
+  updateIncomeFirestore,
   deleteIncomeFirestore,
+  softDeleteExpenseFirestore,
+  softDeleteIncomeFirestore,
+  restoreExpenseFirestore,
+  restoreIncomeFirestore,
   findUserBusinesses
 } from "./lib/firestore.js";
+import {
+  canEditRecord,
+  canDeleteRecord,
+  canRestoreRecord,
+  canBulkManage,
+  filterActiveRecords
+} from "./lib/recordPermissions.js";
+import { RecordEditModal } from "./components/RecordEditModal.jsx";
 import { auth } from "./lib/firebase.js";
 import { getRedirectResult } from "firebase/auth";
 import { Header } from "./components/Header.jsx";
@@ -75,6 +89,8 @@ export function App() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   /** Which step-1 pane to show: "signin" | "signup" (Create Workspace / Sign up) */
   const [onboardingAuthMode, setOnboardingAuthMode] = useState("signup");
+  /** { type: "expense"|"income", record } for edit modal */
+  const [editingRecord, setEditingRecord] = useState(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importType, setImportType] = useState("expenses");
 
@@ -509,24 +525,242 @@ export function App() {
     } catch (e) {}
   }, [isFirestoreMode, businessId, currentUser, firebaseUser]);
 
-  const handleDeleteIncome = useCallback(async (incomeId) => {
-    setIncomeEntries((prev) => (prev || []).filter((e) => e.id !== incomeId));
+  // -------------------------------------------------------------------------
+  // Record management — edit / soft-delete / restore / permanent delete / bulk
+  // -------------------------------------------------------------------------
+  const handleUpdateExpense = useCallback(async (expenseId, updates) => {
+    const rec = expenses.find((e) => e.id === expenseId);
+    const perm = canEditRecord(rec, currentUser);
+    if (!perm.allowed) throw new Error(perm.reason || "Not allowed to edit this expense.");
+
+    setExpenses((prev) =>
+      (prev || []).map((e) => (e.id === expenseId ? { ...e, ...updates } : e))
+    );
 
     if (isFirestoreMode && businessId) {
       try {
-        await deleteIncomeFirestore(businessId, incomeId);
+        await updateExpenseFirestore(businessId, expenseId, updates);
       } catch (err) {
-        console.error("Failed to delete income from Firestore:", err);
+        console.error("Failed to update expense:", err);
+        throw err;
       }
       return;
     }
-
     try {
-      const stored = localStorage.getItem("snapsme_income");
-      const currentArr = stored ? JSON.parse(stored) : [];
-      localStorage.setItem("snapsme_income", JSON.stringify(currentArr.filter(e => e.id !== incomeId)));
+      const stored = JSON.parse(localStorage.getItem("snapsme_expenses") || "[]");
+      localStorage.setItem(
+        "snapsme_expenses",
+        JSON.stringify(stored.map((e) => (e.id === expenseId ? { ...e, ...updates } : e)))
+      );
     } catch (e) {}
-  }, [isFirestoreMode, businessId]);
+  }, [expenses, currentUser, isFirestoreMode, businessId]);
+
+  const handleUpdateIncome = useCallback(async (incomeId, updates) => {
+    const rec = (incomeEntries || []).find((e) => e.id === incomeId);
+    const perm = canEditRecord(rec, currentUser);
+    if (!perm.allowed) throw new Error(perm.reason || "Not allowed to edit this income entry.");
+
+    setIncomeEntries((prev) =>
+      (prev || []).map((e) => (e.id === incomeId ? { ...e, ...updates } : e))
+    );
+
+    if (isFirestoreMode && businessId) {
+      try {
+        await updateIncomeFirestore(businessId, incomeId, updates);
+      } catch (err) {
+        console.error("Failed to update income:", err);
+        throw err;
+      }
+      return;
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem("snapsme_income") || "[]");
+      localStorage.setItem(
+        "snapsme_income",
+        JSON.stringify(stored.map((e) => (e.id === incomeId ? { ...e, ...updates } : e)))
+      );
+    } catch (e) {}
+  }, [incomeEntries, currentUser, isFirestoreMode, businessId]);
+
+  /** Soft-delete (default). permanent=true hard-deletes. */
+  const handleDeleteExpense = useCallback(async (expenseId, { permanent = false } = {}) => {
+    const rec = expenses.find((e) => e.id === expenseId);
+    const perm = canDeleteRecord(rec, currentUser);
+    if (!perm.allowed) {
+      console.warn(perm.reason);
+      return;
+    }
+
+    if (permanent) {
+      setExpenses((prev) => (prev || []).filter((e) => e.id !== expenseId));
+      if (isFirestoreMode && businessId) {
+        try {
+          await deleteExpenseFirestore(businessId, expenseId);
+        } catch (err) {
+          console.error("Failed to permanently delete expense:", err);
+        }
+        return;
+      }
+      try {
+        const stored = JSON.parse(localStorage.getItem("snapsme_expenses") || "[]");
+        localStorage.setItem(
+          "snapsme_expenses",
+          JSON.stringify(stored.filter((e) => e.id !== expenseId))
+        );
+      } catch (e) {}
+      return;
+    }
+
+    const deletedAt = new Date().toISOString();
+    setExpenses((prev) =>
+      (prev || []).map((e) => (e.id === expenseId ? { ...e, deletedAt } : e))
+    );
+    if (isFirestoreMode && businessId) {
+      try {
+        await softDeleteExpenseFirestore(businessId, expenseId);
+      } catch (err) {
+        console.error("Failed to soft-delete expense:", err);
+      }
+      return;
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem("snapsme_expenses") || "[]");
+      localStorage.setItem(
+        "snapsme_expenses",
+        JSON.stringify(stored.map((e) => (e.id === expenseId ? { ...e, deletedAt } : e)))
+      );
+    } catch (e) {}
+  }, [expenses, currentUser, isFirestoreMode, businessId]);
+
+  const handleDeleteIncome = useCallback(async (incomeId, { permanent = false } = {}) => {
+    const rec = (incomeEntries || []).find((e) => e.id === incomeId);
+    const perm = canDeleteRecord(rec, currentUser);
+    if (!perm.allowed) {
+      console.warn(perm.reason);
+      return;
+    }
+
+    if (permanent) {
+      setIncomeEntries((prev) => (prev || []).filter((e) => e.id !== incomeId));
+      if (isFirestoreMode && businessId) {
+        try {
+          await deleteIncomeFirestore(businessId, incomeId);
+        } catch (err) {
+          console.error("Failed to permanently delete income:", err);
+        }
+        return;
+      }
+      try {
+        const stored = JSON.parse(localStorage.getItem("snapsme_income") || "[]");
+        localStorage.setItem(
+          "snapsme_income",
+          JSON.stringify(stored.filter((e) => e.id !== incomeId))
+        );
+      } catch (e) {}
+      return;
+    }
+
+    const deletedAt = new Date().toISOString();
+    setIncomeEntries((prev) =>
+      (prev || []).map((e) => (e.id === incomeId ? { ...e, deletedAt } : e))
+    );
+    if (isFirestoreMode && businessId) {
+      try {
+        await softDeleteIncomeFirestore(businessId, incomeId);
+      } catch (err) {
+        console.error("Failed to soft-delete income:", err);
+      }
+      return;
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem("snapsme_income") || "[]");
+      localStorage.setItem(
+        "snapsme_income",
+        JSON.stringify(stored.map((e) => (e.id === incomeId ? { ...e, deletedAt } : e)))
+      );
+    } catch (e) {}
+  }, [incomeEntries, currentUser, isFirestoreMode, businessId]);
+
+  const handleRestoreExpense = useCallback(async (expenseId) => {
+    const rec = expenses.find((e) => e.id === expenseId);
+    if (!canRestoreRecord(rec, currentUser).allowed) return;
+    setExpenses((prev) =>
+      (prev || []).map((e) => (e.id === expenseId ? { ...e, deletedAt: null } : e))
+    );
+    if (isFirestoreMode && businessId) {
+      try {
+        await restoreExpenseFirestore(businessId, expenseId);
+      } catch (err) {
+        console.error("Failed to restore expense:", err);
+      }
+      return;
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem("snapsme_expenses") || "[]");
+      localStorage.setItem(
+        "snapsme_expenses",
+        JSON.stringify(stored.map((e) => (e.id === expenseId ? { ...e, deletedAt: null } : e)))
+      );
+    } catch (e) {}
+  }, [expenses, currentUser, isFirestoreMode, businessId]);
+
+  const handleRestoreIncome = useCallback(async (incomeId) => {
+    const rec = (incomeEntries || []).find((e) => e.id === incomeId);
+    if (!canRestoreRecord(rec, currentUser).allowed) return;
+    setIncomeEntries((prev) =>
+      (prev || []).map((e) => (e.id === incomeId ? { ...e, deletedAt: null } : e))
+    );
+    if (isFirestoreMode && businessId) {
+      try {
+        await restoreIncomeFirestore(businessId, incomeId);
+      } catch (err) {
+        console.error("Failed to restore income:", err);
+      }
+      return;
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem("snapsme_income") || "[]");
+      localStorage.setItem(
+        "snapsme_income",
+        JSON.stringify(stored.map((e) => (e.id === incomeId ? { ...e, deletedAt: null } : e)))
+      );
+    } catch (e) {}
+  }, [incomeEntries, currentUser, isFirestoreMode, businessId]);
+
+  const handleBulkDeleteExpenses = useCallback(async (ids, { permanent = false } = {}) => {
+    if (!canBulkManage(currentUser)) return;
+    for (const id of ids) {
+      await handleDeleteExpense(id, { permanent });
+    }
+  }, [currentUser, handleDeleteExpense]);
+
+  const handleBulkDeleteIncome = useCallback(async (ids, { permanent = false } = {}) => {
+    if (!canBulkManage(currentUser)) return;
+    for (const id of ids) {
+      await handleDeleteIncome(id, { permanent });
+    }
+  }, [currentUser, handleDeleteIncome]);
+
+  const handleBulkRecategorizeExpenses = useCallback(async (ids, category) => {
+    if (!canBulkManage(currentUser)) return;
+    const updates = {
+      categoryId: category?.id || null,
+      category: category?.id || null,
+      categoryName: category?.name || "Other Expenses",
+      updatedAt: new Date().toISOString()
+    };
+    for (const id of ids) {
+      await handleUpdateExpense(id, updates);
+    }
+  }, [currentUser, handleUpdateExpense]);
+
+  const handleBulkMoneyMovement = useCallback(async (ids, moneyMovement) => {
+    if (!canBulkManage(currentUser)) return;
+    const updates = { moneyMovement, updatedAt: new Date().toISOString() };
+    for (const id of ids) {
+      await handleUpdateExpense(id, updates);
+    }
+  }, [currentUser, handleUpdateExpense]);
 
   // -------------------------------------------------------------------------
   // Workspace update — Firestore or localStorage
@@ -780,9 +1014,16 @@ export function App() {
             incomeEntries={incomeEntries}
             categories={categories}
             members={members}
+            currentUser={currentUser}
             onOpenCapture={() => setIsCaptureOpen(true)}
             onAddIncome={() => setIsIncomeCaptureOpen(true)}
             onOpenImport={(type) => { setImportType(type); setIsImportOpen(true); }}
+            onEditExpense={(rec) => setEditingRecord({ type: "expense", record: rec })}
+            onDeleteExpense={handleDeleteExpense}
+            onRestoreExpense={handleRestoreExpense}
+            onBulkDelete={handleBulkDeleteExpenses}
+            onBulkRecategorize={handleBulkRecategorizeExpenses}
+            onBulkMoneyMovement={handleBulkMoneyMovement}
             currency={workspace?.currency || "USD"}
           />
         )}
@@ -791,19 +1032,23 @@ export function App() {
           <IncomeFeed
             incomeEntries={incomeEntries}
             members={members}
+            currentUser={currentUser}
             currency={workspace?.currency || "USD"}
             onAddIncome={() => setIsIncomeOpen(true)}
             onOpenIncomeCapture={() => setIsIncomeCaptureOpen(true)}
             onOpenImport={(type) => { setImportType(type); setIsImportOpen(true); }}
+            onEditIncome={(rec) => setEditingRecord({ type: "income", record: rec })}
             onDeleteIncome={handleDeleteIncome}
+            onRestoreIncome={handleRestoreIncome}
+            onBulkDelete={handleBulkDeleteIncome}
             isOwner={currentUser?.role === "owner"}
           />
         )}
 
         {currentView === "dashboard" && (
           <DashboardView
-            expenses={expenses}
-            incomeEntries={incomeEntries}
+            expenses={filterActiveRecords(expenses)}
+            incomeEntries={filterActiveRecords(incomeEntries)}
             categories={categories}
             members={members}
             currency={workspace?.currency || "USD"}
@@ -910,6 +1155,23 @@ export function App() {
         currency={workspace?.currency || "USD"}
         currentUser={currentUser}
         onImportComplete={() => { /* Firestore real-time listeners auto-refresh */ }}
+      />
+
+      {/* Record edit modal (expense or income) */}
+      <RecordEditModal
+        isOpen={Boolean(editingRecord)}
+        record={editingRecord?.record || null}
+        recordType={editingRecord?.type || "expense"}
+        categories={categories}
+        currency={workspace?.currency || "USD"}
+        onClose={() => setEditingRecord(null)}
+        onSave={async (id, updates) => {
+          if (editingRecord?.type === "income") {
+            await handleUpdateIncome(id, updates);
+          } else {
+            await handleUpdateExpense(id, updates);
+          }
+        }}
       />
 
       {/* Footer */}

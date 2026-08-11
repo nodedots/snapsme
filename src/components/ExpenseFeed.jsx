@@ -1,32 +1,40 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { TornCard } from "./TornCard";
 import { StatusPill } from "./StatusPill";
 import { ConfidenceDot } from "./ConfidenceDot";
 import { getCurrencySymbol } from "../lib/currencies.js";
 import {
+  canEditRecord,
+  canDeleteRecord,
+  canRestoreRecord,
+  canBulkManage,
+  isSoftDeleted,
+  sortRecords,
+  filterActiveRecords,
+  filterDeletedRecords
+} from "../lib/recordPermissions.js";
+import {
   Search,
   Filter,
   AlertOctagon,
   Receipt,
-  Eye,
   Check,
   Calendar,
   User,
   Tag,
-  Sparkles,
-  Image as ImageIcon,
-  Mic,
   ZoomIn,
   ZoomOut,
   RotateCw,
-  Maximize2,
   X,
-  Download,
   FileSpreadsheet,
   Upload,
-  Plus,
   TrendingUp,
-  Camera
+  Camera,
+  Pencil,
+  Trash2,
+  ArrowUpDown,
+  RotateCcw,
+  CheckSquare
 } from "lucide-react";
 
 export const ExpenseFeed = ({
@@ -34,9 +42,16 @@ export const ExpenseFeed = ({
   incomeEntries = [],
   categories,
   members,
+  currentUser = null,
   onOpenCapture,
   onAddIncome,
   onOpenImport,
+  onEditExpense,
+  onDeleteExpense,
+  onRestoreExpense,
+  onBulkDelete,
+  onBulkRecategorize,
+  onBulkMoneyMovement,
   currency
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -44,6 +59,14 @@ export const ExpenseFeed = ({
   const [selectedMember, setSelectedMember] = useState("all");
   const [selectedMoneyMovement, setSelectedMoneyMovement] = useState("all");
   const [selectedExpense, setSelectedExpense] = useState(null);
+  const [sortKey, setSortKey] = useState("date");
+  const [sortDir, setSortDir] = useState("desc");
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [bulkCategoryId, setBulkCategoryId] = useState("");
+  const [bulkMoneyMovement, setBulkMoneyMovement] = useState("");
 
   // Lightbox Modal state
   const [lightboxExpense, setLightboxExpense] = useState(null);
@@ -63,22 +86,83 @@ export const ExpenseFeed = ({
     setRotation(0);
   };
 
-  // Filter expenses
-  const filteredExpenses = expenses.filter((exp) => {
-    const matchesSearch =
-      exp.vendor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exp.categoryName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      exp.submittedByName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (exp.notes && exp.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+  const isOwner = currentUser?.role === "owner";
+  const canBulk = canBulkManage(currentUser);
 
-    const matchesCategory = selectedCategory === "all" || exp.categoryId === selectedCategory;
-    const matchesMember = selectedMember === "all" || exp.submittedBy === selectedMember;
-    const matchesMM = selectedMoneyMovement === "all" || exp.moneyMovement === selectedMoneyMovement;
+  const deletedCount = useMemo(
+    () => filterDeletedRecords(expenses).length,
+    [expenses]
+  );
 
-    return matchesSearch && matchesCategory && matchesMember && matchesMM;
-  });
+  // Filter + sort expenses
+  const filteredExpenses = useMemo(() => {
+    const pool = showDeleted
+      ? filterDeletedRecords(expenses)
+      : filterActiveRecords(expenses);
 
-  const totalFilteredAmount = filteredExpenses.reduce((acc, curr) => acc + curr.amount, 0);
+    const filtered = pool.filter((exp) => {
+      const vendor = (exp.vendor || "").toLowerCase();
+      const cat = (exp.categoryName || "").toLowerCase();
+      const by = (exp.submittedByName || "").toLowerCase();
+      const notes = (exp.notes || "").toLowerCase();
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        !q || vendor.includes(q) || cat.includes(q) || by.includes(q) || notes.includes(q);
+      const catId = exp.categoryId || exp.category;
+      const matchesCategory = selectedCategory === "all" || catId === selectedCategory;
+      const matchesMember = selectedMember === "all" || exp.submittedBy === selectedMember;
+      const matchesMM =
+        selectedMoneyMovement === "all" || exp.moneyMovement === selectedMoneyMovement;
+      return matchesSearch && matchesCategory && matchesMember && matchesMM;
+    });
+
+    return sortRecords(filtered, sortKey, sortDir);
+  }, [
+    expenses,
+    showDeleted,
+    searchQuery,
+    selectedCategory,
+    selectedMember,
+    selectedMoneyMovement,
+    sortKey,
+    sortDir
+  ]);
+
+  const totalFilteredAmount = filteredExpenses.reduce(
+    (acc, curr) => acc + (Number(curr.amount) || 0),
+    0
+  );
+
+  const toggleSelect = (id, e) => {
+    if (e) e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => {
+    setSelectedIds(new Set(filteredExpenses.map((e) => e.id)));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleRowDelete = (exp, e) => {
+    if (e) e.stopPropagation();
+    if (!canDeleteRecord(exp, currentUser).allowed) return;
+    if (confirmDeleteId === exp.id) {
+      onDeleteExpense?.(exp.id, { permanent: isSoftDeleted(exp) });
+      setConfirmDeleteId(null);
+      if (selectedExpense?.id === exp.id) setSelectedExpense(null);
+    } else {
+      setConfirmDeleteId(exp.id);
+      setTimeout(() => setConfirmDeleteId(null), 3000);
+    }
+  };
+
+  const selectedCount = selectedIds.size;
 
   // CSV Export logic for accounting (FR-I5: income included, clearly typed)
   const handleExportCSV = () => {
@@ -263,30 +347,62 @@ export const ExpenseFeed = ({
 
         {/* Category, Member & Money Movement Filter Controls */}
         <div className="pt-2.5 border-t border-black/10 space-y-2.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-semibold text-[#1c1b19] flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-[#0075de]" /> Filter Feed:
+              <Filter className="w-3.5 h-3.5 text-[#0075de]" /> Filter & sort:
             </span>
-
-            {(selectedCategory !== "all" || selectedMember !== "all" || selectedMoneyMovement !== "all" || searchQuery) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedCategory("all");
-                  setSelectedMember("all");
-                  setSelectedMoneyMovement("all");
-                  setSearchQuery("");
-                }}
-                className="text-[#f64932] hover:underline text-xs font-bold shrink-0 cursor-pointer"
-              >
-                Reset Filters
-              </button>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {isOwner && deletedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleted((v) => !v);
+                    clearSelection();
+                  }}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer ${
+                    showDeleted
+                      ? "bg-red-50 text-red-700 border-red-200"
+                      : "bg-white text-[#6b665c] border-[#d9d4c8]"
+                  }`}
+                >
+                  {showDeleted ? "Showing deleted" : `Trash (${deletedCount})`}
+                </button>
+              )}
+              {canBulk && !showDeleted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectMode((v) => !v);
+                    clearSelection();
+                  }}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer flex items-center gap-1 ${
+                    selectMode
+                      ? "bg-[#e6f3fe] text-[#0075de] border-[#0075de]/30"
+                      : "bg-white text-[#6b665c] border-[#d9d4c8]"
+                  }`}
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  {selectMode ? "Cancel select" : "Select"}
+                </button>
+              )}
+              {(selectedCategory !== "all" || selectedMember !== "all" || selectedMoneyMovement !== "all" || searchQuery) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory("all");
+                    setSelectedMember("all");
+                    setSelectedMoneyMovement("all");
+                    setSearchQuery("");
+                  }}
+                  className="text-[#f64932] hover:underline text-xs font-bold shrink-0 cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Responsive Filter Selectors (1 Column on Mobile < 640px, 3 Columns on Tablet/Desktop >= 640px) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 w-full text-xs">
-            {/* Category Selector */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full text-xs">
             <div className="w-full min-w-0">
               <label htmlFor="feed-filter-category" className="sr-only">Filter by Category</label>
               <select
@@ -303,8 +419,6 @@ export const ExpenseFeed = ({
                 ))}
               </select>
             </div>
-
-            {/* Member Selector */}
             <div className="w-full min-w-0">
               <label htmlFor="feed-filter-member" className="sr-only">Filter by Submitter</label>
               <select
@@ -321,8 +435,6 @@ export const ExpenseFeed = ({
                 ))}
               </select>
             </div>
-
-            {/* Money Movement Selector */}
             <div className="w-full min-w-0">
               <label htmlFor="feed-filter-money" className="sr-only">Filter by Money Movement</label>
               <select
@@ -338,9 +450,129 @@ export const ExpenseFeed = ({
                 <option value="supplier_payment">Supplier Direct</option>
               </select>
             </div>
+            <div className="w-full min-w-0 flex gap-1.5">
+              <label htmlFor="feed-sort-key" className="sr-only">Sort by</label>
+              <select
+                id="feed-sort-key"
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value)}
+                className="flex-1 bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de] cursor-pointer min-h-[44px] sm:min-h-0"
+              >
+                <option value="date">Sort: Date</option>
+                <option value="amount">Sort: Amount</option>
+                <option value="vendor">Sort: Vendor</option>
+                <option value="submittedBy">Sort: Submitted by</option>
+                <option value="createdAt">Sort: Created</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                className="px-2.5 rounded-lg border border-[#d9d4c8] bg-white text-[#1c1b19] text-xs font-bold cursor-pointer flex items-center gap-1"
+                title={sortDir === "asc" ? "Ascending" : "Descending"}
+              >
+                <ArrowUpDown className="w-3.5 h-3.5" />
+                {sortDir === "asc" ? "Asc" : "Desc"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selectMode && canBulk && (
+        <div className="sticky top-2 z-20 bg-[#1c1b19] text-white rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-2 shadow-lg">
+          <span className="text-xs font-semibold shrink-0">
+            {selectedCount} selected
+          </span>
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <button
+              type="button"
+              onClick={selectAllVisible}
+              className="text-[11px] font-semibold px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 cursor-pointer"
+            >
+              Select all visible
+            </button>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-[11px] font-semibold px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 cursor-pointer"
+            >
+              Clear
+            </button>
+            {!showDeleted && (
+              <>
+                <select
+                  value={bulkCategoryId}
+                  onChange={(e) => setBulkCategoryId(e.target.value)}
+                  className="text-[11px] rounded-md px-2 py-1 text-[#1c1b19] bg-white"
+                >
+                  <option value="">Set category…</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={!bulkCategoryId || selectedCount === 0}
+                  onClick={() => {
+                    const cat = categories.find((c) => c.id === bulkCategoryId);
+                    if (cat) onBulkRecategorize?.([...selectedIds], cat);
+                    clearSelection();
+                    setBulkCategoryId("");
+                  }}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#0075de] disabled:opacity-40 cursor-pointer"
+                >
+                  Apply category
+                </button>
+                <select
+                  value={bulkMoneyMovement}
+                  onChange={(e) => setBulkMoneyMovement(e.target.value)}
+                  className="text-[11px] rounded-md px-2 py-1 text-[#1c1b19] bg-white"
+                >
+                  <option value="">Money movement…</option>
+                  <option value="company_card">Company Card</option>
+                  <option value="personal_reimbursement">Personal Reimbursement</option>
+                  <option value="petty_cash">Petty Cash</option>
+                  <option value="supplier_payment">Supplier Direct</option>
+                </select>
+                <button
+                  type="button"
+                  disabled={!bulkMoneyMovement || selectedCount === 0}
+                  onClick={() => {
+                    onBulkMoneyMovement?.([...selectedIds], bulkMoneyMovement);
+                    clearSelection();
+                    setBulkMoneyMovement("");
+                  }}
+                  className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#0075de] disabled:opacity-40 cursor-pointer"
+                >
+                  Apply movement
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              disabled={selectedCount === 0}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    showDeleted
+                      ? `Permanently delete ${selectedCount} record(s)? This cannot be undone.`
+                      : `Move ${selectedCount} expense(s) to trash?`
+                  )
+                ) {
+                  onBulkDelete?.([...selectedIds], { permanent: showDeleted });
+                  clearSelection();
+                }
+              }}
+              className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#f64932] disabled:opacity-40 cursor-pointer ml-auto"
+            >
+              {showDeleted ? "Delete forever" : "Move to trash"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Expense Feed Grid */}
       {filteredExpenses.length > 0 ? (
@@ -348,9 +580,17 @@ export const ExpenseFeed = ({
           {filteredExpenses.map((exp) => (
             <TornCard
               key={exp.id}
-              onClick={() => setSelectedExpense(exp)}
+              onClick={() => {
+                if (selectMode) {
+                  toggleSelect(exp.id);
+                  return;
+                }
+                setSelectedExpense(exp);
+              }}
               headerColor={
-                exp.moneyMovement === "company_card"
+                isSoftDeleted(exp)
+                  ? "bg-red-500"
+                  : exp.moneyMovement === "company_card"
                   ? "bg-blue-600"
                   : exp.moneyMovement === "personal_reimbursement"
                   ? "bg-[#e0982a]"
@@ -359,10 +599,76 @@ export const ExpenseFeed = ({
                   : "bg-purple-600"
               }
             >
-              {/* Header Badges */}
+              {/* Header Badges + actions */}
               <div className="flex items-center justify-between gap-2 mb-2">
-                <StatusPill type="moneyMovement" value={exp.moneyMovement} size="sm" />
-                <StatusPill type="sync" value={exp.syncStatus} />
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {selectMode && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(exp.id)}
+                      onChange={(e) => toggleSelect(exp.id, e)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-4 w-4 rounded shrink-0"
+                    />
+                  )}
+                  <StatusPill type="moneyMovement" value={exp.moneyMovement} size="sm" />
+                  {isSoftDeleted(exp) && (
+                    <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                      Deleted
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1 shrink-0">
+                  <StatusPill type="sync" value={exp.syncStatus} />
+                  {!selectMode && canEditRecord(exp, currentUser).allowed && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditExpense?.(exp);
+                      }}
+                      className="p-1 rounded-md text-[#6b665c] hover:text-[#0075de] hover:bg-[#e6f3fe] cursor-pointer"
+                      title="Edit expense"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {!selectMode && isSoftDeleted(exp) && canRestoreRecord(exp, currentUser).allowed && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRestoreExpense?.(exp.id);
+                      }}
+                      className="p-1 rounded-md text-[#0f7a52] hover:bg-[#e7f4ec] cursor-pointer"
+                      title="Restore"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {!selectMode && canDeleteRecord(exp, currentUser).allowed && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleRowDelete(exp, e)}
+                      className={`p-1 rounded-md cursor-pointer ${
+                        confirmDeleteId === exp.id
+                          ? "bg-red-50 text-red-600"
+                          : "text-[#6b665c] hover:text-red-600 hover:bg-red-50"
+                      }`}
+                      title={
+                        confirmDeleteId === exp.id
+                          ? isSoftDeleted(exp)
+                            ? "Click again to permanently delete"
+                            : "Click again to confirm trash"
+                          : isSoftDeleted(exp)
+                            ? "Delete forever"
+                            : "Move to trash"
+                      }
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Vendor & Amount */}
