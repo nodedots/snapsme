@@ -32,21 +32,8 @@ export async function compressImage(file, options = {}) {
 
   const originalSize = file.size;
 
-  // If the file is already small enough, return it as-is
-  if (file.size <= maxSizeMB * 1024 * 1024 && file.type === "image/jpeg") {
-    const dataUrl = await fileToDataUrl(file);
-    return {
-      blob: file,
-      dataUrl,
-      width: 0,
-      height: 0,
-      originalSize,
-      compressedSize: file.size,
-      skipped: true
-    };
-  }
-
-  // Load the image
+  // Load the image first so we can still downscale huge-dimension JPEGs
+  // even when file size is already under maxSizeMB (common with phone photos).
   const image = await loadImage(file);
 
   // Calculate new dimensions while preserving aspect ratio
@@ -54,6 +41,24 @@ export async function compressImage(file, options = {}) {
   const scale = Math.min(1, maxWidth / width, maxHeight / height);
   width = Math.round(width * scale);
   height = Math.round(height * scale);
+
+  // Skip re-encode only when already JPEG, under size cap, AND within max dimensions
+  if (
+    file.size <= maxSizeMB * 1024 * 1024 &&
+    file.type === "image/jpeg" &&
+    scale >= 1
+  ) {
+    const dataUrl = await fileToDataUrl(file);
+    return {
+      blob: file,
+      dataUrl,
+      width: image.width,
+      height: image.height,
+      originalSize,
+      compressedSize: file.size,
+      skipped: true
+    };
+  }
 
   // Draw to canvas and export as JPEG
   const canvas = document.createElement("canvas");

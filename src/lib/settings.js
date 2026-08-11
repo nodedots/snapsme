@@ -146,19 +146,38 @@ export function unlinkChatChannel(userId, channel, members = [], saveMembersFn, 
 }
 
 /**
- * Signs out the current user or resets local session state.
+ * Signs out quickly: clear local session immediately, race Firebase signOut
+ * against a short timeout, then navigate home. Avoids hanging on slow network.
  */
 export async function signOutUser(saveCurrentUserFn) {
+  // 1) Instant local clear so UI never looks stuck
+  try {
+    localStorage.removeItem("snapsme_current_user");
+  } catch (_) {
+    /* ignore */
+  }
+  if (typeof saveCurrentUserFn === "function") {
+    try {
+      saveCurrentUserFn(null);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  // 2) Best-effort Firebase sign-out, never wait more than ~350ms
   try {
     if (auth) {
-      await signOut(auth);
+      await Promise.race([
+        signOut(auth).catch((e) => {
+          console.warn("Firebase signout error:", e);
+        }),
+        new Promise((resolve) => setTimeout(resolve, 350))
+      ]);
     }
   } catch (e) {
     console.warn("Firebase signout error:", e);
   }
-  localStorage.removeItem("snapsme_current_user");
-  if (saveCurrentUserFn) {
-    saveCurrentUserFn(null);
-  }
-  window.location.href = "/";
+
+  // 3) Hard navigate to landing (replace avoids back-button into a signed-in shell)
+  window.location.replace("/");
 }

@@ -26,12 +26,21 @@ import {
   query,
   where,
   orderBy,
+  limit,
   getDoc,
   getDocs,
   writeBatch,
   serverTimestamp
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
+
+/**
+ * Safety cap for live expense/income listeners.
+ * Small teams rarely exceed a few hundred rows; unbounded listeners would
+ * transfer multi-year history on every dashboard open. Raise or add
+ * cursor pagination if a workspace regularly exceeds this.
+ */
+export const FEED_QUERY_LIMIT = 500;
 
 // ---------------------------------------------------------------------------
 // Auth session helpers
@@ -175,11 +184,11 @@ export function subscribeToBusiness(businessId, handlers = {}) {
     );
   }
 
-  // Expenses subcollection (newest first)
+  // Expenses subcollection (newest first, capped for transfer size)
   if (handlers.onExpenses) {
     unsubscribers.push(
       onSnapshot(
-        query(expensesCol(businessId), orderBy("createdAt", "desc")),
+        query(expensesCol(businessId), orderBy("createdAt", "desc"), limit(FEED_QUERY_LIMIT)),
         (snap) => {
           const list = [];
           snap.forEach((s) => list.push({ id: s.id, ...s.data() }));
@@ -190,11 +199,11 @@ export function subscribeToBusiness(businessId, handlers = {}) {
     );
   }
 
-  // Income subcollection (newest first) — lightweight money-in log, NOT invoicing
+  // Income subcollection (newest first, capped) — money-in log, NOT invoicing
   if (handlers.onIncome) {
     unsubscribers.push(
       onSnapshot(
-        query(incomeCol(businessId), orderBy("createdAt", "desc")),
+        query(incomeCol(businessId), orderBy("createdAt", "desc"), limit(FEED_QUERY_LIMIT)),
         (snap) => {
           const list = [];
           snap.forEach((s) => list.push({ id: s.id, ...s.data() }));

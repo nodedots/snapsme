@@ -98,9 +98,9 @@ function initScrollReveals() {
 
 /**
  * Product Preview Live Feed Motion & Pulse
+ * Interval only runs while the preview card is on-screen and the tab is visible.
  */
 function initLiveFeedMotion() {
-  // Live Status Green Pulse Dot
   const activeMembersHeader = document.querySelector(".preview-card-header");
   if (activeMembersHeader) {
     const greenDot = activeMembersHeader.querySelector("span[style*='background-color: #1a9c6b']");
@@ -109,13 +109,18 @@ function initLiveFeedMotion() {
     }
   }
 
-  // Periodic Soft Background Flash on Feed Item Rows (~every 7 seconds)
   const feedItems = document.querySelectorAll(".preview-feed-item");
   if (feedItems.length === 0) return;
 
-  let flashIndex = 0;
+  const previewRoot =
+    document.querySelector(".product-preview-section") ||
+    document.querySelector(".product-preview-card");
 
-  setInterval(() => {
+  let flashIndex = 0;
+  let timerId = null;
+
+  const tick = () => {
+    if (document.hidden) return;
     const targetItem = feedItems[flashIndex % feedItems.length];
     if (targetItem) {
       targetItem.classList.add("feed-activity-flash");
@@ -124,5 +129,35 @@ function initLiveFeedMotion() {
       }, 850);
     }
     flashIndex++;
-  }, 7000);
+  };
+
+  const start = () => {
+    if (timerId != null) return;
+    timerId = window.setInterval(tick, 7000);
+  };
+  const stop = () => {
+    if (timerId == null) return;
+    window.clearInterval(timerId);
+    timerId = null;
+  };
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stop();
+    else if (!previewRoot || previewRoot.dataset.inView === "1") start();
+  });
+
+  if (previewRoot && "IntersectionObserver" in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.some((e) => e.isIntersecting);
+        previewRoot.dataset.inView = visible ? "1" : "0";
+        if (visible && !document.hidden) start();
+        else stop();
+      },
+      { root: null, threshold: 0.15 }
+    );
+    io.observe(previewRoot);
+  } else {
+    start();
+  }
 }

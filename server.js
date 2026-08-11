@@ -39,8 +39,15 @@ const DEFAULT_CATEGORIES = [
   "Other Expenses"
 ];
 
-// Favicon handler
-app.get("/favicon.ico", (_req, res) => res.status(204).end());
+// Favicon — serve compressed asset (was empty 204, browsers then fell back to huge /logo.jpg)
+app.get("/favicon.ico", (_req, res) => {
+  const fav = path.join(process.cwd(), "public", "favicon.jpg");
+  if (fs.existsSync(fav)) {
+    res.type("image/jpeg").sendFile(fav);
+  } else {
+    res.status(204).end();
+  }
+});
 
 // 1. Health check
 app.get("/api/health", (_req, res) => {

@@ -277,7 +277,6 @@ articles.forEach((art) => {
   <div id="snapsme-footer"></div>
 
   <script type="module" src="/js/header.js"></script>
-  <script type="module" src="/js/auth.js"></script>
   <script type="module" src="/js/footer.js"></script>
 </body>
 </html>`;
@@ -446,7 +445,6 @@ const hubHtml = `<!DOCTYPE html>
   <div id="snapsme-footer"></div>
 
   <script type="module" src="/js/header.js"></script>
-  <script type="module" src="/js/auth.js"></script>
   <script type="module" src="/js/footer.js"></script>
   <script type="module" src="/js/learn.js"></script>
 </body>

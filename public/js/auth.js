@@ -125,8 +125,6 @@ export async function initAuth() {
 export function getApp() { return app; }
 export function getAuthInstance() { return auth; }
 export function getDb() { return db; }
->>>>>>>
-
 
 // In-session draft form state storage (retained across accidental closes in same session)
 let draftAuthState = {
@@ -362,16 +360,30 @@ export async function handleGoogleSignIn() {
 }
 
 /**
- * Signs out user and redirects to /home.
+ * Signs out quickly: clear local session first, race Firebase signOut
+ * against a short timeout, then go to landing. Does not hang on slow networks.
  */
 export async function handleSignOut() {
   try {
-    await signOut(auth);
+    localStorage.removeItem("snapsme_current_user");
+  } catch (_) {
+    /* ignore */
+  }
+
+  try {
+    if (auth) {
+      await Promise.race([
+        signOut(auth).catch((e) => {
+          console.error("Sign out error:", e);
+        }),
+        new Promise((resolve) => setTimeout(resolve, 350))
+      ]);
+    }
   } catch (e) {
     console.error("Sign out error:", e);
   }
-  localStorage.removeItem("snapsme_current_user");
-  window.location.href = "/home";
+
+  window.location.replace("/");
 }
 
 /**

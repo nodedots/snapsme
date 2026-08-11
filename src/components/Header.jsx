@@ -140,7 +140,7 @@ export const Header = ({
             {/* Primary SnapSME App Brand Logo & Side-by-Side Business Brand */}
             <div className="flex items-center gap-2 shrink-0">
               <a
-                href="/home"
+                href="/"
                 className="flex items-center gap-1.5 cursor-pointer group no-underline shrink-0"
                 title="Go to SnapSME Marketing Homepage"
               >
@@ -252,10 +252,12 @@ export const Header = ({
 
                         <button
                           type="button"
-                          onClick={async () => {
+                          onClick={() => {
                             setIsUserDropdownOpen(false);
-                            localStorage.removeItem("snapsme_current_user");
-                            window.location.href = "/home";
+                            // Instant local clear + timed Firebase sign-out (shared helper)
+                            import("../lib/settings.js").then(({ signOutUser }) => {
+                              signOutUser(setCurrentUser);
+                            });
                           }}
                           className="w-full px-3.5 py-2 text-left font-medium text-[#e32d14] hover:bg-red-50 flex items-center gap-2 transition-colors cursor-pointer"
                         >
@@ -356,10 +358,11 @@ export const Header = ({
 
                         <button
                           type="button"
-                          onClick={async () => {
+                          onClick={() => {
                             setIsUserDropdownOpen(false);
-                            localStorage.removeItem("snapsme_current_user");
-                            window.location.href = "/home";
+                            import("../lib/settings.js").then(({ signOutUser }) => {
+                              signOutUser(setCurrentUser);
+                            });
                           }}
                           className="w-full px-3.5 py-2 text-left font-medium text-[#e32d14] hover:bg-red-50 flex items-center gap-2 transition-colors cursor-pointer"
                         >

@@ -37,6 +37,8 @@ export function OnboardingFlowModal({
   onClose,
   onCompleteOnboarding,
   initialStep = 1,
+  /** "signin" | "signup" — which pane to show on step 1 when the modal opens */
+  initialAuthMode = "signup",
   currentUser = null,
   saveWorkspaceFn,
   saveMembersFn,
@@ -47,17 +49,31 @@ export function OnboardingFlowModal({
   const [errorMsg, setErrorMsg] = useState("");
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
-  const [authMode, setAuthMode] = useState("signup"); // 'signup' or 'signin'
+  const [authMode, setAuthMode] = useState(initialAuthMode === "signin" ? "signin" : "signup");
 
   React.useEffect(() => {
-    if (isOpen) {
-      if (initialStep && initialStep > 1) {
-        setCurrentStep((prev) => (prev < initialStep ? initialStep : prev));
-      } else if (auth.currentUser || (currentUser && currentUser.userId)) {
-        setCurrentStep((prev) => (prev === 1 ? 2 : prev));
+    if (!isOpen) return;
+
+    setErrorMsg("");
+    // Always honor the caller's intended pane when opening (Sign in vs Create account)
+    const mode = initialAuthMode === "signin" ? "signin" : "signup";
+    setAuthMode(mode);
+
+    // Signed-in users opening "+ New Workspace" skip account step → workspace setup
+    if (initialStep && initialStep > 1) {
+      setCurrentStep(initialStep);
+    } else if (auth.currentUser || (currentUser && currentUser.userId)) {
+      // Existing session: only jump to workspace when this is a workspace/onboarding flow,
+      // not a pure "Sign in" open (shouldn't happen while already signed in).
+      if (mode === "signup") {
+        setCurrentStep(2);
+      } else {
+        setCurrentStep(1);
       }
+    } else {
+      setCurrentStep(1);
     }
-  }, [isOpen, initialStep, currentUser]);
+  }, [isOpen, initialStep, initialAuthMode, currentUser]);
 
   // Step 1: Signup form state
   const [signUpForm, setSignUpForm] = useState({

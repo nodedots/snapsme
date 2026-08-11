@@ -73,6 +73,8 @@ export function App() {
   const [isIncomeOpen, setIsIncomeOpen] = useState(false);
   const [isIncomeCaptureOpen, setIsIncomeCaptureOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  /** Which step-1 pane to show: "signin" | "signup" (Create Workspace / Sign up) */
+  const [onboardingAuthMode, setOnboardingAuthMode] = useState("signup");
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importType, setImportType] = useState("expenses");
 
@@ -151,6 +153,7 @@ export function App() {
             setBusinessId(null);
             const wasCompleted = localStorage.getItem("snapsme_onboarding_completed") === "true";
             if (!wasCompleted) {
+              setOnboardingAuthMode("signup");
               setIsOnboardingOpen(true);
             }
           }
@@ -223,24 +226,36 @@ export function App() {
         localStorage.getItem("snapsme_onboarding_skipped") === "true" ||
         localStorage.getItem("snapsme_onboarding_completed") === "true";
 
-      const explicitRequest =
+      const wantsSignIn =
+        params.get("auth") === "signin" ||
+        params.get("signin") === "true" ||
+        hash === "#signin";
+
+      const wantsSignUpOrWorkspace =
         params.get("onboarding") === "true" ||
         params.get("start") === "true" ||
         params.get("action") === "signup" ||
+        params.get("auth") === "signup" ||
+        params.get("signup") === "true" ||
         hash === "#onboarding" ||
         hash === "#signup";
 
-      if (explicitRequest) {
-        // User explicitly requested onboarding — clear flags and open it
+      if (wantsSignIn) {
+        // Sign in only — do NOT start Create Workspace flow
+        setOnboardingAuthMode("signin");
+        setIsOnboardingOpen(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (wantsSignUpOrWorkspace) {
+        // Explicit Create Workspace / Sign up
         localStorage.removeItem("snapsme_onboarding_skipped");
         localStorage.removeItem("snapsme_onboarding_completed");
+        setOnboardingAuthMode("signup");
         setIsOnboardingOpen(true);
         window.history.replaceState({}, document.title, window.location.pathname);
       } else if (!isFirestoreMode && (!workspace || !workspace.id) && !wasCompleted) {
+        // First-time visitor: account creation path
+        setOnboardingAuthMode("signup");
         setIsOnboardingOpen(true);
-      } else if (params.get("auth") === "signin" || hash === "#signin") {
-        setIsOnboardingOpen(true);
-        window.history.replaceState({}, document.title, window.location.pathname);
       } else if (params.get("view")) {
         const v = params.get("view");
         if (["feed", "dashboard", "income", "chat", "team", "settings"].includes(v)) {
@@ -670,6 +685,7 @@ export function App() {
         onAddIncome={() => setIsIncomeCaptureOpen(true)}
         onOpenOnboarding={() => {
           localStorage.removeItem("snapsme_onboarding_skipped");
+          setOnboardingAuthMode("signup");
           setIsOnboardingOpen(true);
         }}
       />
@@ -876,6 +892,7 @@ export function App() {
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
         onCompleteOnboarding={handleCompleteOnboarding}
+        initialAuthMode={onboardingAuthMode}
         currentUser={currentUser}
         saveWorkspaceFn={setWorkspace}
         saveMembersFn={setMembers}

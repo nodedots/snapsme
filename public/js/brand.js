@@ -54,6 +54,10 @@ export function applyBrandAccentColor(color = DEFAULT_BRAND_ACCENT) {
 /**
  * Reads and encodes image file to Data URL for logo preview & storage.
  */
+/**
+ * Reads a logo file with 1MB input cap and 256px max dimension downscale.
+ * Avoids storing multi-megabyte data URLs in workspace brand settings.
+ */
 export function readLogoFile(file) {
   return new Promise((resolve, reject) => {
     if (!file) {
@@ -62,13 +66,37 @@ export function readLogoFile(file) {
     if (!file.type.startsWith("image/")) {
       return reject(new Error("Please select a valid image file (PNG, JPG, SVG, WebP)."));
     }
-    if (file.size > 5 * 1024 * 1024) {
-      return reject(new Error("Logo image size must be under 5MB."));
+    if (file.size > 1 * 1024 * 1024) {
+      return reject(new Error("Logo image size must be under 1MB. Try a smaller square image."));
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => resolve(e.target.result);
-    reader.onerror = (err) => reject(new Error("Failed to read image file."));
-    reader.readAsDataURL(file);
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const maxDim = 256;
+        let { width, height } = img;
+        const scale = Math.min(1, maxDim / Math.max(width, height));
+        width = Math.max(1, Math.round(width * scale));
+        height = Math.max(1, Math.round(height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      } catch (e) {
+        URL.revokeObjectURL(url);
+        reject(new Error("Failed to process logo image."));
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to read image file."));
+    };
+    img.src = url;
   });
 }
