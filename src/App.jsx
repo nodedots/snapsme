@@ -679,9 +679,9 @@ export function App() {
         <div className="bg-[#e7f4ec] border-b border-[#0f7a52]/20 text-[#0f7a52] text-xs px-4 py-2 text-center font-medium">
           <ShieldCheck className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
           {workspace?.name ? (
-            <>Welcome to <span className="font-bold">{workspace.name}</span> — your expenses stay in sync in real time. Happy tracking!</>
+            <>Welcome to <span className="font-bold">{workspace.name}</span> — income and expenses stay in sync in real time. Happy cashflow tracking!</>
           ) : (
-            <>You're all set — your team expenses stay in sync in real time. Happy tracking!</>
+            <>You're all set — your team's income and expenses stay in sync in real time. Happy cashflow tracking!</>
           )}
         </div>
       )}

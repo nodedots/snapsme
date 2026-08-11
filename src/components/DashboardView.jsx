@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { getCurrencySymbol } from "../lib/currencies.js";
 import {
   Download,
@@ -33,6 +33,18 @@ export const DashboardView = ({
   onOpenSettings,
   onAddIncome
 }) => {
+  const cashflowHostRef = useRef(null);
+  const cashflowApiRef = useRef(null);
+  // Keep latest dashboard data for cashflow mount (async Chart.js load race)
+  const cashflowDataRef = useRef({
+    expenses,
+    incomeEntries,
+    categories,
+    period: "this_month",
+    currency,
+    workspace
+  });
+
   const [monthlyBudgetInput, setMonthlyBudgetInput] = useState(
     workspace.monthlyBudget ?? 3000
   );
@@ -78,6 +90,7 @@ export const DashboardView = ({
   const totalWorkspaceSpend = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   // Net for Period (FR-I3): income − expenses for the selected period
+  // Shared with Cashflow Overview charts (one period drives Net card + all three charts)
   const [netPeriod, setNetPeriod] = useState("this_month");
   const netPeriodLabel =
     netPeriod === "last_30_days" ? "Net last 30 days" : netPeriod === "all" ? "Net all time" : "Net this month";
@@ -115,6 +128,76 @@ export const DashboardView = ({
     : netIsNegative
     ? "text-[#e0982a]"
     : "text-[#1c1b19]";
+
+  // Keep cashflow data ref in sync for async Chart.js mount
+  cashflowDataRef.current = {
+    expenses,
+    incomeEntries,
+    categories,
+    period: netPeriod,
+    currency,
+    workspace
+  };
+
+  // Cashflow Overview — vanilla Chart.js module under /public/js (CDN Chart.js loads on demand).
+  // Vite forbids `import('/js/...')` for files in /public (hard transform error → component 404).
+  // Load via runtime Function so Vite's static import analysis never sees the public path.
+  useEffect(() => {
+    let cancelled = false;
+    const host = cashflowHostRef.current;
+    if (!host) return undefined;
+
+    const importPublicModule = (url) => {
+      // eslint-disable-next-line no-new-func
+      return new Function("u", "return import(u)")(url);
+    };
+
+    (async () => {
+      try {
+        const mod = await importPublicModule("/js/cashflow-charts.js");
+        if (cancelled || !cashflowHostRef.current) return;
+        const latest = cashflowDataRef.current;
+        const api = await mod.mountCashflowOverview(cashflowHostRef.current, {
+          expenses: latest.expenses,
+          incomeEntries: latest.incomeEntries,
+          categories: latest.categories,
+          period: latest.period,
+          currency: latest.currency,
+          workspace: latest.workspace,
+          onPeriodChange: (p) => setNetPeriod(p)
+        });
+        if (cancelled) {
+          api.destroy();
+          return;
+        }
+        cashflowApiRef.current = api;
+        // Push any data that arrived while Chart.js was loading
+        api.update(cashflowDataRef.current);
+      } catch (err) {
+        console.warn("[DashboardView] Cashflow charts failed to mount:", err?.message || err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (cashflowApiRef.current) {
+        cashflowApiRef.current.destroy();
+        cashflowApiRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!cashflowApiRef.current) return;
+    cashflowApiRef.current.update({
+      expenses,
+      incomeEntries,
+      categories,
+      period: netPeriod,
+      currency,
+      workspace
+    });
+  }, [expenses, incomeEntries, categories, netPeriod, currency, workspace]);
 
   // Calculate current month expenses
   const currentMonthStr = new Date().toISOString().slice(0, 7);
@@ -429,6 +512,9 @@ export const DashboardView = ({
           </div>
         </div>
       )}
+
+      {/* Cashflow Overview — Chart.js line / bar / donut (vanilla module, additive) */}
+      <div ref={cashflowHostRef} id="snapsme-cashflow-overview-host" />
 
       {/* Workspace Monthly Budget Overview Card */}
       {prefs.showBudgetVsActual && (

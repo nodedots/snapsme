@@ -51,6 +51,19 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
+// 1b. Firebase client config endpoint (keeps API key out of client-side source code)
+app.get("/api/firebase-config", (_req, res) => {
+  res.json({
+    apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY || "",
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN || "",
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || "",
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET || "",
+    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID || "",
+    appId: process.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID || "",
+    measurementId: process.env.VITE_FIREBASE_MEASUREMENT_ID || process.env.FIREBASE_MEASUREMENT_ID || ""
+  });
+});
+
 // Helper: Unlimited-OCR Tier 1 Microservice Client
 async function tryExtractWithUnlimitedOCR(imageBase64, mimeType, fileName) {
   const ocrUrl = process.env.UNLIMITED_OCR_URL || "http://localhost:8000/ocr/extract-receipt";
@@ -1307,6 +1320,10 @@ async function startServer() {
       appType: "custom"
     });
 
+    // Vite must handle /src, /@vite, /@react-refresh, etc. Register early so
+    // module transforms never fall through as Express "Cannot GET" 404s.
+    app.use(vite.middlewares);
+
     // Serve landing page
     app.get(["/", "/index.html"], async (req, res, next) => {
       try {
@@ -1344,9 +1361,6 @@ async function startServer() {
         next(e);
       }
     });
-
-    app.use(vite.middlewares);
-
 
   } else {
     const distPath = path.join(process.cwd(), "dist");

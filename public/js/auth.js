@@ -55,21 +55,78 @@ const getEnv = (key, fallback = "") => {
   return fallback;
 };
 
-// Environment variable driven Firebase configuration
-export const firebaseConfig = {
-  apiKey: getEnv("VITE_FIREBASE_API_KEY", "AIzaSyAmQZ0c6cvJhJLBgpNIbcZcNM33yi5ZgtY"),
-  authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN", "snapsme-d26f6.firebaseapp.com"),
-  projectId: getEnv("VITE_FIREBASE_PROJECT_ID", "snapsme-d26f6"),
-  storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET", "snapsme-d26f6.firebasestorage.app"),
-  messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID", "588031509042"),
-  appId: getEnv("VITE_FIREBASE_APP_ID", "1:588031509042:web:dd11f5a6e29a341156722b"),
-  measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID", "G-ZY2K7H6ZN4")
-};
+// Firebase config is fetched from the server at runtime to keep API keys
+// out of client-side source code. See /api/firebase-config endpoint.
+let app = null;
+let auth = null;
+let db = null;
+let firebaseInitPromise = null;
 
-// Initialize Firebase Services
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+/**
+ * Fetches the Firebase client config from the server and initializes Firebase.
+ * Must be called before using auth, db, or app.
+ */
+export async function initAuth() {
+  if (firebaseInitPromise) return firebaseInitPromise;
+
+  firebaseInitPromise = (async () => {
+    // Try server endpoint first (keeps API key out of client source)
+    let config = null;
+    try {
+      const res = await fetch("/api/firebase-config");
+      if (res.ok) {
+        config = await res.json();
+      }
+    } catch (e) {
+      console.warn("Could not fetch Firebase config from server, falling back to env:", e.message);
+    }
+
+    // Fallback to env vars injected via window.__SNAPSME_ENV__ (e.g. by Vite build)
+    if (!config || !config.apiKey) {
+      config = {
+        apiKey: getEnv("VITE_FIREBASE_API_KEY"),
+        authDomain: getEnv("VITE_FIREBASE_AUTH_DOMAIN"),
+        projectId: getEnv("VITE_FIREBASE_PROJECT_ID"),
+        storageBucket: getEnv("VITE_FIREBASE_STORAGE_BUCKET"),
+        messagingSenderId: getEnv("VITE_FIREBASE_MESSAGING_SENDER_ID"),
+        appId: getEnv("VITE_FIREBASE_APP_ID"),
+        measurementId: getEnv("VITE_FIREBASE_MEASUREMENT_ID")
+      };
+    }
+
+    if (!config.apiKey) {
+      throw new Error("Firebase API key is not configured. Please set VITE_FIREBASE_API_KEY in your environment.");
+    }
+
+    app = initializeApp(config);
+    auth = getAuth(app);
+    db = getFirestore(app);
+
+    // Set up auth state listener (moved from module-level to after init)
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        const userPayload = {
+          userId: user.uid,
+          displayName: user.displayName || user.email?.split("@")[0] || "User",
+          email: user.email || "",
+          avatarColor: "#0f7a52"
+        };
+        localStorage.setItem("snapsme_current_user", JSON.stringify(userPayload));
+      }
+    });
+
+    return { app, auth, db };
+  })();
+
+  return firebaseInitPromise;
+}
+
+// Export getters for backward compatibility
+export function getApp() { return app; }
+export function getAuthInstance() { return auth; }
+export function getDb() { return db; }
+>>>>>>>
+
 
 // In-session draft form state storage (retained across accidental closes in same session)
 let draftAuthState = {
@@ -271,14 +328,15 @@ export async function handlePostAuthRedirect(user) {
 
   // Route to workspace dashboard
   if (window.location.pathname.includes("home") || window.location.search.includes("auth") || window.location.search.includes("onboarding")) {
-    window.location.href = "/";
-  } else if (window.location.pathname !== "/") {
-    window.location.href = "/";
+    window.location.href = "/app";
+  } else if (window.location.pathname !== "/app") {
+    window.location.href = "/app";
   } else {
-    // Already on /, reload to mount workspace view
+    // Already on /app, reload to mount workspace view
     window.location.reload();
   }
 }
+
 
 /**
  * Initiates Google Sign-In with popup, falling back to redirect on mobile browsers.
@@ -764,7 +822,12 @@ function escapeHtml(str) {
 // Check URL search parameters or hash to open modal automatically
 if (typeof window !== "undefined") {
   document.addEventListener("DOMContentLoaded", () => {
-    initGoogleRedirectCheck();
+    // Initialize Firebase auth before checking redirect results
+    initAuth().then(() => {
+      initGoogleRedirectCheck();
+    }).catch((err) => {
+      console.error("Firebase auth initialization failed:", err.message);
+    });
 
     const params = new URLSearchParams(window.location.search);
     if (params.get("auth") === "signin" || params.get("signin") === "true") {
@@ -773,18 +836,5 @@ if (typeof window !== "undefined") {
       showAuthModal("signup");
     }
   });
-
-  // Global Auth Observer for Session Persistence
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      // Save authenticated user snapshot to local storage
-      const userPayload = {
-        userId: user.uid,
-        displayName: user.displayName || user.email?.split("@")[0] || "User",
-        email: user.email || "",
-        avatarColor: "#0f7a52"
-      };
-      localStorage.setItem("snapsme_current_user", JSON.stringify(userPayload));
-    }
-  });
 }
+

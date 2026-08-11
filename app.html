@@ -19,6 +19,11 @@
   class="bg-[#f7f3ea] text-[#1c1b19] font-body min-h-screen antialiased selection:bg-[#ff5a3c]/20 selection:text-[#1c1b19]">
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
+  <!--
+    Chart.js is NOT loaded globally. The dashboard Cashflow Overview
+    (public/js/cashflow-charts.js) injects Chart.js 4.x from jsDelivr
+    only when the dashboard mounts, then destroys chart instances on unmount.
+  -->
 </body>
 
 </html>

@@ -4,7 +4,7 @@
  * Supports Centered Nav Links & Signed-In State
  */
 
-import { auth, checkUserMemberStatus, handleSignOut, showAuthModal } from "./auth.js";
+import { initAuth, getAuthInstance, checkUserMemberStatus, handleSignOut, showAuthModal } from "./auth.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 function getInitials(nameOrEmail) {
@@ -29,8 +29,12 @@ export async function renderHeader(targetId = "snapsme-header") {
   const container = document.getElementById(targetId);
   if (!container) return;
 
+  // Initialize Firebase auth before using auth instance
+  await initAuth();
+  const auth = getAuthInstance();
+
   // Determine authenticated user
-  let user = auth.currentUser;
+  let user = auth ? auth.currentUser : null;
   if (!user) {
     const cached = localStorage.getItem("snapsme_current_user");
     if (cached) {
@@ -281,13 +285,21 @@ function initMobileMenu() {
 
 // Global listener for auth state changes
 if (typeof window !== "undefined") {
-  onAuthStateChanged(auth, () => {
-    renderHeader();
-  });
+  // Initialize Firebase auth, then set up auth state listener
+  initAuth().then(() => {
+    const auth = getAuthInstance();
+    if (auth) {
+      onAuthStateChanged(auth, () => {
+        renderHeader();
+      });
+    }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => renderHeader());
-  } else {
-    renderHeader();
-  }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => renderHeader());
+    } else {
+      renderHeader();
+    }
+  }).catch((err) => {
+    console.error("Firebase auth initialization failed:", err.message);
+  });
 }

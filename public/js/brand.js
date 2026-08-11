@@ -17,6 +17,7 @@ export function applyBrandAccentColor(color = DEFAULT_BRAND_ACCENT) {
 
   if (typeof document !== "undefined") {
     document.documentElement.style.setProperty("--color-brand-accent", hexColor);
+    document.documentElement.style.setProperty("--brand-accent", hexColor);
 
     let styleTag = document.getElementById("snapsme-brand-style");
     if (!styleTag) {
@@ -28,6 +29,7 @@ export function applyBrandAccentColor(color = DEFAULT_BRAND_ACCENT) {
     styleTag.textContent = `
       :root {
         --color-brand-accent: ${hexColor};
+        --brand-accent: ${hexColor};
       }
       .bg-brand-accent {
         background-color: var(--color-brand-accent) !important;
