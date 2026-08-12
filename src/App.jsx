@@ -63,6 +63,7 @@ import { SettingsView } from "./components/SettingsView.jsx";
 import { CaptureModal } from "./components/CaptureModal.jsx";
 import { OnboardingFlowModal } from "./components/OnboardingFlowModal.jsx";
 import { ImportModal } from "./components/ImportModal.jsx";
+import { TrashView } from "./components/TrashView.jsx";
 import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle, TrendingUp, LayoutDashboard } from "lucide-react";
 
 export function App() {
@@ -274,7 +275,7 @@ export function App() {
         setIsOnboardingOpen(true);
       } else if (params.get("view")) {
         const v = params.get("view");
-        if (["feed", "dashboard", "income", "chat", "team", "settings"].includes(v)) {
+        if (["feed", "dashboard", "income", "chat", "team", "settings", "trash"].includes(v)) {
           setCurrentView(v);
         }
       }
@@ -779,6 +780,33 @@ export function App() {
   }, [currentUser, handleUpdateExpense]);
 
   // -------------------------------------------------------------------------
+  // Trash management — bulk restore & empty trash
+  // -------------------------------------------------------------------------
+  const handleBulkRestore = useCallback(async ({ expenseIds = [], incomeIds = [] } = {}) => {
+    if (!canBulkManage(currentUser)) return;
+    // Restore expenses
+    for (const id of expenseIds) {
+      await handleRestoreExpense(id);
+    }
+    // Restore income
+    for (const id of incomeIds) {
+      await handleRestoreIncome(id);
+    }
+  }, [currentUser, handleRestoreExpense, handleRestoreIncome]);
+
+  const handleEmptyTrash = useCallback(async ({ expenseIds = [], incomeIds = [] } = {}) => {
+    if (!canBulkManage(currentUser)) return;
+    // Permanently delete expenses
+    for (const id of expenseIds) {
+      await handleDeleteExpense(id, { permanent: true });
+    }
+    // Permanently delete income
+    for (const id of incomeIds) {
+      await handleDeleteIncome(id, { permanent: true });
+    }
+  }, [currentUser, handleDeleteExpense, handleDeleteIncome]);
+
+  // -------------------------------------------------------------------------
   // Workspace update — Firestore or localStorage
   // -------------------------------------------------------------------------
   const handleUpdateWorkspace = useCallback(async (updates) => {
@@ -1131,7 +1159,10 @@ export function App() {
             onOpenSettings={() => setCurrentView("settings")}
             onAddIncome={() => setIsIncomeCaptureOpen(true)}
             onOpenCapture={() => setIsCaptureOpen(true)}
+            onRecordExpense={() => setIsCaptureOpen(true)}
             onOpenImport={(type) => { setImportType(type || "expenses"); setIsImportOpen(true); }}
+            onOpenFeed={() => setCurrentView("feed")}
+            onOpenTrash={() => setCurrentView("trash")}
           />
         )}
 
@@ -1171,6 +1202,21 @@ export function App() {
             categories={categories}
             setCategories={setCategories}
             onBackToDashboard={() => setCurrentView("dashboard")}
+          />
+        )}
+
+        {currentView === "trash" && (
+          <TrashView
+            expenses={expenses}
+            incomeEntries={incomeEntries}
+            currency={workspace?.currency || "USD"}
+            isOwner={currentUser?.role === "owner"}
+            onRestoreExpense={handleRestoreExpense}
+            onRestoreIncome={handleRestoreIncome}
+            onPermanentDeleteExpense={(id) => handleDeleteExpense(id, { permanent: true })}
+            onPermanentDeleteIncome={(id) => handleDeleteIncome(id, { permanent: true })}
+            onBulkRestore={handleBulkRestore}
+            onEmptyTrash={handleEmptyTrash}
           />
         )}
       </main>

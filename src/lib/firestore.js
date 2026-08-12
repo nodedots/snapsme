@@ -13,6 +13,7 @@
  *   businesses/{businessId}/members/{userId}      -> member doc (doc ID == userId, also stores userId field)
  *   businesses/{businessId}/categories/{categoryId} -> category doc
  *   businesses/{businessId}/expenses/{expenseId}  -> expense doc
+ *   businesses/{businessId}/income/{incomeId}     -> income doc
  */
 import { db, auth } from "./firebase.js";
 import {
@@ -126,6 +127,7 @@ export async function getUserReference(uid) {
  *   onMembers?: (data: object[]) => void,
  *   onCategories?: (data: object[]) => void,
  *   onExpenses?: (data: object[]) => void,
+ *   onIncome?: (data: object[]) => void,
  *   onError?: (err: Error) => void
  * }} handlers
  * @returns {() => void} unsubscribe function (call to detach all listeners)
@@ -578,6 +580,124 @@ export async function deleteIncomeFirestore(businessId, incomeId) {
 }
 
 // ---------------------------------------------------------------------------
+// Bulk trash operations
+// ---------------------------------------------------------------------------
+
+/**
+ * Soft-deletes multiple expenses by setting deletedAt.
+ * Only allowed for users with bulk management permission.
+ * @param {string} businessId
+ * @param {string[]} expenseIds - Array of expense IDs to soft-delete
+ * @returns {Promise<void>}
+ */
+export async function bulkSoftDeleteExpensesFirestore(businessId, expenseIds) {
+  if (!businessId || !expenseIds || expenseIds.length === 0) {
+    throw new Error("Missing businessId or expenseIds");
+  }
+  const batch = writeBatch(db);
+  expenseIds.forEach((id) => {
+    const expRef = expenseDoc(businessId, id);
+    batch.update(expenseRef, { deletedAt: new Date().toISOString() });
+  });
+  await batch.commit();
+}
+
+/**
+ * Soft-deletes multiple income entries by setting deletedAt.
+ * Only allowed for users with bulk management permission.
+ * @param {string} businessId
+ * @param {string[]} incomeIds - Array of income IDs to soft-delete
+ * @returns {Promise<void>}
+ */
+export async function bulkSoftDeleteIncomesFirestore(businessId, incomeIds) {
+  if (!businessId || !incomeIds || incomeIds.length === 0) {
+    throw new Error("Missing businessId or incomeIds");
+  }
+  const batch = writeBatch(db);
+  incomeIds.forEach((id) => {
+    const incRef = incomeDoc(businessId, id);
+    batch.update(incRef, { deletedAt: new Date().toISOString() });
+  });
+  await batch.commit();
+}
+
+/**
+ * Restores multiple expenses by clearing deletedAt.
+ * Only allowed for users with bulk management permission.
+ * @param {string} businessId
+ * @param {string[]} expenseIds - Array of expense IDs to restore
+ * @returns {Promise<void>}
+ */
+export async function bulkRestoreExpensesFirestore(businessId, expenseIds) {
+  if (!businessId || !expenseIds || expenseIds.length === 0) {
+    throw new Error("Missing businessId or expenseIds");
+  }
+  const batch = writeBatch(db);
+  expenseIds.forEach((id) => {
+    const expRef = expenseDoc(businessId, id);
+    batch.update(expenseRef, { deletedAt: null });
+  });
+  await batch.commit();
+}
+
+/**
+ * Restores multiple income entries by clearing deletedAt.
+ * Only allowed for users with bulk management permission.
+ * @param {string} businessId
+ * @param {string[]} incomeIds - Array of income IDs to restore
+ * @returns {Promise<void>}
+ */
+export async function bulkRestoreIncomesFirestore(businessId, incomeIds) {
+  if (!businessId || !incomeIds || incomeIds.length === 0) {
+    throw new Error("Missing businessId or incomeIds");
+  }
+  const batch = writeBatch(db);
+  incomeIds.forEach((id) => {
+    const incRef = incomeDoc(businessId, id);
+    batch.update(incRef, { deletedAt: null });
+  });
+  await batch.commit();
+}
+
+/**
+ * Permanently deletes multiple expenses.
+ * Only allowed for users with bulk management permission.
+ * @param {string} businessId
+ * @param {string[]} expenseIds - Array of expense IDs to permanently delete
+ * @returns {Promise<void>}
+ */
+export async function bulkPermanentlyDeleteExpensesFirestore(businessId, expenseIds) {
+  if (!businessId || !expenseIds || expenseIds.length === 0) {
+    throw new Error("Missing businessId or expenseIds");
+  }
+  const batch = writeBatch(db);
+  expenseIds.forEach((id) => {
+    const expRef = expenseDoc(businessId, id);
+    batch.delete(expenseRef);
+  });
+  await batch.commit();
+}
+
+/**
+ * Permanently deletes multiple income entries.
+ * Only allowed for users with bulk management permission.
+ * @param {string} businessId
+ * @param {string[]} incomeIds - Array of income IDs to permanently delete
+ * @returns {Promise<void>}
+ */
+export async function bulkPermanentlyDeleteIncomesFirestore(businessId, incomeIds) {
+  if (!businessId || !incomeIds || incomeIds.length === 0) {
+    throw new Error("Missing businessId or incomeIds");
+  }
+  const batch = writeBatch(db);
+  incomeIds.forEach((id) => {
+    const incRef = incomeDoc(businessId, id);
+    batch.delete(incRef);
+  });
+  await batch.commit();
+}
+
+// ---------------------------------------------------------------------------
 // One-time reads (for initial hydration / invite acceptance)
 // ---------------------------------------------------------------------------
 
@@ -641,7 +761,7 @@ export async function getIncomeOnce(businessId) {
  *   2. If it exists, resolve the business id + role and return immediately.
  *   3. Fallback: collection-group query on members by userId field (best-effort)
  *   4. Fallback: collection-group query on members by email (pending invite),
- *      auto-accept the invite and write the users/{uid} reference.
+ *     auto-accept the invite and write the users/{uid} reference.
  *
  * @param {string} uid - Firebase Auth UID
  * @param {string|null} [email] - User's email (for invite matching)
@@ -810,4 +930,4 @@ export async function regenerateApiKeyFirestore(businessId, oldApiKey) {
   await batch.commit();
 
   return { apiKey: newApiKey, createdAt: now };
-}
+}

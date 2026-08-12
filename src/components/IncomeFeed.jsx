@@ -1,19 +1,69 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { getCurrencySymbol } from "../lib/currencies.js";
-import { ArrowDownLeft, Plus, Trash2, Camera, Upload, Search, Filter, User, Tag, LayoutDashboard } from "lucide-react";
+import {
+  canEditRecord,
+  canDeleteRecord,
+  canRestoreRecord,
+  canBulkManage,
+  isSoftDeleted,
+  sortRecords,
+  filterActiveRecords,
+  filterDeletedRecords
+} from "../lib/recordPermissions.js";
+import {
+  ArrowDownLeft,
+  Plus,
+  Trash2,
+  Camera,
+  Upload,
+  Search,
+  Filter,
+  User,
+  Tag,
+  LayoutDashboard,
+  Pencil,
+  RotateCcw,
+  CheckSquare,
+  ArrowUpDown
+} from "lucide-react";
 
 /**
  * IncomeFeed — separate income list/feed (FR-I2).
  * Income entries render in their own list, distinct from the expense feed.
  * Each row is a white hairline card with a confirmed-green left accent + upward arrow.
+ * Owners get full record management: edit, soft-delete, restore, bulk actions, and empty trash.
  */
-export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD", onAddIncome, onOpenIncomeCapture, onOpenDashboard, onOpenImport, onDeleteIncome, isOwner }) => {
+export const IncomeFeed = ({
+  incomeEntries = [],
+  members = [],
+  currency = "USD",
+  currentUser = null,
+  onAddIncome,
+  onOpenIncomeCapture,
+  onOpenDashboard,
+  onOpenImport,
+  onEditIncome,
+  onDeleteIncome,
+  onRestoreIncome,
+  onBulkDelete,
+  isOwner
+}) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  
-  // Filter States
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMember, setSelectedMember] = useState("all");
   const [selectedOrigin, setSelectedOrigin] = useState("all");
+  const [sortKey, setSortKey] = useState("date");
+  const [sortDir, setSortDir] = useState("desc");
+  const [showDeleted, setShowDeleted] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+
+  const canBulk = canBulkManage(currentUser);
+
+  const deletedCount = useMemo(
+    () => filterDeletedRecords(incomeEntries).length,
+    [incomeEntries]
+  );
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
@@ -22,28 +72,34 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
     return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
   };
 
-  const handleDelete = (id) => {
-    if (confirmDeleteId === id) {
-      if (typeof onDeleteIncome === "function") onDeleteIncome(id);
-      setConfirmDeleteId(null);
-    } else {
-      setConfirmDeleteId(id);
-      setTimeout(() => setConfirmDeleteId(null), 3000);
-    }
-  };
+  // Filter + sort income
+  const filteredIncome = useMemo(() => {
+    const pool = showDeleted
+      ? filterDeletedRecords(incomeEntries)
+      : filterActiveRecords(incomeEntries);
 
-  // Filter Logic
-  const filteredIncome = incomeEntries.filter((inc) => {
-    const matchesSearch =
-      (inc.source && inc.source.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (inc.submittedByName && inc.submittedByName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (inc.notes && inc.notes.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filtered = pool.filter((inc) => {
+      const source = (inc.source || "").toLowerCase();
+      const by = (inc.submittedByName || "").toLowerCase();
+      const notes = (inc.notes || "").toLowerCase();
+      const q = searchQuery.toLowerCase();
+      const matchesSearch =
+        !q || source.includes(q) || by.includes(q) || notes.includes(q);
+      const matchesMember = selectedMember === "all" || inc.submittedBy === selectedMember;
+      const matchesOrigin = selectedOrigin === "all" || (inc.origin || "manual") === selectedOrigin;
+      return matchesSearch && matchesMember && matchesOrigin;
+    });
 
-    const matchesMember = selectedMember === "all" || inc.submittedBy === selectedMember;
-    const matchesOrigin = selectedOrigin === "all" || (inc.origin || "manual") === selectedOrigin;
-
-    return matchesSearch && matchesMember && matchesOrigin;
-  });
+    return sortRecords(filtered, sortKey, sortDir);
+  }, [
+    incomeEntries,
+    showDeleted,
+    searchQuery,
+    selectedMember,
+    selectedOrigin,
+    sortKey,
+    sortDir
+  ]);
 
   const totalFilteredIncome = filteredIncome.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
 
@@ -53,6 +109,36 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
     if (origin === "api_sync") return "API Sync";
     return origin || "Manual";
   };
+
+  const toggleSelect = (id, e) => {
+    if (e) e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAllVisible = () => {
+    setSelectedIds(new Set(filteredIncome.map((e) => e.id)));
+  };
+
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const handleDelete = (entry, e) => {
+    if (e) e.stopPropagation();
+    if (!canDeleteRecord(entry, currentUser).allowed) return;
+    if (confirmDeleteId === entry.id) {
+      onDeleteIncome?.(entry.id, { permanent: isSoftDeleted(entry) });
+      setConfirmDeleteId(null);
+    } else {
+      setConfirmDeleteId(entry.id);
+      setTimeout(() => setConfirmDeleteId(null), 3000);
+    }
+  };
+
+  const selectedCount = selectedIds.size;
 
   return (
     <div className="space-y-6">
@@ -82,7 +168,7 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
                 {filteredIncome.length} entries
               </span>
             </div>
-            
+
             {onOpenDashboard && (
               <button
                 type="button"
@@ -94,7 +180,7 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
                 <span className="hidden sm:inline">Dashboard</span>
               </button>
             )}
-            
+
             {onOpenImport && (
               <button
                 type="button"
@@ -106,7 +192,7 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
                 <span className="hidden sm:inline">Import CSV/Excel</span>
               </button>
             )}
-            
+
             {onOpenIncomeCapture && (
               <button
                 type="button"
@@ -118,7 +204,7 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
                 <span className="hidden sm:inline">Snap Income</span>
               </button>
             )}
-            
+
             <button
               type="button"
               onClick={onAddIncome}
@@ -133,24 +219,58 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
 
         {/* Member & Origin Filter Controls */}
         <div className="pt-2.5 border-t border-black/10 space-y-2.5">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <span className="text-xs font-semibold text-[#1c1b19] flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-[#0075de]" /> Filter Feed:
+              <Filter className="w-3.5 h-3.5 text-[#0075de]" /> Filter & sort:
             </span>
-
-            {(selectedMember !== "all" || selectedOrigin !== "all" || searchQuery) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedMember("all");
-                  setSelectedOrigin("all");
-                  setSearchQuery("");
-                }}
-                className="text-[#f64932] hover:underline text-xs font-bold shrink-0 cursor-pointer"
-              >
-                Reset Filters
-              </button>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {isOwner && deletedCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowDeleted((v) => !v);
+                    clearSelection();
+                  }}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer ${
+                    showDeleted
+                      ? "bg-red-50 text-red-700 border-red-200"
+                      : "bg-white text-[#6b665c] border-[#d9d4c8]"
+                  }`}
+                >
+                  {showDeleted ? "Showing deleted" : `Trash (${deletedCount})`}
+                </button>
+              )}
+              {canBulk && !showDeleted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectMode((v) => !v);
+                    clearSelection();
+                  }}
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer flex items-center gap-1 ${
+                    selectMode
+                      ? "bg-[#e6f3fe] text-[#0075de] border-[#0075de]/30"
+                      : "bg-white text-[#6b665c] border-[#d9d4c8]"
+                  }`}
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  {selectMode ? "Cancel select" : "Select"}
+                </button>
+              )}
+              {(selectedMember !== "all" || selectedOrigin !== "all" || searchQuery) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedMember("all");
+                    setSelectedOrigin("all");
+                    setSearchQuery("");
+                  }}
+                  className="text-[#f64932] hover:underline text-xs font-bold shrink-0 cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="relative">
@@ -182,9 +302,76 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
                 <option value="api_sync">API Sync</option>
               </select>
             </div>
+
+            <div className="relative flex gap-1.5">
+              <select
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value)}
+                className="pl-3 pr-8 py-1.5 bg-[#f6f5f4] border border-black/10 rounded-lg text-xs font-medium text-[#1c1b19] appearance-none focus:outline-none focus:border-[#0075de] cursor-pointer"
+              >
+                <option value="date">Sort: Date</option>
+                <option value="amount">Sort: Amount</option>
+                <option value="source">Sort: Source</option>
+                <option value="submittedBy">Sort: Submitted by</option>
+                <option value="createdAt">Sort: Created</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => setSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                className="px-2.5 rounded-lg border border-[#d9d4c8] bg-white text-[#1c1b19] text-xs font-bold cursor-pointer flex items-center gap-1"
+                title={sortDir === "asc" ? "Ascending" : "Descending"}
+              >
+                <ArrowUpDown className="w-3.5 h-3.5" />
+                {sortDir === "asc" ? "Asc" : "Desc"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selectMode && canBulk && (
+        <div className="sticky top-2 z-20 bg-[#1c1b19] text-white rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-2 shadow-lg">
+          <span className="text-xs font-semibold shrink-0">
+            {selectedCount} selected
+          </span>
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <button
+              type="button"
+              onClick={selectAllVisible}
+              className="text-[11px] font-semibold px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 cursor-pointer"
+            >
+              Select all visible
+            </button>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-[11px] font-semibold px-2 py-1 rounded-md bg-white/10 hover:bg-white/20 cursor-pointer"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              disabled={selectedCount === 0}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    showDeleted
+                      ? `Permanently delete ${selectedCount} income record(s)? This cannot be undone.`
+                      : `Move ${selectedCount} income record(s) to trash?`
+                  )
+                ) {
+                  onBulkDelete?.([...selectedIds], { permanent: showDeleted });
+                  clearSelection();
+                }
+              }}
+              className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#f64932] disabled:opacity-40 cursor-pointer ml-auto"
+            >
+              {showDeleted ? "Delete forever" : "Move to trash"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Income list */}
       {filteredIncome.length > 0 ? (
@@ -192,12 +379,23 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
           {filteredIncome.map((entry) => (
             <div
               key={entry.id}
-              className="bg-white border border-black/10 rounded-xl overflow-hidden flex"
+              className={`bg-white border rounded-xl overflow-hidden flex ${
+                isSoftDeleted(entry) ? "border-red-200 opacity-75" : "border-black/10"
+              }`}
             >
               {/* Green left accent — visually distinguishes income from expenses */}
-              <div className="w-1 bg-[#0f7a52] shrink-0" aria-hidden="true" />
+              <div className={`w-1 shrink-0 ${isSoftDeleted(entry) ? "bg-red-400" : "bg-[#0f7a52]"}`} aria-hidden="true" />
               <div className="flex-1 min-w-0 flex items-center justify-between gap-3 p-3.5">
                 <div className="flex items-center gap-3 min-w-0">
+                  {selectMode && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(entry.id)}
+                      onChange={(e) => toggleSelect(entry.id, e)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="h-4 w-4 rounded shrink-0"
+                    />
+                  )}
                   <div className="w-8 h-8 rounded-lg bg-[#e7f4ec] text-[#0f7a52] flex items-center justify-center shrink-0">
                     <ArrowDownLeft className="w-4 h-4" />
                   </div>
@@ -210,6 +408,11 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
                       <span className="text-[9px] font-mono font-medium text-[#6b665c] bg-[#f7f3ea] px-1.5 py-0.5 rounded border border-black/5 whitespace-nowrap">
                         {formatOriginTag(entry.origin || "manual")}
                       </span>
+                      {isSoftDeleted(entry) && (
+                        <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                          Deleted
+                        </span>
+                      )}
                     </div>
                     <p className="text-[11px] text-[#6b665c] font-medium">
                       {formatDate(entry.date)} · {entry.submittedByName || "Team"}
@@ -229,16 +432,52 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
                       Income
                     </span>
                   </div>
-                  {isOwner && onDeleteIncome && (
+
+                  {/* Action buttons */}
+                  {!selectMode && canEditRecord(entry, currentUser).allowed && (
                     <button
                       type="button"
-                      onClick={() => handleDelete(entry.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEditIncome?.(entry);
+                      }}
+                      className="p-1.5 rounded-lg text-[#6b665c] hover:text-[#0075de] hover:bg-[#e6f3fe] transition-colors cursor-pointer"
+                      title="Edit income entry"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {!selectMode && isSoftDeleted(entry) && canRestoreRecord(entry, currentUser).allowed && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRestoreIncome?.(entry.id);
+                      }}
+                      className="p-1.5 rounded-lg text-[#0f7a52] hover:bg-[#e7f4ec] transition-colors cursor-pointer"
+                      title="Restore income entry"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  {!selectMode && canDeleteRecord(entry, currentUser).allowed && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(entry, e)}
                       className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                         confirmDeleteId === entry.id
                           ? "bg-red-50 text-red-600"
                           : "text-[#6b665c] hover:text-red-600 hover:bg-red-50"
                       }`}
-                      title={confirmDeleteId === entry.id ? "Click again to confirm delete" : "Delete income entry"}
+                      title={
+                        confirmDeleteId === entry.id
+                          ? isSoftDeleted(entry)
+                            ? "Click again to permanently delete"
+                            : "Click again to confirm trash"
+                          : isSoftDeleted(entry)
+                            ? "Delete forever"
+                            : "Move to trash"
+                      }
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -253,30 +492,42 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
           <div className="w-12 h-12 bg-[#e7f4ec] text-[#0f7a52] rounded-full mx-auto flex items-center justify-center">
             <ArrowDownLeft className="w-6 h-6" />
           </div>
-          <h3 className="font-display font-bold text-lg text-[#1c1b19]">{incomeEntries.length === 0 ? "No income logged yet" : "No matching income"}</h3>
+          <h3 className="font-display font-bold text-lg text-[#1c1b19]">
+            {showDeleted
+              ? "Trash is empty"
+              : incomeEntries.length === 0
+                ? "No income logged yet"
+                : "No matching income"}
+          </h3>
           <p className="text-xs text-[#6b665c] max-w-sm mx-auto">
-            {incomeEntries.length === 0 ? "No income logged yet — add your first sale whenever you're ready." : "Try adjusting your search or filter settings."}
+            {showDeleted
+              ? "Deleted income records will appear here. You can restore them or permanently delete them."
+              : incomeEntries.length === 0
+                ? "No income logged yet — add your first sale whenever you're ready."
+                : "Try adjusting your search or filter settings."}
           </p>
-          <div className="flex items-center gap-2 justify-center flex-wrap">
-            {onOpenIncomeCapture && (
+          {!showDeleted && (
+            <div className="flex items-center gap-2 justify-center flex-wrap">
+              {onOpenIncomeCapture && (
+                <button
+                  type="button"
+                  onClick={onOpenIncomeCapture}
+                  className="bg-[#0f7a52] hover:bg-[#0b5f40] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  Snap Income
+                </button>
+              )}
               <button
                 type="button"
-                onClick={onOpenIncomeCapture}
-                className="bg-[#0f7a52] hover:bg-[#0b5f40] text-white font-display font-semibold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                onClick={onAddIncome}
+                className="bg-white hover:bg-[#e6f3fe] text-[#0075de] border border-[#0075de]/40 hover:border-[#0075de] font-display font-semibold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5"
               >
-                <Camera className="w-3.5 h-3.5" />
-                Snap Income
+                <Plus className="w-3.5 h-3.5" />
+                Add Income
               </button>
-            )}
-            <button
-              type="button"
-              onClick={onAddIncome}
-              className="bg-white hover:bg-[#e6f3fe] text-[#0075de] border border-[#0075de]/40 hover:border-[#0075de] font-display font-semibold text-xs px-4 py-2 rounded-xl transition-colors cursor-pointer inline-flex items-center gap-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Income
-            </button>
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>

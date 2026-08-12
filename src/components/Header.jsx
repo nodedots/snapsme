@@ -13,7 +13,8 @@ import {
   ChevronRight,
   Settings,
   LogOut,
-  TrendingUp
+  TrendingUp,
+  Trash2
 } from "lucide-react";
 import { motion } from "motion/react";
 
@@ -117,6 +118,13 @@ export const Header = ({
       icon: <Settings className="w-4 h-4" />,
       badge: currentUser ? (currentUser.role === "owner" ? "Owner" : "Staff") : undefined,
       badgeColor: currentUser && currentUser.role === "owner" ? "bg-[#0f7a52]/10 text-[#0f7a52]" : "bg-gray-200 text-[#1c1b19]"
+    },
+    {
+      id: "trash",
+      label: "Trash",
+      icon: <Trash2 className="w-4 h-4" />,
+      badge: "Deleted",
+      badgeColor: "bg-[#ff5a3c]/10 text-[#ff5a3c]"
     }
   ];
 
