@@ -78,14 +78,14 @@ export const Header = ({
   const navItems = [
     {
       id: "feed",
-      label: "Shared Feed",
+      label: "Team Ledger",
       icon: <Receipt className="w-4 h-4" />,
       badge: expensesCount > 0 ? expensesCount : undefined,
       badgeColor: "bg-[#0f7a52]/10 text-[#0f7a52]"
     },
     {
       id: "dashboard",
-      label: "Dashboard",
+      label: "Control Centre",
       icon: <LayoutDashboard className="w-4 h-4" />,
       badge: "Analytics",
       badgeColor: "bg-amber-500/10 text-amber-700"

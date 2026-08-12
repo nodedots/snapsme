@@ -21,8 +21,7 @@ import {
   Plus,
   Camera,
   Upload,
-  Receipt,
-  Trash2
+  Receipt
 } from "lucide-react";
 
 export const DashboardView = ({
@@ -39,8 +38,7 @@ export const DashboardView = ({
   onOpenCapture,
   onRecordExpense,
   onOpenImport,
-  onOpenFeed,
-  onOpenTrash
+  onOpenFeed
 }) => {
   const cashflowHostRef = useRef(null);
   const cashflowApiRef = useRef(null);
@@ -454,30 +452,16 @@ export const DashboardView = ({
 
         {/* Action buttons arranged cleanly in requested order */}
         <div className="flex items-center gap-2.5 sm:gap-3 w-full lg:w-auto flex-wrap sm:flex-nowrap lg:flex-wrap">
-          {/* 0. Team Money View — "Your team's money, all in one place" dashboard */}
+          {/* 0. Team Ledger — "Your team's money, all in one place" dashboard */}
           {onOpenFeed && (
             <button
               onClick={onOpenFeed}
-              aria-label="Open the team money dashboard"
-              title="Go to Your team's money, all in one place"
+              aria-label="Open the Team Ledger dashboard"
+              title="Go to Team Ledger — Your team's money, all in one place"
               className="flex-1 sm:flex-none bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0f7a52] font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
             >
               <Receipt className="w-4 h-4 text-[#0f7a52] shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap hidden sm:inline">Team Money View</span>
-              <span className="whitespace-nowrap sm:hidden">Money View</span>
-            </button>
-          )}
-
-          {/* 0b. Trash */}
-          {onOpenTrash && (
-            <button
-              onClick={onOpenTrash}
-              aria-label="Open trash & deleted records"
-              title="Manage deleted records & trash"
-              className="flex-1 sm:flex-none bg-white hover:bg-[#fbf1de] text-[#1c1b19] border border-[#d9d4c8] hover:border-[#ff5a3c] font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
-            >
-              <Trash2 className="w-4 h-4 text-[#ff5a3c] shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">Trash</span>
+              <span className="whitespace-nowrap">Team Ledger</span>
             </button>
           )}
 
@@ -519,11 +503,21 @@ export const DashboardView = ({
               className="flex-1 sm:flex-none bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/15 hover:border-black/35 font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
             >
               <Upload className="w-4 h-4 text-[#0075de] shrink-0" aria-hidden="true" />
-              <span className="whitespace-nowrap">Import CSV/Excel</span>
+              <span className="whitespace-nowrap">Import CSV</span>
             </button>
           )}
 
-          {/* 4. App Settings */}
+          {/* 4. Export CSV — grouped with Import */}
+          <button
+            onClick={handleExportCSV}
+            aria-label="Export CSV"
+            className="flex-1 sm:flex-none bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/15 hover:border-black/35 font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
+          >
+            <Download className="w-4 h-4 text-[#0075de] shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">Export CSV</span>
+          </button>
+
+          {/* 5. App Settings */}
           {isOwner && onOpenSettings && (
             <button
               onClick={onOpenSettings}
@@ -534,16 +528,6 @@ export const DashboardView = ({
               <span className="whitespace-nowrap">App Settings</span>
             </button>
           )}
-
-          {/* 5. Export CSV for Accountant */}
-          <button
-            onClick={handleExportCSV}
-            aria-label="Export CSV for accountant"
-            className="flex-1 sm:flex-none bg-[#0075de] hover:bg-[#0060b8] text-white font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
-          >
-            <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
-            <span className="whitespace-nowrap">Export CSV for Accountant</span>
-          </button>
         </div>
       </div>
 

@@ -64,7 +64,7 @@ import { CaptureModal } from "./components/CaptureModal.jsx";
 import { OnboardingFlowModal } from "./components/OnboardingFlowModal.jsx";
 import { ImportModal } from "./components/ImportModal.jsx";
 import { TrashView } from "./components/TrashView.jsx";
-import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle, TrendingUp, LayoutDashboard } from "lucide-react";
+import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle, TrendingUp, LayoutDashboard, Trash2 } from "lucide-react";
 
 export function App() {
   // Demo (localStorage) state — used when not signed in
@@ -1043,64 +1043,75 @@ export function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-[1120px] w-full mx-auto px-4 sm:px-6 py-6">
-        {/* Top Hero Banner */}
+        {/* Top Hero Banner — Team Ledger (second dashboard) */}
         {currentView === "feed" && (
           <div className="mb-6 bg-white border border-[#d9d4c8] rounded-2xl p-5 sm:p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative overflow-hidden">
             <div className="space-y-1 z-10 max-w-xl">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-0.5 rounded-full inline-block mb-1">
-                Your team's money, all in one place
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#0f7a52] bg-[#e7f4ec] px-2.5 py-0.5 rounded-full inline-block mb-1">
+                  Team Ledger
+                </span>
+              </div>
               <h1 className="font-display font-bold text-2xl sm:text-3xl text-[#1c1b19] leading-tight">
-                Every penny in. Every penny out. Nothing slips through.
+                Your team's money, all in one place
               </h1>
               <p className="text-xs sm:text-sm text-[#6b665c] leading-relaxed">
-                Snap a receipt, say it out loud, or type it in — expenses and income land in your shared ledger instantly. No chasing, no guessing, no spreadsheet nightmares.
+                Every penny in. Every penny out. Nothing slips through. Snap a receipt, say it out loud, or type it in — expenses and income land in your shared ledger instantly.
               </p>
             </div>
 
-            {/* Co-primary action pair + tertiary navigation */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 z-10 w-full sm:w-auto">
-              {/* Record Expense — expense outflow action */}
+            {/* Co-primary action pair + tertiary navigation — same layout as Control Centre */}
+            <div className="flex items-center gap-2.5 sm:gap-3 w-full lg:w-auto flex-wrap sm:flex-nowrap lg:flex-wrap">
+              {/* 1. Record Expense — expense outflow action */}
               <button
                 onClick={() => setIsCaptureOpen(true)}
                 aria-label="Record an expense"
-                className="flex items-center justify-center gap-2 font-display font-semibold text-sm px-5 py-3 rounded-[10px] text-white shadow-sm cursor-pointer transition-transform active:scale-95"
+                className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer text-white shadow-2xs min-h-[40px]"
                 style={{ backgroundColor: 'var(--color-expense-action)' }}
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action-hover)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action)'}
               >
-                <Camera className="w-4 h-4" aria-hidden="true" />
-                <span>Record Expense</span>
+                <Camera className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Record Expense</span>
               </button>
-              {/* Add Income — income inflow action */}
+              {/* 2. Add Income — income inflow action */}
               <button
                 onClick={() => setIsIncomeCaptureOpen(true)}
                 aria-label="Add an income entry"
-                className="flex items-center justify-center gap-2 font-display font-semibold text-sm px-5 py-3 rounded-[10px] text-white shadow-sm cursor-pointer transition-transform active:scale-95"
+                className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer text-white shadow-2xs min-h-[40px]"
                 style={{ backgroundColor: 'var(--color-income-action)' }}
                 onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action-hover)'}
                 onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action)'}
               >
-                <TrendingUp className="w-4 h-4" aria-hidden="true" />
-                <span>Add Income</span>
+                <TrendingUp className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Add Income</span>
               </button>
-              {/* Spend Dashboard navigation */}
+              {/* 3. Control Centre navigation */}
               <button
                 onClick={() => setCurrentView("dashboard")}
-                aria-label="Open owner & team spend dashboard"
-                className="flex items-center justify-center gap-2 bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0075de] font-display font-medium text-xs px-4 py-3 rounded-[10px] shadow-2xs cursor-pointer transition-all"
+                aria-label="Open the Financial Control Centre"
+                className="flex-1 sm:flex-none bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0075de] font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
               >
-                <LayoutDashboard className="w-4 h-4 text-[#0075de]" aria-hidden="true" />
-                <span>Dashboard</span>
+                <LayoutDashboard className="w-4 h-4 text-[#0075de] shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Control Centre</span>
               </button>
-              {/* Workspace Settings */}
+              {/* 4. Trash — manage deleted records */}
+              <button
+                onClick={() => setCurrentView("trash")}
+                aria-label="Open trash & deleted records"
+                className="flex-1 sm:flex-none bg-[#fbf1de] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#ff5a3c] font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
+              >
+                <Trash2 className="w-4 h-4 text-[#ff5a3c] shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Trash</span>
+              </button>
+              {/* 5. Workspace Settings */}
               <button
                 onClick={() => setCurrentView("settings")}
                 aria-label="Open workspace settings"
-                className="flex items-center justify-center gap-2 bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#615d59] font-display font-medium text-xs px-4 py-3 rounded-[10px] shadow-2xs cursor-pointer transition-all"
+                className="flex-1 sm:flex-none bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#615d59] font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
               >
-                <Building2 className="w-4 h-4 text-[#615d59]" aria-hidden="true" />
-                <span>Settings</span>
+                <Building2 className="w-4 h-4 text-[#615d59] shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Settings</span>
               </button>
             </div>
           </div>
@@ -1162,7 +1173,6 @@ export function App() {
             onRecordExpense={() => setIsCaptureOpen(true)}
             onOpenImport={(type) => { setImportType(type || "expenses"); setIsImportOpen(true); }}
             onOpenFeed={() => setCurrentView("feed")}
-            onOpenTrash={() => setCurrentView("trash")}
           />
         )}
 
