@@ -150,6 +150,11 @@ export const SettingsView = ({
   const [wsCurrency, setWsCurrency] = useState(workspace.currency || "USD");
   const [wsToast, setWsToast] = useState("");
 
+  useEffect(() => {
+    if (workspace.name) setWsName(workspace.name);
+    if (workspace.currency) setWsCurrency(workspace.currency);
+  }, [workspace.name, workspace.currency]);
+
   // Invite Member state
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");

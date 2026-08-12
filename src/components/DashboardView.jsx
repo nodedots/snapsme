@@ -18,7 +18,9 @@ import {
   Globe,
   Settings,
   ArrowDownLeft,
-  Plus
+  Plus,
+  Camera,
+  Upload
 } from "lucide-react";
 
 export const DashboardView = ({
@@ -31,7 +33,10 @@ export const DashboardView = ({
   workspace,
   onUpdateWorkspace,
   onOpenSettings,
-  onAddIncome
+  onAddIncome,
+  onOpenCapture,
+  onRecordExpense,
+  onOpenImport
 }) => {
   const cashflowHostRef = useRef(null);
   const cashflowApiRef = useRef(null);
@@ -55,6 +60,12 @@ export const DashboardView = ({
   );
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [testAlertToast, setTestAlertToast] = useState(null);
+
+  useEffect(() => {
+    if (workspace?.monthlyBudget !== undefined) {
+      setMonthlyBudgetInput(workspace.monthlyBudget);
+    }
+  }, [workspace?.monthlyBudget, currency]);
 
   const prefs = {
     showTopVendor: true,
@@ -421,42 +432,86 @@ export const DashboardView = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Header & Export */}
-      <div className="bg-white p-4 sm:p-5 rounded-xl border border-black/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="font-display font-bold text-lg sm:text-xl text-[#000000]">Owner & Team Spend Dashboard</h2>
-          <p className="text-xs text-[#615d59]">Real-time visibility into team expenses, category budgets, and money movement</p>
+      {/* Top Header & Action Controls */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-black/10 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+        <div className="space-y-1 max-w-xl">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#0075de] bg-[#0075de]/10 px-2.5 py-0.5 rounded-full inline-block">
+              Financial Control Center
+            </span>
+          </div>
+          <h2 className="font-display font-bold text-xl sm:text-2xl text-[#1c1b19] tracking-tight">
+            Owner & Team Spend & Cashflow Dashboard
+          </h2>
+          <p className="text-xs sm:text-sm text-[#615d59] leading-relaxed">
+            Real-time visibility into team expenses, income streams, cashflow trends, category budgets, member spend limits, and money movement.
+          </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+        {/* Action buttons arranged cleanly in requested order */}
+        <div className="flex items-center gap-2.5 sm:gap-3 w-full lg:w-auto flex-wrap sm:flex-nowrap lg:flex-wrap">
+          {/* 1. Record Expense */}
+          {(onOpenCapture || onRecordExpense) && (
+            <button
+              onClick={onOpenCapture || onRecordExpense}
+              aria-label="Record an expense"
+              className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer text-white shadow-2xs min-h-[40px]"
+              style={{ backgroundColor: 'var(--color-expense-action)' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action-hover)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action)'}
+            >
+              <Camera className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Record Expense</span>
+            </button>
+          )}
+
+          {/* 2. Add Income */}
           {onAddIncome && (
             <button
               onClick={onAddIncome}
               aria-label="Add an income entry"
-              className="w-full sm:w-auto font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer text-white min-h-[44px] sm:min-h-0"
+              className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer text-white shadow-2xs min-h-[40px]"
               style={{ backgroundColor: 'var(--color-income-action)' }}
               onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action-hover)'}
               onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action)'}
             >
               <TrendingUp className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span>Add Income</span>
+              <span className="whitespace-nowrap">Add Income</span>
             </button>
           )}
+
+          {/* 3. Import CSV/Excel */}
+          {onOpenImport && (
+            <button
+              onClick={() => onOpenImport("expenses")}
+              aria-label="Import CSV or Excel file"
+              className="flex-1 sm:flex-none bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/15 hover:border-black/35 font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
+            >
+              <Upload className="w-4 h-4 text-[#0075de] shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">Import CSV/Excel</span>
+            </button>
+          )}
+
+          {/* 4. App Settings */}
           {isOwner && onOpenSettings && (
             <button
               onClick={onOpenSettings}
-              className="w-full sm:w-auto bg-[#1c1b19] hover:bg-[#ff5a3c] text-white font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer min-h-[44px] sm:min-h-0"
+              aria-label="Open app settings"
+              className="flex-1 sm:flex-none bg-[#1c1b19] hover:bg-[#33312e] text-white font-display font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
             >
-              <Settings className="w-4 h-4 shrink-0" />
-              <span>App Settings</span>
+              <Settings className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span className="whitespace-nowrap">App Settings</span>
             </button>
           )}
+
+          {/* 5. Export CSV for Accountant */}
           <button
             onClick={handleExportCSV}
-            className="w-full sm:w-auto bg-[#0075de] hover:bg-[#0060b8] text-white font-medium text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer min-h-[44px] sm:min-h-0"
+            aria-label="Export CSV for accountant"
+            className="flex-1 sm:flex-none bg-[#0075de] hover:bg-[#0060b8] text-white font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-2xs min-h-[40px]"
           >
-            <Download className="w-4 h-4 shrink-0" />
-            <span>Export CSV for Accountant</span>
+            <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <span className="whitespace-nowrap">Export CSV for Accountant</span>
           </button>
         </div>
       </div>

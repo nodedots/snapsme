@@ -34,7 +34,8 @@ import {
   Trash2,
   ArrowUpDown,
   RotateCcw,
-  CheckSquare
+  CheckSquare,
+  LayoutDashboard
 } from "lucide-react";
 
 export const ExpenseFeed = ({
@@ -45,6 +46,7 @@ export const ExpenseFeed = ({
   currentUser = null,
   onOpenCapture,
   onAddIncome,
+  onOpenDashboard,
   onOpenImport,
   onEditExpense,
   onDeleteExpense,
@@ -311,6 +313,19 @@ export const ExpenseFeed = ({
                 >
                   <TrendingUp className="w-3.5 h-3.5" aria-hidden="true" />
                   <span>Add Income</span>
+                </button>
+              )}
+
+              {/* Dashboard Navigation Button */}
+              {onOpenDashboard && (
+                <button
+                  type="button"
+                  onClick={onOpenDashboard}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/10 hover:border-black/30"
+                  title="Open spend dashboard"
+                >
+                  <LayoutDashboard className="w-3.5 h-3.5 text-[#0075de]" />
+                  <span>Dashboard</span>
                 </button>
               )}
 

@@ -379,3 +379,78 @@ export async function fetchLiveExchangeRates(base = "USD") {
 
   return USD_EXCHANGE_RATES;
 }
+
+/**
+ * Reconverts all cashflow records (expenses & income) and category budgets when the
+ * Default Accounting Currency changes.
+ *
+ * @param {Array} expenses - Array of expense objects
+ * @param {Array} incomeEntries - Array of income objects
+ * @param {Array} categories - Array of category objects
+ * @param {string} oldCurrency - Previous Default Accounting Currency code (e.g. "USD")
+ * @param {string} newCurrency - New Default Accounting Currency code (e.g. "EUR")
+ * @returns {{
+ *   expenses: Array,
+ *   incomeEntries: Array,
+ *   categories: Array
+ * }}
+ */
+export function reconvertCashflowRecords(expenses = [], incomeEntries = [], categories = [], oldCurrency = "USD", newCurrency = "USD") {
+  const fromCurr = (oldCurrency || "USD").toUpperCase();
+  const toCurr = (newCurrency || "USD").toUpperCase();
+
+  if (fromCurr === toCurr) {
+    return { expenses, incomeEntries, categories };
+  }
+
+  const updatedExpenses = (expenses || []).map((e) => {
+    const srcCurrency = (e.originalCurrency || fromCurr).toUpperCase();
+    const srcAmount = e.originalAmount !== undefined ? parseFloat(e.originalAmount) : parseFloat(e.amount || 0);
+    const conversion = convertCurrency(srcAmount, srcCurrency, toCurr);
+
+    return {
+      ...e,
+      amount: conversion.convertedAmount,
+      currency: toCurr,
+      originalAmount: srcAmount,
+      originalCurrency: srcCurrency,
+      exchangeRate: conversion.exchangeRate,
+      isConverted: conversion.isConverted
+    };
+  });
+
+  const updatedIncome = (incomeEntries || []).map((inc) => {
+    const srcCurrency = (inc.originalCurrency || fromCurr).toUpperCase();
+    const srcAmount = inc.originalAmount !== undefined ? parseFloat(inc.originalAmount) : parseFloat(inc.amount || 0);
+    const conversion = convertCurrency(srcAmount, srcCurrency, toCurr);
+
+    return {
+      ...inc,
+      amount: conversion.convertedAmount,
+      currency: toCurr,
+      originalAmount: srcAmount,
+      originalCurrency: srcCurrency,
+      exchangeRate: conversion.exchangeRate,
+      isConverted: conversion.isConverted
+    };
+  });
+
+  const updatedCategories = (categories || []).map((cat) => {
+    let newCat = { ...cat };
+    if (cat.budget !== undefined && cat.budget !== null) {
+      const conv = convertCurrency(cat.budget, fromCurr, toCurr);
+      newCat.budget = conv.convertedAmount;
+    }
+    if (cat.monthlyBudget !== undefined && cat.monthlyBudget !== null) {
+      const conv = convertCurrency(cat.monthlyBudget, fromCurr, toCurr);
+      newCat.monthlyBudget = conv.convertedAmount;
+    }
+    return newCat;
+  });
+
+  return {
+    expenses: updatedExpenses,
+    incomeEntries: updatedIncome,
+    categories: updatedCategories
+  };
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { convertCurrency } from "./lib/currencies.js";
+import { convertCurrency, reconvertCashflowRecords } from "./lib/currencies.js";
 import { applyBrandAccentColor } from "./lib/brand.js";
 import {
   loadWorkspace,
@@ -63,7 +63,7 @@ import { SettingsView } from "./components/SettingsView.jsx";
 import { CaptureModal } from "./components/CaptureModal.jsx";
 import { OnboardingFlowModal } from "./components/OnboardingFlowModal.jsx";
 import { ImportModal } from "./components/ImportModal.jsx";
-import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle, TrendingUp } from "lucide-react";
+import { Camera, Receipt, ShieldCheck, Building2, AlertTriangle, TrendingUp, LayoutDashboard } from "lucide-react";
 
 export function App() {
   // Demo (localStorage) state — used when not signed in
@@ -497,7 +497,23 @@ export function App() {
   // -------------------------------------------------------------------------
   // Income save/delete — Firestore or localStorage (FR-I1)
   // -------------------------------------------------------------------------
-  const handleSaveIncome = useCallback(async (entry) => {
+  const handleSaveIncome = useCallback(async (incomeInput) => {
+    const defaultAccountingCurrency = workspace?.currency || "USD";
+    const srcCurrency = incomeInput.originalCurrency || incomeInput.currency || defaultAccountingCurrency;
+    const rawCapturedAmount = incomeInput.originalAmount !== undefined ? incomeInput.originalAmount : incomeInput.amount;
+
+    const conversion = convertCurrency(rawCapturedAmount, srcCurrency, defaultAccountingCurrency);
+
+    const entry = {
+      ...incomeInput,
+      amount: conversion.convertedAmount,
+      currency: defaultAccountingCurrency,
+      originalAmount: parseFloat(rawCapturedAmount),
+      originalCurrency: srcCurrency,
+      exchangeRate: conversion.exchangeRate,
+      isConverted: conversion.isConverted
+    };
+
     // Optimistically update local state immediately
     setIncomeEntries((prev) => [entry, ...(prev || []).filter((e) => e.id !== entry.id)]);
 
@@ -523,7 +539,7 @@ export function App() {
       const currentArr = stored ? JSON.parse(stored) : [];
       localStorage.setItem("snapsme_income", JSON.stringify([entry, ...currentArr.filter(e => e.id !== entry.id)]));
     } catch (e) {}
-  }, [isFirestoreMode, businessId, currentUser, firebaseUser]);
+  }, [workspace, isFirestoreMode, businessId, currentUser, firebaseUser]);
 
   // -------------------------------------------------------------------------
   // Record management — edit / soft-delete / restore / permanent delete / bulk
@@ -766,17 +782,67 @@ export function App() {
   // Workspace update — Firestore or localStorage
   // -------------------------------------------------------------------------
   const handleUpdateWorkspace = useCallback(async (updates) => {
+    const oldCurrency = workspace?.currency || "USD";
+    const newCurrency = updates.currency ? updates.currency.trim().toUpperCase() : oldCurrency;
+    const isCurrencyChanged = Boolean(newCurrency && newCurrency !== oldCurrency);
+
+    const updatedWorkspace = {
+      ...workspace,
+      ...updates,
+      currency: newCurrency
+    };
+
+    if (isCurrencyChanged) {
+      // Reconverts all existing cashflow records (expenses & income) and budget limits to new currency equivalent
+      const {
+        expenses: updatedExpenses,
+        incomeEntries: updatedIncome,
+        categories: updatedCategories
+      } = reconvertCashflowRecords(expenses, incomeEntries, categories, oldCurrency, newCurrency);
+
+      if (updatedWorkspace.monthlyBudget) {
+        const budgetConv = convertCurrency(updatedWorkspace.monthlyBudget, oldCurrency, newCurrency);
+        updatedWorkspace.monthlyBudget = budgetConv.convertedAmount;
+      }
+
+      // Optimistically update local React states so feeds, cards & dashboards adjust in real-time
+      setExpenses(updatedExpenses);
+      saveExpenses(updatedExpenses);
+
+      setIncomeEntries(updatedIncome);
+      saveIncomeEntries(updatedIncome);
+
+      setCategories(updatedCategories);
+      saveCategories(updatedCategories);
+
+      if (isFirestoreMode && businessId) {
+        try {
+          for (const exp of updatedExpenses) {
+            await updateExpenseFirestore(businessId, exp.id, exp);
+          }
+          for (const inc of updatedIncome) {
+            await updateIncomeFirestore(businessId, inc.id, inc);
+          }
+          for (const cat of updatedCategories) {
+            await updateCategoryFirestore(businessId, cat.id, cat);
+          }
+        } catch (err) {
+          console.error("Firestore currency batch conversion error:", err);
+        }
+      }
+    }
+
     if (isFirestoreMode && businessId) {
       try {
-        await updateWorkspaceFirestore(businessId, updates);
-        // Snapshot will update state
-        return;
+        await updateWorkspaceFirestore(businessId, updatedWorkspace);
       } catch (err) {
         console.error("Failed to update workspace in Firestore:", err);
       }
     }
-    setWorkspace(updates);
-  }, [isFirestoreMode, businessId]);
+
+    setWorkspace(updatedWorkspace);
+    saveWorkspace(updatedWorkspace);
+  }, [workspace, expenses, incomeEntries, categories, isFirestoreMode, businessId]);
 
   // -------------------------------------------------------------------------
   // Member add/remove — Firestore or localStorage
@@ -968,7 +1034,7 @@ export function App() {
               </p>
             </div>
 
-            {/* Co-primary action pair — intentional design exception, scoped to this button pair only */}
+            {/* Co-primary action pair + tertiary navigation */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0 z-10 w-full sm:w-auto">
               {/* Record Expense — expense outflow action */}
               <button
@@ -994,7 +1060,16 @@ export function App() {
                 <TrendingUp className="w-4 h-4" aria-hidden="true" />
                 <span>Add Income</span>
               </button>
-              {/* Workspace Settings — tertiary, not part of the co-primary pair */}
+              {/* Spend Dashboard navigation */}
+              <button
+                onClick={() => setCurrentView("dashboard")}
+                aria-label="Open owner & team spend dashboard"
+                className="flex items-center justify-center gap-2 bg-[#f7f3ea] hover:bg-white text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0075de] font-display font-medium text-xs px-4 py-3 rounded-[10px] shadow-2xs cursor-pointer transition-all"
+              >
+                <LayoutDashboard className="w-4 h-4 text-[#0075de]" aria-hidden="true" />
+                <span>Dashboard</span>
+              </button>
+              {/* Workspace Settings */}
               <button
                 onClick={() => setCurrentView("settings")}
                 aria-label="Open workspace settings"
@@ -1017,6 +1092,7 @@ export function App() {
             currentUser={currentUser}
             onOpenCapture={() => setIsCaptureOpen(true)}
             onAddIncome={() => setIsIncomeCaptureOpen(true)}
+            onOpenDashboard={() => setCurrentView("dashboard")}
             onOpenImport={(type) => { setImportType(type); setIsImportOpen(true); }}
             onEditExpense={(rec) => setEditingRecord({ type: "expense", record: rec })}
             onDeleteExpense={handleDeleteExpense}
@@ -1036,6 +1112,7 @@ export function App() {
             currency={workspace?.currency || "USD"}
             onAddIncome={() => setIsIncomeOpen(true)}
             onOpenIncomeCapture={() => setIsIncomeCaptureOpen(true)}
+            onOpenDashboard={() => setCurrentView("dashboard")}
             onOpenImport={(type) => { setImportType(type); setIsImportOpen(true); }}
             onEditIncome={(rec) => setEditingRecord({ type: "income", record: rec })}
             onDeleteIncome={handleDeleteIncome}
@@ -1057,6 +1134,8 @@ export function App() {
             onUpdateWorkspace={handleUpdateWorkspace}
             onOpenSettings={() => setCurrentView("settings")}
             onAddIncome={() => setIsIncomeCaptureOpen(true)}
+            onOpenCapture={() => setIsCaptureOpen(true)}
+            onOpenImport={(type) => { setImportType(type || "expenses"); setIsImportOpen(true); }}
           />
         )}
 

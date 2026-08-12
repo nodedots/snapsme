@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { getCurrencySymbol } from "../lib/currencies.js";
-import { ArrowDownLeft, Plus, Trash2, Camera, Upload, Search, Filter, User, Tag } from "lucide-react";
+import { ArrowDownLeft, Plus, Trash2, Camera, Upload, Search, Filter, User, Tag, LayoutDashboard } from "lucide-react";
 
 /**
  * IncomeFeed — separate income list/feed (FR-I2).
  * Income entries render in their own list, distinct from the expense feed.
  * Each row is a white hairline card with a confirmed-green left accent + upward arrow.
  */
-export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD", onAddIncome, onOpenIncomeCapture, onOpenImport, onDeleteIncome, isOwner }) => {
+export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD", onAddIncome, onOpenIncomeCapture, onOpenDashboard, onOpenImport, onDeleteIncome, isOwner }) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   
   // Filter States
@@ -82,6 +82,18 @@ export const IncomeFeed = ({ incomeEntries = [], members = [], currency = "USD",
                 {filteredIncome.length} entries
               </span>
             </div>
+            
+            {onOpenDashboard && (
+              <button
+                type="button"
+                onClick={onOpenDashboard}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/10 hover:border-black/30"
+                title="Open spend dashboard"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 text-[#0075de]" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </button>
+            )}
             
             {onOpenImport && (
               <button
