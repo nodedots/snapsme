@@ -14,8 +14,8 @@ import { onCall, onRequest } from "firebase-functions/v2/https";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
-import { GoogleGenAI } from "@google/genai";
 import { defineSecret } from "firebase-functions/params";
+import { extractWithAI, cleanJson } from "./ai-providers.js";
 
 // ---------------------------------------------------------------------------
 // Firebase Admin init
@@ -26,9 +26,20 @@ const storage = getStorage();
 
 // Secrets (set via `firebase functions:secrets:set`)
 const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+const NVIDIA_API_KEY = defineSecret("NVIDIA_API_KEY");
+const DEEPSEEK_API_KEY = defineSecret("DEEPSEEK_API_KEY");
+const PERPLEXITY_API_KEY = defineSecret("PERPLEXITY_API_KEY");
 const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WHATSAPP_VERIFY_TOKEN = defineSecret("WHATSAPP_VERIFY_TOKEN");
 const WHATSAPP_ACCESS_TOKEN = defineSecret("WHATSAPP_ACCESS_TOKEN");
+
+// All AI provider secrets used by the multi-provider failover layer.
+const AI_SECRETS = [
+  GEMINI_API_KEY,
+  NVIDIA_API_KEY,
+  DEEPSEEK_API_KEY,
+  PERPLEXITY_API_KEY
+];
 
 // Default categories (must match the client-side defaults)
 const DEFAULT_CATEGORIES = [
@@ -46,14 +57,13 @@ const DEFAULT_CATEGORIES = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getGeminiClient() {
-  const apiKey = GEMINI_API_KEY.value();
-  if (!apiKey) return null;
-  return new GoogleGenAI({ apiKey });
-}
-
-function cleanJson(text) {
-  return text.replace(/```json/g, "").replace(/```/g, "").trim();
+function getAiSecrets() {
+  return {
+    GEMINI_API_KEY: GEMINI_API_KEY.value(),
+    NVIDIA_API_KEY: NVIDIA_API_KEY.value(),
+    DEEPSEEK_API_KEY: DEEPSEEK_API_KEY.value(),
+    PERPLEXITY_API_KEY: PERPLEXITY_API_KEY.value()
+  };
 }
 
 function normalizeCategory(suggested) {
@@ -74,15 +84,10 @@ async function isBusinessMember(businessId, uid) {
 }
 
 /**
- * Extracts structured expense data from an image using Gemini AI Vision.
+ * Extracts structured expense data from an image using the
+ * multi-provider failover layer (Gemini → NVIDIA → DeepSeek → Perplexity).
  */
 async function extractFromImage(imageBase64, mimeType) {
-  const ai = getGeminiClient();
-  if (!ai) {
-    throw new Error("GEMINI_API_KEY is not configured on the server.");
-  }
-
-  const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
   const prompt = `Analyze this receipt image or document and extract structured expense details.
 Return strictly valid JSON with no markdown formatting or triple backticks.
 
@@ -106,43 +111,15 @@ JSON Schema:
 
 IMPORTANT: Return null for any field that you cannot clearly determine from the receipt image. Do NOT guess, fabricate, or hallucinate values.`;
 
-  const candidateModels = [
-    process.env.GEMINI_MODEL,
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-2.5-flash-lite",
-    "gemini-1.5-flash"
-  ].filter(Boolean);
+  const aiResult = await extractWithAI({
+    secrets: getAiSecrets(),
+    prompt,
+    imageBase64,
+    mimeType,
+    task: "receipt"
+  });
 
-  let response = null;
-  let lastErr = null;
-
-  for (const modelCandidate of candidateModels) {
-    try {
-      response = await ai.models.generateContent({
-        model: modelCandidate,
-        contents: [
-          {
-            role: "user",
-            parts: [
-              { inlineData: { mimeType, data: base64Data } },
-              { text: prompt }
-            ]
-          }
-        ],
-        config: { responseMimeType: "application/json" }
-      });
-      if (response && response.text) break;
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-
-  if (!response || !response.text) {
-    throw new Error(`Gemini Vision call failed: ${lastErr?.message || "All model candidates failed"}`);
-  }
-
-  const textResponse = response.text || "";
+  const textResponse = aiResult.text || "";
   const parsed = JSON.parse(cleanJson(textResponse));
 
   if (!parsed || (parsed.vendor === null && parsed.amount === null && parsed.date === null)) {
@@ -182,14 +159,10 @@ IMPORTANT: Return null for any field that you cannot clearly determine from the 
 }
 
 /**
- * Extracts structured expense data from a voice transcript.
+ * Extracts structured expense data from a voice transcript using the
+ * multi-provider failover layer (Gemini → NVIDIA → DeepSeek → Perplexity).
  */
 async function extractFromTranscript(transcript) {
-  const ai = getGeminiClient();
-  if (!ai) {
-    throw new Error("GEMINI_API_KEY is not configured on the server.");
-  }
-
   const promptText = `Extract structured expense details from this audio/transcript.
 Return strictly valid JSON:
 {
@@ -202,13 +175,14 @@ Return strictly valid JSON:
   "confidence": { "vendor": number, "amount": number, "date": number, "category": number }
 }`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: [{ text: `Transcript: "${transcript}"\n\n${promptText}` }],
-    config: { responseMimeType: "application/json" }
+  const aiResult = await extractWithAI({
+    secrets: getAiSecrets(),
+    prompt: promptText,
+    transcript,
+    task: "voice-expense"
   });
 
-  const textResponse = response.text || "";
+  const textResponse = aiResult.text || "";
   const parsed = JSON.parse(cleanJson(textResponse));
 
   return {
@@ -300,7 +274,7 @@ async function checkAndIncrementAiUsage(businessId) {
 // 1. extractReceipt — onCall (FR1, FR4)
 // ---------------------------------------------------------------------------
 export const extractReceipt = onCall(
-  { secrets: [GEMINI_API_KEY], maxInstances: 10 },
+  { secrets: AI_SECRETS, maxInstances: 10 },
   async (request) => {
     const { imageBase64, mimeType = "image/jpeg", fileName, businessId } = request.data || {};
 
@@ -351,7 +325,7 @@ export const extractReceipt = onCall(
 // 2. extractVoiceNote — onCall (FR2)
 // ---------------------------------------------------------------------------
 export const extractVoiceNote = onCall(
-  { secrets: [GEMINI_API_KEY], maxInstances: 10 },
+  { secrets: AI_SECRETS, maxInstances: 10 },
   async (request) => {
     const { transcript, audioBase64, mimeType = "audio/webm", businessId } = request.data || {};
 
@@ -422,7 +396,7 @@ export const linkChatAccount = onCall(
 // 4. telegramWebhook — onRequest (FR8)
 // ---------------------------------------------------------------------------
 export const telegramWebhook = onRequest(
-  { secrets: [TELEGRAM_BOT_TOKEN, GEMINI_API_KEY], maxInstances: 10 },
+  { secrets: [TELEGRAM_BOT_TOKEN, ...AI_SECRETS], maxInstances: 10 },
   async (req, res) => {
     try {
       const update = req.body;
@@ -607,7 +581,7 @@ export const telegramWebhook = onRequest(
 // 5. whatsappWebhook — onRequest (FR9)
 // ---------------------------------------------------------------------------
 export const whatsappWebhook = onRequest(
-  { secrets: [WHATSAPP_VERIFY_TOKEN, WHATSAPP_ACCESS_TOKEN, GEMINI_API_KEY], maxInstances: 10 },
+  { secrets: [WHATSAPP_VERIFY_TOKEN, WHATSAPP_ACCESS_TOKEN, ...AI_SECRETS], maxInstances: 10 },
   async (req, res) => {
     // Webhook verification (GET)
     if (req.method === "GET") {
@@ -999,4 +973,4 @@ export const apiExpenses = onRequest(
       return res.status(500).json({ error: "Internal server error." });
     }
   }
-);
+);

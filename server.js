@@ -5,8 +5,8 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 import { convertCurrency, getCurrencySymbol } from "./src/lib/currencies.js";
+import { extractWithAI, getProviderStatus, getConfiguredProviders } from "./src/lib/aiProviders.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,15 +17,6 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
 app.use(express.static(path.join(process.cwd(), "public")));
-
-// Helper to get Gemini client lazily
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return null;
-  }
-  return new GoogleGenAI({ apiKey });
-}
 
 // Default categories
 const DEFAULT_CATEGORIES = [
@@ -53,7 +44,8 @@ app.get("/favicon.ico", (_req, res) => {
 app.get("/api/health", (_req, res) => {
   res.json({
     status: "ok",
-    hasGeminiKey: Boolean(process.env.GEMINI_API_KEY),
+    providers: getProviderStatus(),
+    activeProviders: getConfiguredProviders().map((p) => p.name),
     timestamp: new Date().toISOString()
   });
 });
@@ -387,19 +379,8 @@ app.post("/api/extract-receipt", async (req, res) => {
       return res.json(ocrResult);
     }
 
-    // TIER 2: Gemini AI Multi-Modal Vision API
-    const ai = getGeminiClient();
-    if (!ai) {
-      return res.status(503).json({
-        success: false,
-        code: "ai_unavailable",
-        error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
-      });
-    }
-
+    // TIER 2: Multi-Provider AI Vision (Gemini → NVIDIA → DeepSeek → Perplexity failover)
     try {
-      const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
-
       const prompt = `Analyze this receipt image or document and extract structured expense details.
 Return strictly valid JSON with no markdown formatting or triple backticks.
 
@@ -423,40 +404,27 @@ JSON Schema:
 
 IMPORTANT: Return null for any field that you cannot clearly determine from the receipt image. Do NOT guess, fabricate, or hallucinate values.`;
 
-      const candidateModels = [
-        "gemini-2.0-flash-lite", // Primary choice: Flash-Lite model tier for maximum free headroom
-        process.env.GEMINI_MODEL,
-        "gemini-2.0-flash",
-        "gemini-2.5-flash-lite",
-        "gemini-1.5-flash"
-      ].filter(Boolean);
+      const aiResult = await extractWithAI({
+        prompt,
+        imageBase64,
+        mimeType,
+        task: "receipt"
+      });
 
-      let response = null;
-      let lastErr = null;
-
-      for (const modelCandidate of candidateModels) {
-        try {
-          response = await ai.models.generateContent({
-            model: modelCandidate,
-            contents: [
-              prompt,
-              { inlineData: { mimeType, data: base64Data } }
-            ],
-            config: {
-              responseMimeType: "application/json"
-            }
-          });
-          if (response && response.text) break;
-        } catch (modelErr) {
-          lastErr = modelErr;
-          console.warn(`Gemini model ${modelCandidate} failed (${modelErr?.message || modelErr}), checking next candidate model...`);
-        }
-      }
-
-      if (response && response.text) {
-        const textResponse = response.text || "";
+      if (aiResult && aiResult.text) {
+        const textResponse = aiResult.text || "";
         const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
         const parsed = JSON.parse(cleanJson);
+        const providerName = aiResult.provider || "unknown";
+        const sourceLabel = `ai_${providerName}_vision_tier`;
+        
+        if (!parsed || (parsed.vendor === null && parsed.amount === null && parsed.date === null)) {
+          return res.status(422).json({
+            success: false,
+            code: "ai_unreadable",
+            error: "The AI vision service could not read legible details from that image. Please enter details manually."
+          });
+        }
 
         const confMap = { high: 0.90, medium: 0.75, low: 0.45 };
         const rawConf = parsed.confidence || {};
@@ -468,7 +436,7 @@ IMPORTANT: Return null for any field that you cannot clearly determine from the 
 
         return res.json({
           success: true,
-          source: "ai_gemini_vision_tier",
+          source: sourceLabel,
           aiUsage: { count: usageCheck.count, limit: usageCheck.limit },
           notice: (vendorConf < 0.7 || amountConf < 0.7 || !parsed.vendor || !parsed.amount)
             ? "We had trouble reading some details on this receipt — please check and fill in the missing fields below."
@@ -496,8 +464,8 @@ IMPORTANT: Return null for any field that you cannot clearly determine from the 
         code: "ai_unavailable",
         error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
       });
-    } catch (geminiError) {
-      console.error("Gemini API error during receipt extraction:", geminiError?.message || geminiError);
+    } catch (aiError) {
+      console.error("AI provider error during receipt extraction:", aiError?.message || aiError);
       return res.status(503).json({
         success: false,
         code: "ai_unavailable",
@@ -588,11 +556,8 @@ app.post("/api/extract-voice", async (req, res) => {
   try {
     const { transcript, audioBase64, mimeType = "audio/webm" } = req.body;
 
-    const ai = getGeminiClient();
-
-    if (ai && (audioBase64 || transcript)) {
+    if (getConfiguredProviders().length > 0 && (audioBase64 || transcript)) {
       try {
-        let contents = [];
         const promptText = `Extract structured expense details from this audio/transcript.
 Return strictly valid JSON:
 {
@@ -605,41 +570,36 @@ Return strictly valid JSON:
   "confidence": { "vendor": number, "amount": number, "date": number, "category": number }
 }`;
 
-        if (audioBase64) {
-          const cleanAudio = audioBase64.replace(/^data:audio\/\w+;base64,/, "");
-          contents = [
-            { inlineData: { mimeType, data: cleanAudio } },
-            { text: promptText }
-          ];
-        } else {
-          contents = [{ text: `Transcript: "${transcript}"\n\n${promptText}` }];
+        const aiResult = await extractWithAI({
+          prompt: promptText,
+          transcript,
+          audioBase64,
+          audioMimeType: mimeType,
+          task: "voice-expense"
+        });
+
+        if (aiResult && aiResult.text) {
+          const textResponse = aiResult.text || "";
+          const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+          const parsed = JSON.parse(cleanJson);
+          const providerName = aiResult.provider || "unknown";
+
+          return res.json({
+            success: true,
+            source: `ai_${providerName}_voice`,
+            data: {
+              vendor: parsed.vendor || "Voice Mentioned Vendor",
+              amount: typeof parsed.amount === "number" ? parsed.amount : 0,
+              currency: parsed.currency || "USD",
+              date: parsed.date || new Date().toISOString().split("T")[0],
+              suggestedCategory: parsed.suggestedCategory || "Petty Cash Spend",
+              transcriptText: parsed.transcriptText || transcript || "Voice recording processed",
+              confidence: parsed.confidence || { vendor: 0.82, amount: 0.88, date: 0.70, category: 0.80 }
+            }
+          });
         }
-
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents,
-          config: { responseMimeType: "application/json" }
-        });
-
-        const textResponse = response.text || "";
-        const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-        const parsed = JSON.parse(cleanJson);
-
-        return res.json({
-          success: true,
-          source: "ai_gemini_voice",
-          data: {
-            vendor: parsed.vendor || "Voice Mentioned Vendor",
-            amount: typeof parsed.amount === "number" ? parsed.amount : 0,
-            currency: parsed.currency || "USD",
-            date: parsed.date || new Date().toISOString().split("T")[0],
-            suggestedCategory: parsed.suggestedCategory || "Petty Cash Spend",
-            transcriptText: parsed.transcriptText || transcript || "Voice recording processed",
-            confidence: parsed.confidence || { vendor: 0.82, amount: 0.88, date: 0.70, category: 0.80 }
-          }
-        });
-      } catch (geminiErr) {
-        console.warn("Gemini voice extraction failed, fallback to simulated parser:", geminiErr?.message);
+      } catch (aiErr) {
+        console.warn("AI voice extraction failed, fallback to simulated parser:", aiErr?.message);
       }
     }
 
@@ -661,7 +621,7 @@ Return strictly valid JSON:
     return res.json({
       success: true,
       source: "simulated_speech",
-      notice: process.env.GEMINI_API_KEY ? "AI transcribed voice note" : "Add GEMINI_API_KEY in settings for native AI speech transcription",
+      notice: getConfiguredProviders().length > 0 ? "AI transcribed voice note" : "Add an AI provider key in settings for native AI speech transcription",
       data: {
         vendor,
         amount,
@@ -693,18 +653,8 @@ app.post("/api/extract-income-doc", async (req, res) => {
       return res.json(ocrResult);
     }
 
-    // TIER 2: Gemini AI Multi-Modal Vision API
-    const ai = getGeminiClient();
-    if (!ai) {
-      return res.status(503).json({
-        success: false,
-        error: "Gemini API key is not configured on the server (GEMINI_API_KEY missing). Please enter details manually."
-      });
-    }
-
+    // TIER 2: Multi-Provider AI Vision (Gemini → NVIDIA → DeepSeek → Perplexity failover)
     try {
-      const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
-
       const prompt = `Analyze this income document (invoice, payment receipt, bank transfer confirmation, sales receipt, or payment notification) and extract structured income details.
 Return strictly valid JSON with no markdown formatting or triple backticks.
 JSON Schema:
@@ -721,40 +671,19 @@ JSON Schema:
   }
 }`;
 
-      const candidateModels = [
-        process.env.GEMINI_MODEL,
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
-        "gemini-1.5-flash-latest"
-      ].filter(Boolean);
+      const aiResult = await extractWithAI({
+        prompt,
+        imageBase64,
+        mimeType,
+        task: "income-doc"
+      });
 
-      let response = null;
-      let lastErr = null;
-
-      for (const modelCandidate of candidateModels) {
-        try {
-          response = await ai.models.generateContent({
-            model: modelCandidate,
-            contents: [
-              prompt,
-              { inlineData: { mimeType, data: base64Data } }
-            ],
-            config: {
-              responseMimeType: "application/json"
-            }
-          });
-          if (response && response.text) break;
-        } catch (modelErr) {
-          lastErr = modelErr;
-          console.warn(`Gemini model ${modelCandidate} failed (${modelErr?.message || modelErr}), checking next candidate model...`);
-        }
-      }
-
-      if (response && response.text) {
-        const textResponse = response.text || "";
+      if (aiResult && aiResult.text) {
+        const textResponse = aiResult.text || "";
         const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
         const parsed = JSON.parse(cleanJson);
+        const providerName = aiResult.provider || "unknown";
+        const sourceLabel = `ai_${providerName}_vision_tier`;
 
         if (!parsed || (typeof parsed.amount !== "number" && !parsed.source)) {
           return res.status(422).json({
@@ -765,7 +694,7 @@ JSON Schema:
 
         return res.json({
           success: true,
-          source: "ai_gemini_vision_tier",
+          source: sourceLabel,
           notice: "Income document scanned! Please review the extracted fields below.",
           data: {
             source: parsed.source || "Client Payment",
@@ -782,14 +711,12 @@ JSON Schema:
         });
       }
 
-      const errReason = lastErr?.message || "AI vision API call failed";
-      console.warn("Gemini Vision income extraction failed:", errReason);
       return res.status(503).json({
         success: false,
-        error: `Could not read income document using AI Vision (${errReason.includes("429") || errReason.includes("quota") ? "API quota limit reached" : "vision service error"}). Please enter details manually.`
+        error: "Could not read income document using AI Vision. Please enter details manually."
       });
-    } catch (geminiError) {
-      console.error("Gemini API error during income extraction:", geminiError?.message || geminiError);
+    } catch (aiError) {
+      console.error("AI provider error during income extraction:", aiError?.message || aiError);
       return res.status(500).json({
         success: false,
         error: "Failed to extract income document with AI Vision. Please enter details manually."
@@ -806,11 +733,8 @@ app.post("/api/extract-income-voice", async (req, res) => {
   try {
     const { transcript, audioBase64, mimeType = "audio/webm" } = req.body;
 
-    const ai = getGeminiClient();
-
-    if (ai && (audioBase64 || transcript)) {
+    if (getConfiguredProviders().length > 0 && (audioBase64 || transcript)) {
       try {
-        let contents = [];
         const promptText = `Extract structured income details from this audio/transcript.
 Return strictly valid JSON:
 {
@@ -823,41 +747,36 @@ Return strictly valid JSON:
   "confidence": { "source": number, "amount": number, "date": number }
 }`;
 
-        if (audioBase64) {
-          const cleanAudio = audioBase64.replace(/^data:audio\/\w+;base64,/, "");
-          contents = [
-            { inlineData: { mimeType, data: cleanAudio } },
-            { text: promptText }
-          ];
-        } else {
-          contents = [{ text: `Transcript: "${transcript}"\n\n${promptText}` }];
+        const aiResult = await extractWithAI({
+          prompt: promptText,
+          transcript,
+          audioBase64,
+          audioMimeType: mimeType,
+          task: "voice-income"
+        });
+
+        if (aiResult && aiResult.text) {
+          const textResponse = aiResult.text || "";
+          const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+          const parsed = JSON.parse(cleanJson);
+          const providerName = aiResult.provider || "unknown";
+
+          return res.json({
+            success: true,
+            source: `ai_${providerName}_voice`,
+            data: {
+              source: parsed.source || "Voice Mentioned Source",
+              amount: typeof parsed.amount === "number" ? parsed.amount : 0,
+              currency: parsed.currency || "USD",
+              date: parsed.date || new Date().toISOString().split("T")[0],
+              notes: parsed.notes || null,
+              transcriptText: parsed.transcriptText || transcript || "Voice recording processed",
+              confidence: parsed.confidence || { source: 0.82, amount: 0.88, date: 0.70 }
+            }
+          });
         }
-
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents,
-          config: { responseMimeType: "application/json" }
-        });
-
-        const textResponse = response.text || "";
-        const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-        const parsed = JSON.parse(cleanJson);
-
-        return res.json({
-          success: true,
-          source: "ai_gemini_voice",
-          data: {
-            source: parsed.source || "Voice Mentioned Source",
-            amount: typeof parsed.amount === "number" ? parsed.amount : 0,
-            currency: parsed.currency || "USD",
-            date: parsed.date || new Date().toISOString().split("T")[0],
-            notes: parsed.notes || null,
-            transcriptText: parsed.transcriptText || transcript || "Voice recording processed",
-            confidence: parsed.confidence || { source: 0.82, amount: 0.88, date: 0.70 }
-          }
-        });
-      } catch (geminiErr) {
-        console.warn("Gemini income voice extraction failed, fallback to simulated parser:", geminiErr?.message);
+      } catch (aiErr) {
+        console.warn("AI income voice extraction failed, fallback to simulated parser:", aiErr?.message);
       }
     }
 
@@ -881,7 +800,7 @@ Return strictly valid JSON:
     return res.json({
       success: true,
       source: "simulated_speech",
-      notice: process.env.GEMINI_API_KEY ? "AI transcribed voice note" : "Add GEMINI_API_KEY in settings for native AI speech transcription",
+      notice: getConfiguredProviders().length > 0 ? "AI transcribed voice note" : "Add an AI provider key in settings for native AI speech transcription",
       data: {
         source,
         amount,
