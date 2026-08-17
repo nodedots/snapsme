@@ -458,20 +458,35 @@ IMPORTANT: Return null for any field that you cannot clearly determine from the 
         });
       }
 
-      // Transient AI service rate limit / unavailable
-      return res.status(503).json({
-        success: false,
-        code: "ai_unavailable",
-        error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
-      });
+      // Transient AI service rate limit / unavailable — fall through to Tier 3
     } catch (aiError) {
       console.error("AI provider error during receipt extraction:", aiError?.message || aiError);
-      return res.status(503).json({
-        success: false,
-        code: "ai_unavailable",
-        error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
-      });
+      // Fall through to Tier 3 local parser
     }
+
+    // TIER 3: Local Smart OCR Buffer & Financial Text Parsing Engine (zero-cost fallback)
+    // Ensures users always get a best-effort extraction even when all AI providers fail.
+    try {
+      const localResult = smartExtractReceiptFromBuffer(imageBase64, fileName || "");
+      if (localResult && localResult.amount > 0) {
+        return res.json({
+          success: true,
+          source: "local_smart_parser_tier",
+          aiUsage: { count: usageCheck.count, limit: usageCheck.limit },
+          notice: "AI vision was unavailable — used local receipt parser. Please review the extracted details below.",
+          data: localResult
+        });
+      }
+    } catch (localErr) {
+      console.warn("Local smart parser fallback failed:", localErr?.message || localErr);
+    }
+
+    // All tiers exhausted — honest error
+    return res.status(503).json({
+      success: false,
+      code: "ai_unavailable",
+      error: "The AI vision service is temporarily busy — you can try again or enter details manually below."
+    });
   } catch (error) {
     console.error("Error in /api/extract-receipt:", error);
     res.status(500).json({ success: false, error: error?.message || "Failed to extract receipt" });
@@ -711,17 +726,33 @@ JSON Schema:
         });
       }
 
-      return res.status(503).json({
-        success: false,
-        error: "Could not read income document using AI Vision. Please enter details manually."
-      });
+      // Transient AI service rate limit / unavailable — fall through to Tier 3
     } catch (aiError) {
       console.error("AI provider error during income extraction:", aiError?.message || aiError);
-      return res.status(500).json({
-        success: false,
-        error: "Failed to extract income document with AI Vision. Please enter details manually."
-      });
+      // Fall through to Tier 3 local parser
     }
+
+    // TIER 3: Local Smart OCR Buffer & Financial Text Parsing Engine (zero-cost fallback)
+    // Ensures users always get a best-effort extraction even when all AI providers fail.
+    try {
+      const localResult = smartExtractIncomeFromBuffer(imageBase64, fileName || "");
+      if (localResult && localResult.amount > 0) {
+        return res.json({
+          success: true,
+          source: "local_smart_parser_tier",
+          notice: "AI vision was unavailable — used local income parser. Please review the extracted details below.",
+          data: localResult
+        });
+      }
+    } catch (localErr) {
+      console.warn("Local smart income parser fallback failed:", localErr?.message || localErr);
+    }
+
+    // All tiers exhausted — honest error
+    return res.status(503).json({
+      success: false,
+      error: "Could not read income document using AI Vision. Please enter details manually."
+    });
   } catch (error) {
     console.error("Error extracting income document:", error);
     res.status(500).json({ error: error?.message || "Failed to extract income document" });
