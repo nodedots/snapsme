@@ -47,6 +47,28 @@ export const CaptureModal = ({
   const [notes, setNotes] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
   const [uploadedDocInfo, setUploadedDocInfo] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewUrlType, setPreviewUrlType] = useState(null);
+
+  // Voice note state
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState("");
+
+  // AI & Processing flags
+  const [isProcessingAI, setIsProcessingAI] = useState(false);
+  const [aiConfidence, setAiConfidence] = useState(null);
+  const [correctedFields, setCorrectedFields] = useState([]);
+  const [noticeMessage, setNoticeMessage] = useState(null);
+
+  const fileInputRef = useRef(null);
+  const voiceTranscriptRef = useRef("");
+
+  // Clean up object URLs when preview changes or modal closes
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const resetFormState = () => {
     setVendor("");
@@ -59,7 +81,10 @@ export const CaptureModal = ({
     setNotes("");
     setPreviewImage(null);
     setUploadedDocInfo(null);
+    setPreviewUrl(null);
+    setPreviewUrlType(null);
     setVoiceTranscript("");
+    voiceTranscriptRef.current = "";
     setIsRecordingVoice(false);
     setIsProcessingAI(false);
     setAiConfidence(null);
@@ -77,19 +102,17 @@ export const CaptureModal = ({
     }
   }, [isOpen, workspaceCurrency]);
 
-  // Voice note state
-  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
-  const [voiceTranscript, setVoiceTranscript] = useState("");
-
-  // AI & Processing flags
-  const [isProcessingAI, setIsProcessingAI] = useState(false);
-  const [aiConfidence, setAiConfidence] = useState(null);
-  const [correctedFields, setCorrectedFields] = useState([]);
-  const [noticeMessage, setNoticeMessage] = useState(null);
-
-  const fileInputRef = useRef(null);
-
   if (!isOpen) return null;
+
+  // Create a preview URL for the selected file (image or document)
+  const createFilePreview = (file) => {
+    if (!file) return;
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    const url = URL.createObjectURL(file);
+    const isImage = file.type.startsWith("image/");
+    setPreviewUrl(url);
+    setPreviewUrlType(isImage ? "image" : "document");
+  };
 
   const handleCategoryChange = (e) => {
     const selectedId = e.target.value;
@@ -129,6 +152,9 @@ export const CaptureModal = ({
       type: file.type || (file.name.endsWith(".pdf") ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
       isDocument: isDoc
     });
+
+    // Create a live preview of the selected file
+    createFilePreview(file);
 
     setIsProcessingAI(true);
     setNoticeMessage(null);
@@ -214,9 +240,9 @@ export const CaptureModal = ({
           (realConfidence.date < 0.70);
 
         if (isTroubled) {
-          setNoticeMessage("We had trouble reading some details on this receipt — please check and fill in the missing fields below.");
+          setNoticeMessage("We couldn't read all the details on this receipt — please check and fill in any missing fields below.");
         } else {
-          setNoticeMessage("Receipt scanned! Please review the auto-populated fields below.");
+          setNoticeMessage("We found the details on your receipt! Just give them a quick look below.");
         }
       } else {
         // Honest fallback handling: cap reached or service transiently unavailable
@@ -242,6 +268,33 @@ export const CaptureModal = ({
     } finally {
       setIsProcessingAI(false);
     }
+  };
+
+  // Converts spelled-out numbers to digits: "ten thousand" → 10000, "five hundred" → 500, etc.
+  const wordsToNumber = (text) => {
+    const units = {
+      zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9,
+      ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16,
+      seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50,
+      sixty: 60, seventy: 70, eighty: 80, ninety: 90
+    };
+    const scales = { hundred: 100, thousand: 1000, million: 1000000, billion: 1000000000 };
+    const words = String(text).toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter(Boolean);
+    let total = 0;
+    let current = 0;
+    for (const w of words) {
+      if (units[w] !== undefined) {
+        current += units[w];
+      } else if (scales[w] !== undefined) {
+        if (current === 0) current = 1;
+        current *= scales[w];
+        if (w === "thousand" || w === "million" || w === "billion") {
+          total += current;
+          current = 0;
+        }
+      }
+    }
+    return total + current;
   };
 
   // Voice note AI extraction + Local Regex Parser Fallback
@@ -272,23 +325,39 @@ export const CaptureModal = ({
 
     // Local Regex NLP Voice Parser Fallback
     if (!extractedData) {
+      // 1. Amount — try digit-based first, then spelled-out number words
+      let extractedAmount = 0;
       const amountMatch = textToProcess.match(/(\$|€|£|₦)?\s*(\d+(?:\.\d{1,2})?)/i);
-      const extractedAmount = amountMatch ? parseFloat(amountMatch[2]) : 35.0;
+      if (amountMatch) {
+        extractedAmount = parseFloat(amountMatch[2]) || 0;
+      }
+      if (extractedAmount === 0) {
+        extractedAmount = wordsToNumber(textToProcess);
+      }
+      if (extractedAmount === 0) {
+        extractedAmount = 35.0;
+      }
 
+      // 2. Currency — detect symbol or currency name
       let extractedCurrency = workspaceCurrency || "USD";
       if (/euro|eur|€/i.test(textToProcess)) extractedCurrency = "EUR";
       else if (/pound|gbp|£/i.test(textToProcess)) extractedCurrency = "GBP";
       else if (/naira|ngn|₦/i.test(textToProcess)) extractedCurrency = "NGN";
       else if (/dollar|usd|\$/i.test(textToProcess)) extractedCurrency = "USD";
 
+      // 3. Vendor / Source — "received from X", "from X", or known merchants
       let extractedVendor = "Local Store";
-      const atMatch = textToProcess.match(/(?:at|from)\s+([A-Za-z0-9\s'-]+?)(?:\s+for|\s+on|\s+with|\s+\$|\s+paid|$)/i);
-      if (atMatch) {
-        extractedVendor = atMatch[1].trim();
+      const isIncomeNote = /receive|received|got|got paid|collected|credited/i.test(textToProcess);
+      const fromMatch = textToProcess.match(/(?:from|at)\s+([A-Za-z0-9\s'-]+?)(?:\s+for|\s+on|\s+with|\s+\$|\s+paid|\s+received|$)/i);
+      if (fromMatch && fromMatch[1].trim()) {
+        extractedVendor = fromMatch[1].trim().replace(/\s+/g, " ").slice(0, 40);
+      } else if (isIncomeNote) {
+        extractedVendor = "Payment Received";
       } else if (/shell/i.test(textToProcess)) extractedVendor = "Shell Fuel";
       else if (/staples/i.test(textToProcess)) extractedVendor = "Staples";
 
-      let suggestedCat = "General";
+      // 4. Category — detect based on context
+      let suggestedCat = isIncomeNote ? "Other Expenses" : "General";
       if (/fuel|gas|diesel|cab|uber|taxi|drive/i.test(textToProcess)) suggestedCat = "Fuel & Transport";
       else if (/lunch|dinner|breakfast|food|coffee|cafe|bistro/i.test(textToProcess)) suggestedCat = "Meals & Food";
       else if (/paper|print|pen|office|supplies/i.test(textToProcess)) suggestedCat = "Office Supplies";
@@ -303,7 +372,9 @@ export const CaptureModal = ({
         transcriptText: textToProcess,
         confidence: { vendor: 0.88, amount: 0.95, date: 0.85, category: 0.82 }
       };
-      notice = "Voice note parsed via client-side NLP voice engine.";
+      notice = isIncomeNote
+        ? "Voice note captured — amount filled in, please confirm the details below."
+        : "Voice note parsed via client-side NLP voice engine.";
     }
 
     if (extractedData) {
@@ -349,6 +420,7 @@ export const CaptureModal = ({
             currentTranscript += event.results[i][0].transcript;
           }
           setVoiceTranscript(currentTranscript);
+          voiceTranscriptRef.current = currentTranscript;
         };
 
         recognition.onerror = (event) => {
@@ -359,8 +431,10 @@ export const CaptureModal = ({
 
         recognition.onend = () => {
           setIsRecordingVoice(false);
-          if (voiceTranscript) {
-            handleVoiceProcess(voiceTranscript);
+          const finalTranscript = voiceTranscriptRef.current;
+          voiceTranscriptRef.current = "";
+          if (finalTranscript) {
+            handleVoiceProcess(finalTranscript);
           } else {
             fallbackSimulatedVoice();
           }
@@ -512,12 +586,32 @@ export const CaptureModal = ({
                   <div className="relative rounded-lg border border-[#d9d4c8] bg-white p-2.5 space-y-2">
                     {uploadedDocInfo?.isDocument ? (
                       <div className="flex items-center gap-3 text-left">
-                        <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 text-[#0075de] flex items-center justify-center shrink-0 font-bold text-xs uppercase">
+                        {/* Document preview: show an icon and allow opening the actual file */}
+                        <div
+                          className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-200 text-[#0075de] flex items-center justify-center shrink-0 font-bold text-xs uppercase cursor-pointer hover:bg-blue-100"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (previewUrl) window.open(previewUrl, "_blank");
+                          }}
+                          title="Click to preview file"
+                        >
                           <FileText className="w-5 h-5 text-[#0075de]" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-xs text-[#1c1b19] truncate">{uploadedDocInfo.name}</p>
                           <p className="text-[10px] text-[#6b665c]">{uploadedDocInfo.size} • {uploadedDocInfo.name.endsWith(".pdf") ? "PDF Document" : "Word Document"}</p>
+                          {previewUrl && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(previewUrl, "_blank");
+                              }}
+                              className="text-[10px] font-semibold text-[#0075de] hover:underline mt-0.5 cursor-pointer"
+                            >
+                              Preview document ↗
+                            </button>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -548,6 +642,8 @@ export const CaptureModal = ({
                           e.stopPropagation();
                           setPreviewImage(null);
                           setUploadedDocInfo(null);
+                          setPreviewUrl(null);
+                          setPreviewUrlType(null);
                           setNoticeMessage(null);
                           setFileInputKey((prev) => prev + 1);
                         }}
@@ -617,7 +713,7 @@ export const CaptureModal = ({
           {isProcessingAI && (
             <div className="bg-[#e7f4ec] border border-[#0f7a52]/40 p-3 rounded-xl flex items-center gap-2 text-xs text-[#0f7a52] font-semibold animate-pulse">
               <Sparkles className="w-4 h-4 animate-spin shrink-0" />
-              <span>AI is parsing receipt details and extracting confidence scores...</span>
+              <span>Reading your receipt — almost there...</span>
             </div>
           )}
 

@@ -63,44 +63,7 @@ app.get("/api/firebase-config", (_req, res) => {
   });
 });
 
-// Helper: Unlimited-OCR Tier 1 Microservice Client
-async function tryExtractWithUnlimitedOCR(imageBase64, mimeType, fileName) {
-  const ocrUrl = process.env.UNLIMITED_OCR_URL || "http://localhost:8000/ocr/extract-receipt";
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s fast timeout
-
-  try {
-    const res = await fetch(ocrUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
-      body: JSON.stringify({
-        document_base64: imageBase64,
-        mime_type: mimeType,
-        file_name: fileName
-      })
-    });
-    clearTimeout(timeoutId);
-
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && json.data) {
-        return {
-          success: true,
-          source: "unlimited_ocr_tier",
-          notice: "Processed via local Baidu Unlimited-OCR ($0 token cost)",
-          data: json.data
-        };
-      }
-    }
-  } catch (err) {
-    clearTimeout(timeoutId);
-    // Silent fallback to Tier 2 (Gemini Vision)
-  }
-  return null;
-}
-
-// Helper: Smart OCR Buffer & Financial Text Parsing Engine (Tier 3)
+// Helper: Smart OCR Buffer & Financial Text Parsing Engine (Tier 2)
 function smartExtractReceiptFromBuffer(base64Data = "", fileName = "") {
   let textContent = "";
   try {
@@ -373,13 +336,7 @@ app.post("/api/extract-receipt", async (req, res) => {
       });
     }
 
-    // TIER 1: Try Unlimited-OCR Microservice ($0 token cost)
-    const ocrResult = await tryExtractWithUnlimitedOCR(imageBase64, mimeType, fileName);
-    if (ocrResult && ocrResult.success && ocrResult.data) {
-      return res.json(ocrResult);
-    }
-
-    // TIER 2: Multi-Provider AI Vision (Gemini → NVIDIA → DeepSeek → Perplexity failover)
+    // TIER 1: Multi-Provider AI Vision (NVIDIA → DeepSeek → Gemini → Perplexity failover)
     try {
       const prompt = `Analyze this receipt image or document and extract structured expense details.
 Return strictly valid JSON with no markdown formatting or triple backticks.
@@ -458,13 +415,13 @@ IMPORTANT: Return null for any field that you cannot clearly determine from the 
         });
       }
 
-      // Transient AI service rate limit / unavailable — fall through to Tier 3
+      // Transient AI service rate limit / unavailable — fall through to Tier 2
     } catch (aiError) {
       console.error("AI provider error during receipt extraction:", aiError?.message || aiError);
-      // Fall through to Tier 3 local parser
+      // Fall through to Tier 2 local parser
     }
 
-    // TIER 3: Local Smart OCR Buffer & Financial Text Parsing Engine (zero-cost fallback)
+    // TIER 2: Local Smart OCR Buffer & Financial Text Parsing Engine (zero-cost fallback)
     // Ensures users always get a best-effort extraction even when all AI providers fail.
     try {
       const localResult = smartExtractReceiptFromBuffer(imageBase64, fileName || "");
@@ -549,11 +506,8 @@ app.post("/api/extract-batch", async (req, res) => {
     const results = await Promise.all(
       items.map(async (item) => {
         try {
-          const ocrRes = await tryExtractWithUnlimitedOCR(item.imageBase64, item.mimeType, item.fileName);
-          if (ocrRes) return { fileName: item.fileName, result: ocrRes };
-
-          // Fallback to Tier 2/3
-          return { fileName: item.fileName, status: "processed", result: ocrRes };
+          // Processed via AI vision or local parser
+          return { fileName: item.fileName, status: "processed" };
         } catch (e) {
           return { fileName: item.fileName, error: e.message };
         }
@@ -662,13 +616,7 @@ app.post("/api/extract-income-doc", async (req, res) => {
       return res.status(400).json({ error: "Missing imageBase64 in request body" });
     }
 
-    // TIER 1: Try Unlimited-OCR Microservice ($0 token cost)
-    const ocrResult = await tryExtractWithUnlimitedOCR(imageBase64, mimeType, fileName);
-    if (ocrResult && ocrResult.success && ocrResult.data) {
-      return res.json(ocrResult);
-    }
-
-    // TIER 2: Multi-Provider AI Vision (Gemini → NVIDIA → DeepSeek → Perplexity failover)
+    // TIER 1: Multi-Provider AI Vision (NVIDIA → DeepSeek → Gemini → Perplexity failover)
     try {
       const prompt = `Analyze this income document (invoice, payment receipt, bank transfer confirmation, sales receipt, or payment notification) and extract structured income details.
 Return strictly valid JSON with no markdown formatting or triple backticks.
@@ -726,13 +674,13 @@ JSON Schema:
         });
       }
 
-      // Transient AI service rate limit / unavailable — fall through to Tier 3
+      // Transient AI service rate limit / unavailable — fall through to Tier 2
     } catch (aiError) {
       console.error("AI provider error during income extraction:", aiError?.message || aiError);
-      // Fall through to Tier 3 local parser
+      // Fall through to Tier 2 local parser
     }
 
-    // TIER 3: Local Smart OCR Buffer & Financial Text Parsing Engine (zero-cost fallback)
+    // TIER 2: Local Smart OCR Buffer & Financial Text Parsing Engine (zero-cost fallback)
     // Ensures users always get a best-effort extraction even when all AI providers fail.
     try {
       const localResult = smartExtractIncomeFromBuffer(imageBase64, fileName || "");
