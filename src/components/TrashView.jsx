@@ -7,7 +7,8 @@ import {
   AlertTriangle,
   Receipt,
   ArrowDownLeft,
-  Search
+  Search,
+  LayoutDashboard
 } from "lucide-react";
 
 /**
@@ -25,7 +26,8 @@ export const TrashView = ({
   onPermanentDeleteExpense,
   onPermanentDeleteIncome,
   onBulkRestore,
-  onEmptyTrash
+  onEmptyTrash,
+  onBackToDashboard
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [confirmEmpty, setConfirmEmpty] = useState(false);
@@ -137,58 +139,72 @@ export const TrashView = ({
           </div>
 
           {/* Action buttons */}
-          {isOwner && totalTrashed > 0 && (
-            <div className="flex items-center gap-2.5 w-full lg:w-auto flex-wrap sm:flex-nowrap">
-              {/* Restore All */}
-              {!confirmRestoreAll ? (
-                <button
-                  onClick={() => setConfirmRestoreAll(true)}
-                  aria-label="Restore all trashed records"
-                  className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer bg-[#0f7a52] hover:bg-[#0b5f40] text-white shadow-2xs min-h-[40px]"
-                >
-                  <RotateCcw className="w-4 h-4 shrink-0" aria-hidden="true" />
-                  <span className="whitespace-nowrap">Restore All</span>
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 bg-[#e7f4ec] border border-[#0f7a52]/30 rounded-lg p-1.5">
-                  <span className="text-[11px] font-semibold text-[#0f7a52] px-1">
-                    Restore all {totalTrashed} records?
-                  </span>
-                  <button
-                    onClick={handleRestoreAll}
-                    className="text-[11px] font-bold bg-[#0f7a52] text-white px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-[#0b5f40] transition-colors"
-                  >
-                    Yes
-                  </button>
-                  <button
-                    onClick={() => setConfirmRestoreAll(false)}
-                    className="text-[11px] font-bold bg-white text-[#6b665c] px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-[#f7f3ea] transition-colors border border-[#d9d4c8]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-
-              {/* Empty Trash */}
+          <div className="flex items-center gap-2.5 w-full lg:w-auto flex-wrap sm:flex-nowrap">
+            {/* Back to Dashboard / Ledger */}
+            {onBackToDashboard && (
               <button
-                onClick={() => {
-                  setDeleteModalConfig({
-                    title: `Empty Trash (${totalTrashed} items)?`,
-                    description: "Are you sure you want to permanently erase all records in the trash? This action cannot be undone.",
-                    selectedCount: totalTrashed,
-                    isPermanent: true,
-                    confirmText: "Empty Trash Permanently",
-                    onConfirm: handleEmptyTrash
-                  });
-                }}
-                aria-label="Empty trash permanently"
-                className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer bg-[#ff5a3c] hover:bg-[#e04a2f] text-white shadow-2xs min-h-[40px]"
+                onClick={onBackToDashboard}
+                aria-label="Back to dashboard"
+                className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-[#d9d4c8] hover:border-[#0075de] min-h-[40px]"
               >
-                <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
-                <span className="whitespace-nowrap">Empty Trash</span>
+                <LayoutDashboard className="w-4 h-4 text-[#0075de] shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Dashboard</span>
               </button>
-            </div>
-          )}
+            )}
+
+            {isOwner && totalTrashed > 0 && (
+              <>
+                {/* Restore All */}
+                {!confirmRestoreAll ? (
+                  <button
+                    onClick={() => setConfirmRestoreAll(true)}
+                    aria-label="Restore all trashed records"
+                    className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer bg-[#0f7a52] hover:bg-[#0b5f40] text-white shadow-2xs min-h-[40px]"
+                  >
+                    <RotateCcw className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span className="whitespace-nowrap">Restore All</span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-2 bg-[#e7f4ec] border border-[#0f7a52]/30 rounded-lg p-1.5">
+                    <span className="text-[11px] font-semibold text-[#0f7a52] px-1">
+                      Restore all {totalTrashed} records?
+                    </span>
+                    <button
+                      onClick={handleRestoreAll}
+                      className="text-[11px] font-bold bg-[#0f7a52] text-white px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-[#0b5f40] transition-colors"
+                    >
+                      Yes
+                    </button>
+                    <button
+                      onClick={() => setConfirmRestoreAll(false)}
+                      className="text-[11px] font-bold bg-white text-[#6b665c] px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-[#f7f3ea] transition-colors border border-[#d9d4c8]"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+
+                {/* Empty Trash */}
+                <button
+                  onClick={() => {
+                    setDeleteModalConfig({
+                      title: `Empty Trash (${totalTrashed} items)?`,
+                      description: "Are you sure you want to permanently erase all records in the trash? This action cannot be undone.",
+                      selectedCount: totalTrashed,
+                      isPermanent: true,
+                      confirmText: "Empty Trash Permanently",
+                      onConfirm: handleEmptyTrash
+                    });
+                  }}
+                  aria-label="Empty trash permanently"
+                  className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer bg-[#ff5a3c] hover:bg-[#e04a2f] text-white shadow-2xs min-h-[40px]"
+                >
+                  <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <span className="whitespace-nowrap">Empty Trash</span>
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Summary stats */}

@@ -1231,6 +1231,7 @@ export function App() {
             onPermanentDeleteIncome={(id) => handleDeleteIncome(id, { permanent: true })}
             onBulkRestore={handleBulkRestore}
             onEmptyTrash={handleEmptyTrash}
+            onBackToDashboard={() => setCurrentView("dashboard")}
           />
         )}
       </main>
