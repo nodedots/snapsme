@@ -62,6 +62,8 @@ export const CaptureModal = ({
 
   const fileInputRef = useRef(null);
   const voiceTranscriptRef = useRef("");
+  const currentFileRef = useRef(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Clean up object URLs when preview changes or modal closes
   useEffect(() => {
@@ -138,6 +140,9 @@ export const CaptureModal = ({
   // Process photo or document (PDF / DOCX) uploading
   const handlePhotoUpload = async (file) => {
     if (!file) return;
+
+    // Store file reference for retry / reload capability
+    currentFileRef.current = file;
 
     const isDoc = file.type.includes("pdf") ||
                   file.type.includes("word") ||
@@ -455,6 +460,16 @@ export const CaptureModal = ({
     setNoticeMessage("Voice input complete. Please type or edit transcript context.");
   };
 
+  // Retry AI reading with the currently selected file
+  const handleRetryAI = () => {
+    if (!currentFileRef.current) {
+      setNoticeMessage("No file selected — please choose a receipt photo or document first.");
+      return;
+    }
+    setRetryCount((prev) => prev + 1);
+    handlePhotoUpload(currentFileRef.current);
+  };
+
   const conversion = convertCurrency(amount, currency, workspaceCurrency || "USD");
 
   const handleSubmit = (e) => {
@@ -719,9 +734,19 @@ export const CaptureModal = ({
 
           {/* Notice Message */}
           {noticeMessage && (
-            <div className="bg-[#fbf1de] border border-[#e0982a]/40 p-2.5 rounded-xl text-xs text-[#1c1b19] flex items-center gap-2">
+            <div className="bg-[#fbf1de] border border-[#e0982a]/40 p-2.5 rounded-xl text-xs text-[#1c1b19] flex items-center gap-2 flex-wrap">
               <AlertTriangle className="w-4 h-4 text-[#e0982a] shrink-0" />
-              <span className="text-[11px]">{noticeMessage}</span>
+              <span className="text-[11px] flex-1 min-w-0">{noticeMessage}</span>
+              {activeTab === "photo" && currentFileRef.current && !isProcessingAI && (
+                <button
+                  type="button"
+                  onClick={handleRetryAI}
+                  className="ml-auto text-[11px] font-bold text-[#0f7a52] bg-white border border-[#0f7a52]/30 hover:bg-[#e7f4ec] px-2.5 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+                  title="Retry AI receipt reading"
+                >
+                  <RefreshCw className="w-3 h-3" /> Reload / Retry
+                </button>
+              )}
             </div>
           )}
 

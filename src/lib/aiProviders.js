@@ -26,6 +26,14 @@ const PROVIDER_DEFAULTS = {
   perplexity:{ baseUrl: "https://api.perplexity.ai", model: "sonar-pro" }
 };
 
+// NVIDIA vision-capable model candidates to try in order (fallback chain)
+const NVIDIA_VISION_MODELS = [
+  "nvidia/llama-3.1-8b-vision-instruct",
+  "nvidia/llama-3.1-70b-vision-instruct",
+  "meta/llama-3.2-11b-vision-instruct",
+  "meta/llama-3.2-90b-vision-instruct"
+];
+
 /**
  * Returns the list of configured providers in failover priority order.
  * The order can be customised via AI_PROVIDER_ORDER=gemini,nvidia,deepseek,perplexity
@@ -233,44 +241,61 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
     ];
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  // Determine model fallback chain: configured model first, then provider defaults
+  const modelCandidates = [
+    provider.model,
+    ...(provider.name === "nvidia" ? NVIDIA_VISION_MODELS.filter((m) => m !== provider.model) : [])
+  ].filter(Boolean);
 
-  try {
-    const res = await fetch(`${provider.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${provider.apiKey}`
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: provider.model,
-        messages,
-        temperature: 0.1,
-        response_format: { type: "json_object" },
-        max_tokens: 2048
-      })
-    });
-    clearTimeout(timeoutId);
+  let lastErr = null;
 
-    if (!res.ok) {
-      const errBody = await res.text().catch(() => "");
-      throw new Error(`${provider.name} API error ${res.status}: ${errBody.slice(0, 200)}`);
+  for (const modelCandidate of modelCandidates) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const res = await fetch(`${provider.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${provider.apiKey}`
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: modelCandidate,
+          messages,
+          temperature: 0.1,
+          response_format: { type: "json_object" },
+          max_tokens: 2048
+        })
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "");
+        lastErr = new Error(`${provider.name} API error ${res.status} (${modelCandidate}): ${errBody.slice(0, 200)}`);
+        console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" failed: ${lastErr.message}`);
+        continue;
+      }
+
+      const json = await res.json();
+      const text = json?.choices?.[0]?.message?.content || "";
+
+      if (!text) {
+        lastErr = new Error(`${provider.name} returned an empty response (${modelCandidate})`);
+        console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" empty response`);
+        continue;
+      }
+
+      return { success: true, provider: provider.name, model: modelCandidate, text };
+    } catch (err) {
+      clearTimeout(timeoutId);
+      lastErr = err;
+      console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" threw: ${err.message}`);
     }
-
-    const json = await res.json();
-    const text = json?.choices?.[0]?.message?.content || "";
-
-    if (!text) {
-      throw new Error(`${provider.name} returned an empty response`);
-    }
-
-    return { success: true, provider: provider.name, model: provider.model, text };
-  } catch (err) {
-    clearTimeout(timeoutId);
-    throw err;
   }
+
+  throw lastErr || new Error(`${provider.name} all model candidates failed`);
 }
 
 // ---------------------------------------------------------------------------
