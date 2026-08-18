@@ -366,27 +366,34 @@ export async function handleHealth(query = {}) {
     timestamp: new Date().toISOString()
   };
 
-  // Optional live probe: /api/health?probe=1 — returns first-provider ping result (no secrets)
+  // Optional live probe: /api/health?probe=1 — tests each configured provider separately
   if (String(query.probe || "") === "1") {
-    try {
-      const result = await extractWithAI({
-        prompt:
-          'Return strictly valid JSON only: {"ok":true,"vendor":"Probe Cafe","amount":1}',
-        transcript: "Paid 1 dollar at Probe Cafe",
-        task: "health-probe"
-      });
-      body.probe = {
-        ok: true,
-        provider: result.provider,
-        model: result.model,
-        preview: String(result.text || "").slice(0, 160)
-      };
-    } catch (err) {
-      body.probe = {
-        ok: false,
-        error: err?.message || String(err)
-      };
+    const providers = getConfiguredProviders();
+    const results = [];
+    for (const provider of providers) {
+      try {
+        const result = await extractWithAI({
+          prompt:
+            'Return strictly valid JSON only: {"ok":true,"vendor":"Probe Cafe","amount":1}',
+          transcript: "Paid 1 dollar at Probe Cafe",
+          task: `health-probe-${provider.name}`,
+          onlyProvider: provider.name
+        });
+        results.push({
+          name: provider.name,
+          ok: true,
+          model: result.model,
+          preview: String(result.text || "").slice(0, 120)
+        });
+      } catch (err) {
+        results.push({
+          name: provider.name,
+          ok: false,
+          error: err?.message || String(err)
+        });
+      }
     }
+    body.probe = { results };
   }
 
   return { status: 200, body };

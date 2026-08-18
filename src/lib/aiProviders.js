@@ -253,13 +253,19 @@ export async function extractWithAI({
   transcript = null,
   audioBase64 = null,
   audioMimeType = "audio/webm",
-  task = "general"
+  task = "general",
+  onlyProvider = null
 }) {
-  const providers = getConfiguredProviders();
+  let providers = getConfiguredProviders();
+  if (onlyProvider) {
+    providers = providers.filter((p) => p.name === onlyProvider);
+  }
 
   if (providers.length === 0) {
     throw new Error(
-      "No AI providers configured. Set XAI_API_KEY (Grok) and/or NVIDIA_API_KEY."
+      onlyProvider
+        ? `AI provider "${onlyProvider}" is not configured.`
+        : "No AI providers configured. Set XAI_API_KEY (Grok) and/or NVIDIA_API_KEY."
     );
   }
 
