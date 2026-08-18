@@ -1,24 +1,20 @@
 /**
  * SnapSME — Multi-Provider AI Abstraction Layer (Firebase Cloud Functions)
  *
- * Active providers (OpenAI-compatible):
- *   1. Grok (xAI / SpaceXAI) — text + vision  — XAI_API_KEY
- *   2. NVIDIA NIM            — text + vision  — NVIDIA_API_KEY
- *
- * Gemini / DeepSeek removed from the client stack for the same reasons as src/lib/aiProviders.js.
+ * Failover: Grok → NVIDIA → Gemini
  */
 
-export const AI_PROVIDER_NAMES = ["grok", "nvidia"];
+import { GoogleGenAI } from "@google/genai";
+
+export const AI_PROVIDER_NAMES = ["grok", "nvidia", "gemini"];
 
 const PROVIDER_DEFAULTS = {
-  grok: {
-    baseUrl: "https://api.x.ai/v1",
-    model: "grok-4.3"
-  },
+  grok: { baseUrl: "https://api.x.ai/v1", model: "grok-4.3" },
   nvidia: {
     baseUrl: "https://integrate.api.nvidia.com/v1",
     model: "meta/llama-3.2-11b-vision-instruct"
-  }
+  },
+  gemini: { baseUrl: null, model: "gemini-2.0-flash" }
 };
 
 const GROK_MODEL_CANDIDATES = ["grok-4.3", "grok-4.5", "grok-4.6"];
@@ -26,10 +22,13 @@ const NVIDIA_VISION_MODELS = [
   "meta/llama-3.2-11b-vision-instruct",
   "meta/llama-3.2-90b-vision-instruct"
 ];
+const GEMINI_MODEL_CANDIDATES = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite"
+];
 
-/**
- * @param {object} secrets — { XAI_API_KEY, NVIDIA_API_KEY, ... }
- */
 export function getConfiguredProviders(secrets = {}) {
   const providers = [];
 
@@ -56,7 +55,18 @@ export function getConfiguredProviders(secrets = {}) {
     });
   }
 
-  const rawOrder = (secrets.AI_PROVIDER_ORDER || "grok,nvidia")
+  if (secrets.GEMINI_API_KEY) {
+    providers.push({
+      name: "gemini",
+      apiKey: secrets.GEMINI_API_KEY,
+      baseUrl: null,
+      model: secrets.GEMINI_MODEL || PROVIDER_DEFAULTS.gemini.model,
+      canVision: true,
+      canAudio: true
+    });
+  }
+
+  const rawOrder = (secrets.AI_PROVIDER_ORDER || "grok,nvidia,gemini")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
@@ -86,19 +96,53 @@ export function parseJsonSafe(text) {
 }
 
 function buildPromptText(prompt, transcript) {
-  if (transcript) {
-    return `Transcript: "${transcript}"\n\n${prompt}`;
-  }
+  if (transcript) return `Transcript: "${transcript}"\n\n${prompt}`;
   return prompt;
+}
+
+async function callGemini(provider, { prompt, imageBase64, mimeType, transcript, audioBase64, audioMimeType }) {
+  const ai = new GoogleGenAI({ apiKey: provider.apiKey });
+  let contents;
+  if (imageBase64) {
+    const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
+    contents = [prompt, { inlineData: { mimeType: mimeType || "image/jpeg", data: base64Data } }];
+  } else if (audioBase64) {
+    const cleanAudio = audioBase64.replace(/^data:audio\/\w+;base64,/, "");
+    contents = [
+      { inlineData: { mimeType: audioMimeType || "audio/webm", data: cleanAudio } },
+      { text: prompt }
+    ];
+  } else {
+    contents = [{ text: buildPromptText(prompt, transcript) }];
+  }
+
+  const candidateModels = [
+    ...new Set([provider.model, ...GEMINI_MODEL_CANDIDATES].filter(Boolean))
+  ];
+
+  let lastErr = null;
+  for (const modelCandidate of candidateModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model: modelCandidate,
+        contents,
+        config: { responseMimeType: "application/json" }
+      });
+      if (response?.text) {
+        return { success: true, provider: "gemini", model: modelCandidate, text: response.text };
+      }
+      lastErr = new Error(`gemini empty (${modelCandidate})`);
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[AI Failover] gemini model "${modelCandidate}" failed: ${err.message}`);
+    }
+  }
+  throw lastErr || new Error("All Gemini model candidates failed");
 }
 
 async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, transcript }) {
   let messages;
-
   if (imageBase64) {
-    if (!provider.canVision) {
-      throw new Error(`${provider.name} does not support image/vision input`);
-    }
     const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
     messages = [
       {
@@ -122,10 +166,7 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
         content:
           "You are an expert financial data extraction assistant. Return ONLY valid JSON matching the requested schema. Do not include markdown, explanation, or commentary."
       },
-      {
-        role: "user",
-        content: buildPromptText(prompt, transcript)
-      }
+      { role: "user", content: buildPromptText(prompt, transcript) }
     ];
   }
 
@@ -135,7 +176,6 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
       : provider.name === "nvidia"
         ? NVIDIA_VISION_MODELS
         : [];
-
   const modelCandidates = [
     ...new Set([provider.model, ...fallbackModels.filter((m) => m !== provider.model)].filter(Boolean))
   ];
@@ -143,15 +183,12 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
   let lastErr = null;
   const timeoutMs = provider.name === "grok" ? 90000 : 45000;
   const formatVariants =
-    provider.name === "grok"
-      ? [{ response_format: { type: "json_object" } }, {}]
-      : [{}];
+    provider.name === "grok" ? [{ response_format: { type: "json_object" } }, {}] : [{}];
 
   for (const modelCandidate of modelCandidates) {
     for (const extra of formatVariants) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
       try {
         const body = {
           model: modelCandidate,
@@ -160,7 +197,6 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
           max_tokens: provider.name === "grok" ? 4096 : 2048,
           ...extra
         };
-
         const res = await fetch(`${provider.baseUrl}/chat/completions`, {
           method: "POST",
           headers: {
@@ -171,16 +207,13 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
           body: JSON.stringify(body)
         });
         clearTimeout(timeoutId);
-
         if (!res.ok) {
           const errBody = await res.text().catch(() => "");
           lastErr = new Error(
             `${provider.name} API error ${res.status} (${modelCandidate}): ${errBody.slice(0, 220)}`
           );
-          console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" failed: ${lastErr.message}`);
           continue;
         }
-
         const json = await res.json();
         const choice = json?.choices?.[0]?.message || {};
         const text =
@@ -189,21 +222,17 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
             ? choice.content.map((c) => c?.text || c?.content || "").join("")
             : "") ||
           "";
-
-        if (!text || !String(text).trim()) {
-          lastErr = new Error(`${provider.name} returned an empty response (${modelCandidate})`);
+        if (!text?.trim()) {
+          lastErr = new Error(`${provider.name} empty (${modelCandidate})`);
           continue;
         }
-
         return { success: true, provider: provider.name, model: modelCandidate, text: String(text) };
       } catch (err) {
         clearTimeout(timeoutId);
         lastErr = err;
-        console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" threw: ${err.message}`);
       }
     }
   }
-
   throw lastErr || new Error(`${provider.name} all model candidates failed`);
 }
 
@@ -214,12 +243,17 @@ export async function extractWithAI(params = {}) {
     imageBase64 = null,
     mimeType = "image/jpeg",
     transcript = null,
-    task = "general"
+    audioBase64 = null,
+    audioMimeType = "audio/webm",
+    task = "general",
+    onlyProvider = null
   } = params;
 
-  const providers = getConfiguredProviders(secrets);
+  let providers = getConfiguredProviders(secrets);
+  if (onlyProvider) providers = providers.filter((p) => p.name === onlyProvider);
+
   if (providers.length === 0) {
-    throw new Error("No AI providers configured. Set XAI_API_KEY and/or NVIDIA_API_KEY.");
+    throw new Error("No AI providers configured. Set XAI_API_KEY, NVIDIA_API_KEY, and/or GEMINI_API_KEY.");
   }
 
   const requiresVision = Boolean(imageBase64);
@@ -231,12 +265,24 @@ export async function extractWithAI(params = {}) {
   for (const provider of providers) {
     if (imageBase64 && !provider.canVision) continue;
     try {
-      const result = await callOpenAICompatible(provider, {
-        prompt,
-        imageBase64,
-        mimeType,
-        transcript
-      });
+      let result;
+      if (provider.name === "gemini") {
+        result = await callGemini(provider, {
+          prompt,
+          imageBase64,
+          mimeType,
+          transcript,
+          audioBase64,
+          audioMimeType
+        });
+      } else {
+        result = await callOpenAICompatible(provider, {
+          prompt,
+          imageBase64,
+          mimeType,
+          transcript
+        });
+      }
       if (result?.success && result.text) {
         console.log(`[AI] ${task} extraction succeeded via ${result.provider} (${result.model})`);
         return result;

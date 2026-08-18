@@ -1,43 +1,50 @@
 /**
  * SnapSME — Multi-Provider AI Abstraction Layer
  *
- * Active providers (OpenAI-compatible):
- *   1. Grok (xAI / SpaceXAI) — text + vision  — XAI_API_KEY
- *   2. NVIDIA NIM            — text + vision  — NVIDIA_API_KEY
+ * Failover order (default):
+ *   1. Grok (xAI)     — text + vision  — XAI_API_KEY
+ *   2. NVIDIA NIM     — text + vision  — NVIDIA_API_KEY
+ *   3. Gemini (Google)— text + vision (+ audio) — GEMINI_API_KEY
  *
- * Gemini and DeepSeek were removed: Gemini model endpoints were unreliable
- * here, and DeepSeek is text-only / paid with no free tier for this use case.
+ * DeepSeek stays out (text-only / paid, not useful for receipt vision).
  */
 
-export const AI_PROVIDER_NAMES = ["grok", "nvidia"];
+import { GoogleGenAI } from "@google/genai";
+
+export const AI_PROVIDER_NAMES = ["grok", "nvidia", "gemini"];
 
 const PROVIDER_DEFAULTS = {
   grok: {
     baseUrl: "https://api.x.ai/v1",
-    // Prefer faster general model for structured JSON extraction; 4.5/4.6 as fallbacks
     model: "grok-4.3"
   },
   nvidia: {
     baseUrl: "https://integrate.api.nvidia.com/v1",
-    // Currently available free NIM vision models (older nvidia/* ids often 404)
     model: "meta/llama-3.2-11b-vision-instruct"
+  },
+  gemini: {
+    baseUrl: null,
+    model: "gemini-2.0-flash"
   }
 };
 
-const GROK_MODEL_CANDIDATES = [
-  "grok-4.3",
-  "grok-4.5",
-  "grok-4.6"
-];
+const GROK_MODEL_CANDIDATES = ["grok-4.3", "grok-4.5", "grok-4.6"];
 
 const NVIDIA_VISION_MODELS = [
   "meta/llama-3.2-11b-vision-instruct",
   "meta/llama-3.2-90b-vision-instruct"
 ];
 
+const GEMINI_MODEL_CANDIDATES = [
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite"
+];
+
 /**
  * Returns configured providers in failover priority order.
- * Override with AI_PROVIDER_ORDER=grok,nvidia
+ * Override with AI_PROVIDER_ORDER=grok,nvidia,gemini
  */
 export function getConfiguredProviders() {
   const providers = [];
@@ -65,7 +72,18 @@ export function getConfiguredProviders() {
     });
   }
 
-  const rawOrder = (process.env.AI_PROVIDER_ORDER || "grok,nvidia")
+  if (process.env.GEMINI_API_KEY) {
+    providers.push({
+      name: "gemini",
+      apiKey: process.env.GEMINI_API_KEY,
+      baseUrl: null,
+      model: process.env.GEMINI_MODEL || PROVIDER_DEFAULTS.gemini.model,
+      canVision: true,
+      canAudio: true
+    });
+  }
+
+  const rawOrder = (process.env.AI_PROVIDER_ORDER || "grok,nvidia,gemini")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
@@ -93,8 +111,6 @@ export function getProviderStatus() {
   }
   status.anyConfigured = providers.length > 0;
   status.visionAvailable = providers.some((p) => p.canVision);
-  // Explicitly report removed providers as absent so health UI stays honest
-  status.gemini = false;
   status.deepseek = false;
   status.perplexity = false;
   return status;
@@ -118,6 +134,54 @@ function buildPromptText(prompt, transcript) {
     return `Transcript: "${transcript}"\n\n${prompt}`;
   }
   return prompt;
+}
+
+/**
+ * Google Gemini via @google/genai (vision + text + optional audio).
+ */
+async function callGemini(provider, { prompt, imageBase64, mimeType, transcript, audioBase64, audioMimeType }) {
+  const ai = new GoogleGenAI({ apiKey: provider.apiKey });
+
+  let contents;
+  if (imageBase64) {
+    const base64Data = imageBase64.replace(/^data:[^;]+;base64,/, "");
+    contents = [
+      prompt,
+      { inlineData: { mimeType: mimeType || "image/jpeg", data: base64Data } }
+    ];
+  } else if (audioBase64) {
+    const cleanAudio = audioBase64.replace(/^data:audio\/\w+;base64,/, "");
+    contents = [
+      { inlineData: { mimeType: audioMimeType || "audio/webm", data: cleanAudio } },
+      { text: prompt }
+    ];
+  } else {
+    contents = [{ text: buildPromptText(prompt, transcript) }];
+  }
+
+  const candidateModels = [
+    ...new Set([provider.model, process.env.GEMINI_MODEL, ...GEMINI_MODEL_CANDIDATES].filter(Boolean))
+  ];
+
+  let lastErr = null;
+  for (const modelCandidate of candidateModels) {
+    try {
+      const response = await ai.models.generateContent({
+        model: modelCandidate,
+        contents,
+        config: { responseMimeType: "application/json" }
+      });
+      if (response?.text) {
+        return { success: true, provider: "gemini", model: modelCandidate, text: response.text };
+      }
+      lastErr = new Error(`gemini returned empty response (${modelCandidate})`);
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[AI Failover] gemini model "${modelCandidate}" failed: ${err.message}`);
+    }
+  }
+
+  throw lastErr || new Error("All Gemini model candidates failed");
 }
 
 /**
@@ -173,8 +237,6 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
 
   let lastErr = null;
   const timeoutMs = provider.name === "grok" ? 90000 : 45000;
-
-  // Grok: try JSON mode then plain; NVIDIA: plain only (more compatible)
   const formatVariants =
     provider.name === "grok"
       ? [{ response_format: { type: "json_object" } }, {}]
@@ -216,7 +278,6 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
 
         const json = await res.json();
         const choice = json?.choices?.[0]?.message || {};
-        // Reasoning models sometimes stash text oddly — collect any usable string
         const text =
           (typeof choice.content === "string" && choice.content) ||
           (Array.isArray(choice.content)
@@ -265,7 +326,7 @@ export async function extractWithAI({
     throw new Error(
       onlyProvider
         ? `AI provider "${onlyProvider}" is not configured.`
-        : "No AI providers configured. Set XAI_API_KEY (Grok) and/or NVIDIA_API_KEY."
+        : "No AI providers configured. Set XAI_API_KEY, NVIDIA_API_KEY, and/or GEMINI_API_KEY."
     );
   }
 
@@ -274,10 +335,9 @@ export async function extractWithAI({
     throw new Error("Image scanning requested but no configured provider supports vision input.");
   }
 
-  // Audio blobs: we currently extract via browser STT → transcript; ignore raw audio
-  if (audioBase64 && !transcript) {
+  if (audioBase64 && !transcript && !providers.some((p) => p.canAudio)) {
     console.warn(
-      `[AI] ${task}: raw audio provided without transcript — providers are text/vision only. Prefer Web Speech transcript.`
+      `[AI] ${task}: raw audio provided without transcript — no audio-capable provider available. Prefer Web Speech transcript.`
     );
   }
 
@@ -285,14 +345,27 @@ export async function extractWithAI({
 
   for (const provider of providers) {
     if (imageBase64 && !provider.canVision) continue;
+    if (audioBase64 && !transcript && !provider.canAudio) continue;
 
     try {
-      const result = await callOpenAICompatible(provider, {
-        prompt,
-        imageBase64,
-        mimeType,
-        transcript
-      });
+      let result;
+      if (provider.name === "gemini") {
+        result = await callGemini(provider, {
+          prompt,
+          imageBase64,
+          mimeType,
+          transcript,
+          audioBase64,
+          audioMimeType
+        });
+      } else {
+        result = await callOpenAICompatible(provider, {
+          prompt,
+          imageBase64,
+          mimeType,
+          transcript
+        });
+      }
 
       if (result && result.success && result.text) {
         console.log(`[AI] ${task} extraction succeeded via ${result.provider} (${result.model})`);
