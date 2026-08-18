@@ -49,6 +49,7 @@ export const IncomeCaptureModal = ({
   // Voice note state
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [voiceTranscript, setVoiceTranscript] = useState("");
+  const voiceTranscriptRef = useRef("");
 
   // AI & Processing flags
   const [isProcessingAI, setIsProcessingAI] = useState(false);
@@ -67,6 +68,7 @@ export const IncomeCaptureModal = ({
     setPreviewImage(null);
     setUploadedDocInfo(null);
     setVoiceTranscript("");
+    voiceTranscriptRef.current = "";
     setIsRecordingVoice(false);
     setIsProcessingAI(false);
     setAiConfidence(null);
@@ -150,7 +152,8 @@ export const IncomeCaptureModal = ({
           body: JSON.stringify({
             imageBase64: base64Str,
             mimeType: file.type || (file.name.endsWith(".pdf") ? "application/pdf" : "image/jpeg"),
-            fileName: file.name
+            fileName: file.name,
+            businessId: businessId || currentUser?.businessId || null
           })
         });
         isOk = response.ok;
@@ -212,9 +215,15 @@ export const IncomeCaptureModal = ({
     }
   };
 
-  // Voice note AI extraction + Local Regex Parser Fallback
+  // Voice note AI extraction + Local Regex Parser Fallback (never invent amounts)
   const handleVoiceProcess = async (rawText) => {
-    const textToProcess = rawText || voiceTranscript || "Received 500 dollars from Acme Corp for product sales";
+    const textToProcess = String(rawText || voiceTranscriptRef.current || voiceTranscript || "").trim();
+    if (!textToProcess) {
+      setNoticeMessage("No speech captured — type the details or try recording again.");
+      setIsRecordingVoice(false);
+      return;
+    }
+
     setIsProcessingAI(true);
 
     let extractedData = null;
@@ -224,7 +233,7 @@ export const IncomeCaptureModal = ({
       const response = await fetch("/api/extract-income-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: textToProcess })
+        body: JSON.stringify({ transcript: textToProcess, businessId })
       });
 
       if (response.ok) {
@@ -238,10 +247,10 @@ export const IncomeCaptureModal = ({
       console.warn("Income voice API endpoint unreachable, using local voice NLP parser:", err.message);
     }
 
-    // Local Regex NLP Voice Parser Fallback
+    // Local Regex NLP Voice Parser Fallback — only fill what we can parse
     if (!extractedData) {
       const amountMatch = textToProcess.match(/(\$|€|£|₦)?\s*(\d+(?:\.\d{1,2})?)/i);
-      const extractedAmount = amountMatch ? parseFloat(amountMatch[2]) : 500.0;
+      const extractedAmount = amountMatch ? parseFloat(amountMatch[2]) : null;
 
       let extractedCurrency = workspaceCurrency || "USD";
       if (/euro|eur|€/i.test(textToProcess)) extractedCurrency = "EUR";
@@ -249,7 +258,7 @@ export const IncomeCaptureModal = ({
       else if (/naira|ngn|₦/i.test(textToProcess)) extractedCurrency = "NGN";
       else if (/dollar|usd|\$/i.test(textToProcess)) extractedCurrency = "USD";
 
-      let extractedSource = "Client Payment";
+      let extractedSource = "";
       const fromMatch = textToProcess.match(/(?:from|received from|paid by)\s+([A-Za-z0-9\s'-]+?)(?:\s+for|\s+on|\s+with|\s+\$|\s+received|$)/i);
       if (fromMatch) {
         extractedSource = fromMatch[1].trim();
@@ -258,15 +267,21 @@ export const IncomeCaptureModal = ({
       else if (/transfer|bank|deposit/i.test(textToProcess)) extractedSource = "Bank Transfer";
 
       extractedData = {
-        source: extractedSource,
-        amount: extractedAmount,
+        source: extractedSource || null,
+        amount: Number.isFinite(extractedAmount) && extractedAmount > 0 ? extractedAmount : null,
         currency: extractedCurrency,
         date: new Date().toISOString().split("T")[0],
         notes: null,
         transcriptText: textToProcess,
-        confidence: { source: 0.88, amount: 0.95, date: 0.85 }
+        confidence: {
+          source: extractedSource ? 0.8 : 0.35,
+          amount: extractedAmount ? 0.9 : 0.3,
+          date: 0.6
+        }
       };
-      notice = "Income voice note parsed via client-side NLP voice engine.";
+      notice = extractedAmount
+        ? "Income voice note parsed locally — please review the fields below."
+        : "Heard your note, but could not find a clear amount — please fill it in.";
     }
 
     if (extractedData) {
@@ -276,6 +291,7 @@ export const IncomeCaptureModal = ({
       setDate(extractedData.date || new Date().toISOString().split("T")[0]);
       setNotes(extractedData.notes || "");
       setVoiceTranscript(extractedData.transcriptText || textToProcess);
+      voiceTranscriptRef.current = extractedData.transcriptText || textToProcess;
 
       setAiConfidence(extractedData.confidence || { source: 0.85, amount: 0.92, date: 0.80 });
       if (notice) setNoticeMessage(notice);
@@ -285,7 +301,7 @@ export const IncomeCaptureModal = ({
     setIsRecordingVoice(false);
   };
 
-  // Real Web Speech API Microphone Recording with Simulated Fallback
+  // Real Web Speech API Microphone Recording
   const handleStartRealVoiceRecording = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
@@ -297,6 +313,7 @@ export const IncomeCaptureModal = ({
         recognition.lang = "en-US";
 
         setIsRecordingVoice(true);
+        voiceTranscriptRef.current = "";
 
         recognition.onresult = (event) => {
           let currentTranscript = "";
@@ -304,18 +321,20 @@ export const IncomeCaptureModal = ({
             currentTranscript += event.results[i][0].transcript;
           }
           setVoiceTranscript(currentTranscript);
+          voiceTranscriptRef.current = currentTranscript;
         };
 
         recognition.onerror = (event) => {
-          console.warn("Speech recognition error, falling back to simulated voice note:", event.error);
+          console.warn("Speech recognition error:", event.error);
           recognition.stop();
           fallbackSimulatedVoice();
         };
 
         recognition.onend = () => {
           setIsRecordingVoice(false);
-          if (voiceTranscript) {
-            handleVoiceProcess(voiceTranscript);
+          const finalTranscript = voiceTranscriptRef.current;
+          if (finalTranscript) {
+            handleVoiceProcess(finalTranscript);
           } else {
             fallbackSimulatedVoice();
           }
@@ -368,13 +387,21 @@ export const IncomeCaptureModal = ({
       source: source.trim(),
       date,
       notes: notes.trim() || null,
-      sourceType: activeTab,
+      sourceType: (() => {
+        if (previewImage || uploadedDocInfo?.compressedBlob || uploadedDocInfo?.isDocument) return "photo";
+        if (voiceTranscript) return "voice";
+        return "manual";
+      })(),
       receiptImageUrl,
       voiceTranscript: voiceTranscript || null,
       aiConfidence,
       correctedFields,
       syncStatus: isOfflineMode ? "pending" : "synced",
-      origin: "manual",
+      origin: (() => {
+        if (previewImage || uploadedDocInfo?.compressedBlob || uploadedDocInfo?.isDocument) return "photo";
+        if (voiceTranscript) return "voice";
+        return "manual";
+      })(),
       createdAt: new Date().toISOString()
     });
 

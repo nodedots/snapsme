@@ -21,17 +21,18 @@ export const AI_PROVIDER_NAMES = ["gemini", "nvidia", "deepseek", "perplexity"];
 
 const PROVIDER_DEFAULTS = {
   gemini:    { baseUrl: null, model: "gemini-2.0-flash" },
-  nvidia:    { baseUrl: "https://integrate.api.nvidia.com/v1", model: "nvidia/llama-3.1-8b-vision-instruct" },
+  // Prefer currently available NIM vision models first (older nvidia/* ids often 404)
+  nvidia:    { baseUrl: "https://integrate.api.nvidia.com/v1", model: "meta/llama-3.2-11b-vision-instruct" },
   deepseek:  { baseUrl: "https://api.deepseek.com/v1", model: "deepseek-chat" },
   perplexity:{ baseUrl: "https://api.perplexity.ai", model: "sonar-pro" }
 };
 
 // NVIDIA vision-capable model candidates to try in order (fallback chain)
 const NVIDIA_VISION_MODELS = [
-  "nvidia/llama-3.1-8b-vision-instruct",
-  "nvidia/llama-3.1-70b-vision-instruct",
   "meta/llama-3.2-11b-vision-instruct",
-  "meta/llama-3.2-90b-vision-instruct"
+  "meta/llama-3.2-90b-vision-instruct",
+  "nvidia/llama-3.1-8b-vision-instruct",
+  "nvidia/llama-3.1-70b-vision-instruct"
 ];
 
 /**
@@ -178,13 +179,17 @@ async function callGemini(provider, { prompt, imageBase64, mimeType, transcript,
   }
 
   const candidateModels = [
-    provider.model,
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-2.5-flash-lite",
-    process.env.GEMINI_MODEL,
-    "gemini-1.5-flash"
-  ].filter(Boolean);
+    ...new Set(
+      [
+        provider.model,
+        process.env.GEMINI_MODEL,
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-2.5-flash-lite"
+      ].filter(Boolean)
+    )
+  ];
 
   let lastErr = null;
   for (const modelCandidate of candidateModels) {

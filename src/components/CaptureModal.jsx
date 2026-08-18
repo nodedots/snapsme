@@ -197,7 +197,8 @@ export const CaptureModal = ({
           body: JSON.stringify({
             imageBase64: base64Str,
             mimeType: file.type || (file.name.endsWith(".pdf") ? "application/pdf" : "image/jpeg"),
-            fileName: file.name
+            fileName: file.name,
+            businessId: businessId || currentUser?.businessId || null
           })
         });
         isOk = response.ok;
@@ -302,9 +303,15 @@ export const CaptureModal = ({
     return total + current;
   };
 
-  // Voice note AI extraction + Local Regex Parser Fallback
+  // Voice note AI extraction + Local Regex Parser Fallback (never invent amounts)
   const handleVoiceProcess = async (rawText) => {
-    const textToProcess = rawText || voiceTranscript || "Paid 28 dollars for lunch at Cafe";
+    const textToProcess = String(rawText || voiceTranscriptRef.current || voiceTranscript || "").trim();
+    if (!textToProcess) {
+      setNoticeMessage("No speech captured — type the details or try recording again.");
+      setIsRecordingVoice(false);
+      return;
+    }
+
     setIsProcessingAI(true);
 
     let extractedData = null;
@@ -314,7 +321,7 @@ export const CaptureModal = ({
       const response = await fetch("/api/extract-voice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ transcript: textToProcess })
+        body: JSON.stringify({ transcript: textToProcess, businessId })
       });
 
       if (response.ok) {
@@ -328,58 +335,54 @@ export const CaptureModal = ({
       console.warn("Voice API endpoint unreachable, using local voice NLP parser:", err.message);
     }
 
-    // Local Regex NLP Voice Parser Fallback
+    // Local Regex NLP Voice Parser Fallback — only fill what we can parse
     if (!extractedData) {
-      // 1. Amount — try digit-based first, then spelled-out number words
       let extractedAmount = 0;
       const amountMatch = textToProcess.match(/(\$|€|£|₦)?\s*(\d+(?:\.\d{1,2})?)/i);
       if (amountMatch) {
         extractedAmount = parseFloat(amountMatch[2]) || 0;
       }
       if (extractedAmount === 0) {
-        extractedAmount = wordsToNumber(textToProcess);
-      }
-      if (extractedAmount === 0) {
-        extractedAmount = 35.0;
+        extractedAmount = wordsToNumber(textToProcess) || 0;
       }
 
-      // 2. Currency — detect symbol or currency name
       let extractedCurrency = workspaceCurrency || "USD";
       if (/euro|eur|€/i.test(textToProcess)) extractedCurrency = "EUR";
       else if (/pound|gbp|£/i.test(textToProcess)) extractedCurrency = "GBP";
       else if (/naira|ngn|₦/i.test(textToProcess)) extractedCurrency = "NGN";
       else if (/dollar|usd|\$/i.test(textToProcess)) extractedCurrency = "USD";
 
-      // 3. Vendor / Source — "received from X", "from X", or known merchants
-      let extractedVendor = "Local Store";
-      const isIncomeNote = /receive|received|got|got paid|collected|credited/i.test(textToProcess);
+      let extractedVendor = "";
       const fromMatch = textToProcess.match(/(?:from|at)\s+([A-Za-z0-9\s'-]+?)(?:\s+for|\s+on|\s+with|\s+\$|\s+paid|\s+received|$)/i);
       if (fromMatch && fromMatch[1].trim()) {
         extractedVendor = fromMatch[1].trim().replace(/\s+/g, " ").slice(0, 40);
-      } else if (isIncomeNote) {
-        extractedVendor = "Payment Received";
       } else if (/shell/i.test(textToProcess)) extractedVendor = "Shell Fuel";
       else if (/staples/i.test(textToProcess)) extractedVendor = "Staples";
+      else if (/uber/i.test(textToProcess)) extractedVendor = "Uber";
 
-      // 4. Category — detect based on context
-      let suggestedCat = isIncomeNote ? "Other Expenses" : "General";
+      let suggestedCat = null;
       if (/fuel|gas|diesel|cab|uber|taxi|drive/i.test(textToProcess)) suggestedCat = "Fuel & Transport";
       else if (/lunch|dinner|breakfast|food|coffee|cafe|bistro/i.test(textToProcess)) suggestedCat = "Meals & Food";
       else if (/paper|print|pen|office|supplies/i.test(textToProcess)) suggestedCat = "Office Supplies";
       else if (/tool|hardware|equipment/i.test(textToProcess)) suggestedCat = "Equipment & Tools";
 
       extractedData = {
-        vendor: extractedVendor,
-        amount: extractedAmount,
+        vendor: extractedVendor || null,
+        amount: extractedAmount > 0 ? extractedAmount : null,
         currency: extractedCurrency,
         date: new Date().toISOString().split("T")[0],
         suggestedCategory: suggestedCat,
         transcriptText: textToProcess,
-        confidence: { vendor: 0.88, amount: 0.95, date: 0.85, category: 0.82 }
+        confidence: {
+          vendor: extractedVendor ? 0.8 : 0.35,
+          amount: extractedAmount > 0 ? 0.9 : 0.3,
+          date: 0.6,
+          category: suggestedCat ? 0.75 : 0.35
+        }
       };
-      notice = isIncomeNote
-        ? "Voice note captured — amount filled in, please confirm the details below."
-        : "Voice note parsed via client-side NLP voice engine.";
+      notice = extractedAmount > 0
+        ? "Voice note parsed locally — please review the fields below."
+        : "Heard your note, but could not find a clear amount — please fill it in.";
     }
 
     if (extractedData) {
@@ -505,7 +508,11 @@ export const CaptureModal = ({
       categoryName: categoryName || "General",
       moneyMovement,
       date,
-      source: activeTab,
+      source: (() => {
+        if (previewImage || uploadedDocInfo?.compressedBlob || uploadedDocInfo?.isDocument) return "photo";
+        if (voiceTranscript) return "voice";
+        return "manual";
+      })(),
       receiptImageUrl,
       voiceTranscript: voiceTranscript || null,
       aiConfidence,

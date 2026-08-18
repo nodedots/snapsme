@@ -148,6 +148,21 @@ export function App() {
       console.warn("Firebase redirect auth result error:", err.message);
     });
 
+    let settled = false;
+    const finishAuth = () => {
+      if (settled) return;
+      settled = true;
+      setIsAuthLoading(false);
+    };
+
+    // Never hang forever on "Restoring session" if Firebase auth is slow/blocked
+    const authTimeout = setTimeout(() => {
+      console.warn("Auth restore timed out — continuing in demo/offline mode.");
+      setIsFirestoreMode(false);
+      setCurrentUser((prev) => prev || loadCurrentUser());
+      finishAuth();
+    }, 8000);
+
     const unsubscribe = subscribeToAuth(async (user) => {
       setFirebaseUser(user);
 
@@ -186,10 +201,14 @@ export function App() {
         setCurrentUser(loadCurrentUser());
       }
 
-      setIsAuthLoading(false);
+      clearTimeout(authTimeout);
+      finishAuth();
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(authTimeout);
+      unsubscribe();
+    };
   }, []);
 
   // -------------------------------------------------------------------------

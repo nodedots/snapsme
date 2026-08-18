@@ -13,5 +13,14 @@
       "source": "/app",
       "destination": "/app.html"
     }
-  ]
+  ],
+  "functions": {
+    "api/extract-receipt.js": { "maxDuration": 30, "memory": 1024 },
+    "api/extract-voice.js": { "maxDuration": 30, "memory": 1024 },
+    "api/extract-income-doc.js": { "maxDuration": 30, "memory": 1024 },
+    "api/extract-income-voice.js": { "maxDuration": 30, "memory": 1024 },
+    "api/exchange-rates.js": { "maxDuration": 15 },
+    "api/health.js": { "maxDuration": 10 },
+    "api/firebase-config.js": { "maxDuration": 10 }
+  }
 }
