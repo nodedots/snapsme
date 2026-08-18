@@ -16,18 +16,23 @@ const publicDir = join(root, "public");
 const distDir = join(root, "dist");
 
 // Files/dirs to copy from public/ into dist/
-// We skip index.html (Vite generates its own) and favicon.ico (Vite copies it).
+// Skip index.html / app.html (Vite generates those). Always include brand assets.
 const COPY_ITEMS = [
   "404.html",
   "about.html",
+  "about",
   "contact.html",
   "cookies.html",
   "faq.html",
+  "faq",
   "help.html",
   "home.html",
   "landing.html",
   "logo.jpg",
+  "favicon.jpg",
+  "favicon.ico",
   "nodedots.png",
+  "nodedots.jpg",
   "privacy.html",
   "terms.html",
   "sitemap.xml",

@@ -24,6 +24,28 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(express.json({ limit: "25mb" }));
+
+// Brand assets BEFORE static — public/favicon.ico is a huge legacy file (546KB)
+app.get(["/favicon.ico", "/favicon.jpg"], (_req, res) => {
+  const fav = path.join(process.cwd(), "public", "favicon.jpg");
+  if (fs.existsSync(fav)) {
+    res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+    res.type("image/jpeg").sendFile(fav);
+  } else {
+    res.status(204).end();
+  }
+});
+
+app.get("/logo.jpg", (_req, res) => {
+  const logo = path.join(process.cwd(), "public", "logo.jpg");
+  if (fs.existsSync(logo)) {
+    res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+    res.type("image/jpeg").sendFile(logo);
+  } else {
+    res.status(404).end();
+  }
+});
+
 app.use(express.static(path.join(process.cwd(), "public")));
 
 // Default categories
@@ -37,16 +59,6 @@ const DEFAULT_CATEGORIES = [
   "Petty Cash Spend",
   "Other Expenses"
 ];
-
-// Favicon — serve compressed asset (was empty 204, browsers then fell back to huge /logo.jpg)
-app.get("/favicon.ico", (_req, res) => {
-  const fav = path.join(process.cwd(), "public", "favicon.jpg");
-  if (fs.existsSync(fav)) {
-    res.type("image/jpeg").sendFile(fav);
-  } else {
-    res.status(204).end();
-  }
-});
 
 // 1. Health check
 app.get("/api/health", async (_req, res) => {

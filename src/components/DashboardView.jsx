@@ -284,7 +284,7 @@ export const DashboardView = ({
     ) {
       new Notification("SnapSME Budget Notification", {
         body: message,
-        icon: "/favicon.ico"
+        icon: "/favicon.jpg"
       });
     }
 

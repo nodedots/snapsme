@@ -10,8 +10,26 @@
   ],
   "rewrites": [
     {
+      "source": "/favicon.ico",
+      "destination": "/favicon.jpg"
+    },
+    {
       "source": "/app",
       "destination": "/app.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(favicon.jpg|favicon.ico|logo.jpg|nodedots.jpg)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, immutable" }
+      ]
+    },
+    {
+      "source": "/nodedots.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, immutable" }
+      ]
     }
   ],
   "functions": {

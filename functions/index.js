@@ -25,20 +25,16 @@ const db = getFirestore();
 const storage = getStorage();
 
 // Secrets (set via `firebase functions:secrets:set`)
-const GEMINI_API_KEY = defineSecret("GEMINI_API_KEY");
+const XAI_API_KEY = defineSecret("XAI_API_KEY");
 const NVIDIA_API_KEY = defineSecret("NVIDIA_API_KEY");
-const DEEPSEEK_API_KEY = defineSecret("DEEPSEEK_API_KEY");
-const PERPLEXITY_API_KEY = defineSecret("PERPLEXITY_API_KEY");
 const TELEGRAM_BOT_TOKEN = defineSecret("TELEGRAM_BOT_TOKEN");
 const WHATSAPP_VERIFY_TOKEN = defineSecret("WHATSAPP_VERIFY_TOKEN");
 const WHATSAPP_ACCESS_TOKEN = defineSecret("WHATSAPP_ACCESS_TOKEN");
 
-// All AI provider secrets used by the multi-provider failover layer.
+// AI provider secrets used by the multi-provider failover layer (Grok + NVIDIA).
 const AI_SECRETS = [
-  GEMINI_API_KEY,
-  NVIDIA_API_KEY,
-  DEEPSEEK_API_KEY,
-  PERPLEXITY_API_KEY
+  XAI_API_KEY,
+  NVIDIA_API_KEY
 ];
 
 // Default categories (must match the client-side defaults)
@@ -59,10 +55,9 @@ const DEFAULT_CATEGORIES = [
 
 function getAiSecrets() {
   return {
-    GEMINI_API_KEY: GEMINI_API_KEY.value(),
+    XAI_API_KEY: XAI_API_KEY.value(),
     NVIDIA_API_KEY: NVIDIA_API_KEY.value(),
-    DEEPSEEK_API_KEY: DEEPSEEK_API_KEY.value(),
-    PERPLEXITY_API_KEY: PERPLEXITY_API_KEY.value()
+    AI_PROVIDER_ORDER: "grok,nvidia"
   };
 }
 
