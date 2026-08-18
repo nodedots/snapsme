@@ -75,24 +75,39 @@ service cloud.firestore {
         allow create, update, delete: if isBusinessOwner(businessId);
       }
 
+      // Staff may edit / soft-delete their own active submissions.
+      // 48h window is enforced in the client (recordPermissions.js); rules key off ownership.
+      // Soft-deleted rows (deletedAt set) are owner-only for restore / further edits.
+      // Hard delete remains owner-only.
+      function isOwnActiveSubmission() {
+        return resource.data.submittedBy == request.auth.uid &&
+          (!('deletedAt' in resource.data) || resource.data.deletedAt == null);
+      }
+
+      function staffMayUpdateOwnRecord() {
+        return isBusinessMember(businessId) &&
+          isOwnActiveSubmission() &&
+          // Prevent reassigning authorship
+          request.resource.data.submittedBy == resource.data.submittedBy;
+      }
+
       // Expenses Subcollection
       // Any member of the business can read all expenses (shared feed, FR15)
-      // and create their own expense submissions. Only the owner can update/delete.
+      // and create their own expense submissions. Owner: full update/delete.
+      // Staff: update (edit + soft-delete) own active records only.
       match /expenses/{expenseId} {
         allow read: if isBusinessMember(businessId) || isBusinessOwner(businessId);
         allow create: if isBusinessMember(businessId) || isBusinessOwner(businessId);
-        allow update: if isBusinessOwner(businessId);
+        allow update: if isBusinessOwner(businessId) || staffMayUpdateOwnRecord();
         allow delete: if isBusinessOwner(businessId);
       }
 
       // Income Subcollection
-      // Lightweight money-in log (NOT invoicing). Any member can read the shared
-      // income feed and create their own income entries. Only the owner can
-      // update/delete, mirroring the expenses subcollection rules.
+      // Lightweight money-in log (NOT invoicing). Mirrors expense permissions.
       match /income/{incomeId} {
         allow read: if isBusinessMember(businessId) || isBusinessOwner(businessId);
         allow create: if isBusinessMember(businessId) || isBusinessOwner(businessId);
-        allow update: if isBusinessOwner(businessId);
+        allow update: if isBusinessOwner(businessId) || staffMayUpdateOwnRecord();
         allow delete: if isBusinessOwner(businessId);
       }
     }

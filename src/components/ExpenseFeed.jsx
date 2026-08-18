@@ -1184,7 +1184,7 @@ export const ExpenseFeed = ({
               )}
             </div>
 
-            <div className="bg-[#f7f3ea] p-4 border-t border-[#d9d4c8] flex items-center justify-between">
+            <div className="bg-[#f7f3ea] p-4 border-t border-[#d9d4c8] flex items-center gap-2 flex-wrap">
               {canEditRecord(selectedRecord.data, currentUser).allowed && (
                 <button
                   type="button"
@@ -1199,6 +1199,39 @@ export const ExpenseFeed = ({
                 >
                   <Pencil className="w-3.5 h-3.5" />
                   Edit Record
+                </button>
+              )}
+              {isSoftDeleted(selectedRecord.data) &&
+                canRestoreRecord(selectedRecord.data, currentUser).allowed && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const rec = selectedRecord.data;
+                    const isInc = selectedRecord.type === "income";
+                    if (isInc) onRestoreIncome?.(rec.id);
+                    else onRestoreExpense?.(rec.id);
+                    setSelectedRecord(null);
+                  }}
+                  className="px-3.5 py-2 text-xs font-semibold text-[#0f7a52] bg-[#e7f4ec] border border-[#0f7a52]/30 rounded-xl hover:bg-[#d5ebfe] flex items-center gap-1.5 cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Restore
+                </button>
+              )}
+              {canDeleteRecord(selectedRecord.data, currentUser).allowed && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleRowDelete(selectedRecord.data);
+                  }}
+                  className={`px-3.5 py-2 text-xs font-semibold rounded-xl flex items-center gap-1.5 cursor-pointer border ${
+                    isSoftDeleted(selectedRecord.data)
+                      ? "text-red-700 bg-red-50 border-red-200 hover:bg-red-100"
+                      : "text-[#ff5a3c] bg-[#fff1ee] border-[#ff5a3c]/30 hover:bg-[#ffe4de]"
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {isSoftDeleted(selectedRecord.data) ? "Delete Forever" : "Move to Trash"}
                 </button>
               )}
               <button
