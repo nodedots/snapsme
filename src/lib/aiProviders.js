@@ -24,7 +24,8 @@ const PROVIDER_DEFAULTS = {
   },
   gemini: {
     baseUrl: null,
-    model: "gemini-2.0-flash"
+    // Prefer current Gemini 3.5 flash; older 2.5-lite is retired for new users
+    model: "gemini-3.5-flash"
   }
 };
 
@@ -36,10 +37,10 @@ const NVIDIA_VISION_MODELS = [
 ];
 
 const GEMINI_MODEL_CANDIDATES = [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
   "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite"
+  "gemini-2.0-flash-lite"
 ];
 
 /**
@@ -159,8 +160,13 @@ async function callGemini(provider, { prompt, imageBase64, mimeType, transcript,
     contents = [{ text: buildPromptText(prompt, transcript) }];
   }
 
+  // Prefer known-good current models first; env overrides still tried afterward
   const candidateModels = [
-    ...new Set([provider.model, process.env.GEMINI_MODEL, ...GEMINI_MODEL_CANDIDATES].filter(Boolean))
+    ...new Set(
+      [PROVIDER_DEFAULTS.gemini.model, ...GEMINI_MODEL_CANDIDATES, provider.model, process.env.GEMINI_MODEL].filter(
+        Boolean
+      )
+    )
   ];
 
   let lastErr = null;

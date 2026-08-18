@@ -14,7 +14,7 @@ const PROVIDER_DEFAULTS = {
     baseUrl: "https://integrate.api.nvidia.com/v1",
     model: "meta/llama-3.2-11b-vision-instruct"
   },
-  gemini: { baseUrl: null, model: "gemini-2.0-flash" }
+  gemini: { baseUrl: null, model: "gemini-3.5-flash" }
 };
 
 const GROK_MODEL_CANDIDATES = ["grok-4.3", "grok-4.5", "grok-4.6"];
@@ -23,10 +23,10 @@ const NVIDIA_VISION_MODELS = [
   "meta/llama-3.2-90b-vision-instruct"
 ];
 const GEMINI_MODEL_CANDIDATES = [
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
   "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite"
+  "gemini-2.0-flash-lite"
 ];
 
 export function getConfiguredProviders(secrets = {}) {
@@ -117,7 +117,7 @@ async function callGemini(provider, { prompt, imageBase64, mimeType, transcript,
   }
 
   const candidateModels = [
-    ...new Set([provider.model, ...GEMINI_MODEL_CANDIDATES].filter(Boolean))
+    ...new Set([PROVIDER_DEFAULTS.gemini.model, ...GEMINI_MODEL_CANDIDATES, provider.model].filter(Boolean))
   ];
 
   let lastErr = null;
