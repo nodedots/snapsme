@@ -62,6 +62,7 @@ export const DashboardView = ({
   );
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [testAlertToast, setTestAlertToast] = useState(null);
+  const [showAllCategories, setShowAllCategories] = useState(false);
 
   useEffect(() => {
     if (workspace?.monthlyBudget !== undefined) {
@@ -294,7 +295,7 @@ export const DashboardView = ({
   const categorySpendMap = categories.map((cat) => {
     const catExpenses = expenses.filter((e) => e.categoryId === cat.id);
     const spent = catExpenses.reduce((sum, e) => sum + e.amount, 0);
-    const budget = cat.budget || 0;
+    const budget = Number(cat.budget) || 0;
     const percentUsed = budget > 0 ? (spent / budget) * 100 : 0;
 
     return {
@@ -305,6 +306,9 @@ export const DashboardView = ({
       count: catExpenses.length
     };
   });
+
+  const configuredCategoryItems = categorySpendMap.filter((item) => item.budget > 0);
+  const displayedCategoryItems = showAllCategories ? categorySpendMap : configuredCategoryItems;
 
   // Income totals by Source
   const sourceIncomeMap = (incomeEntries || []).reduce((acc, entry) => {
@@ -904,77 +908,121 @@ export const DashboardView = ({
 
       {/* Category Budgets & Soft Alert System per PRD FR17, FR18 */}
       <div className="bg-white p-5 rounded-xl border border-[#d9d4c8] space-y-4">
-        <div className="flex items-center justify-between border-b border-[#d9d4c8] pb-3">
+        <div className="flex items-center justify-between border-b border-[#d9d4c8] pb-3 flex-wrap gap-2">
           <div>
             <h3 className="font-display font-bold text-base text-[#1c1b19] flex items-center gap-2">
               <PieChart className="w-5 h-5 text-[#0f7a52]" /> Category Budgets & Soft Alerts
             </h3>
-            <span className="text-xs text-[#6b665c]">Owner-configured category limits</span>
+            <span className="text-xs text-[#6b665c]">
+              {configuredCategoryItems.length > 0
+                ? `Owner-configured limits (${configuredCategoryItems.length} category limit${configuredCategoryItems.length === 1 ? "" : "s"} set)`
+                : "Owner-configured category limits (Not configured yet)"}
+            </span>
           </div>
-          <button
-            type="button"
-            onClick={onOpenSettings}
-            className="text-[11px] font-semibold text-[#0f7a52] hover:underline bg-[#e7f4ec] px-2.5 py-1 rounded-md border border-[#0f7a52]/30 cursor-pointer"
-          >
-            Configure
-          </button>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {categorySpendMap.map((item) => {
-            const isNearLimit = item.percentUsed >= 80 && item.percentUsed < 100;
-            const isExceeded = item.percentUsed >= 100;
-
-            return (
-              <div
-                key={item.category.id}
-                className={`p-3.5 rounded-xl border transition-colors ${
-                  isExceeded
-                    ? "bg-[#fbf1de] border-[#e0982a]"
-                    : isNearLimit
-                    ? "bg-amber-50/50 border-amber-200"
-                    : "bg-[#f7f3ea]/50 border-[#d9d4c8]"
-                }`}
+          <div className="flex items-center gap-2">
+            {categorySpendMap.length > configuredCategoryItems.length && (
+              <button
+                type="button"
+                onClick={() => setShowAllCategories((prev) => !prev)}
+                className="text-[11px] font-semibold text-[#1c1b19] bg-[#f7f3ea] hover:bg-white px-2.5 py-1 rounded-md border border-[#d9d4c8] cursor-pointer"
               >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-display font-semibold text-xs text-[#1c1b19]">
-                    {item.category.name}
-                  </span>
-                  <span className="font-mono text-xs font-bold text-[#1c1b19]">
-                    {getCurrencySymbol(currency)}{item.spent.toFixed(2)}{" "}
-                    <span className="text-[#6b665c] font-normal">
-                      / {item.budget ? `${getCurrencySymbol(currency)}${item.budget}` : "No Limit"}
-                    </span>
-                  </span>
-                </div>
-
-                {/* Progress Bar */}
-                {item.budget > 0 && (
-                  <div className="w-full h-2 bg-[#d9d4c8]/50 rounded-full overflow-hidden my-2">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        isExceeded ? "bg-[#ff5a3c]" : isNearLimit ? "bg-[#e0982a]" : "bg-[#0f7a52]"
-                      }`}
-                      style={{ width: `${Math.min(item.percentUsed, 100)}%` }}
-                    />
-                  </div>
-                )}
-
-                {/* Soft Alert Banner */}
-                {isExceeded && (
-                  <p className="text-[11px] text-[#ff5a3c] font-semibold flex items-center gap-1 mt-1">
-                    <ShieldAlert className="w-3.5 h-3.5 shrink-0" /> Soft Alert: Category budget exceeded by {getCurrencySymbol(currency)}{(item.spent - item.budget).toFixed(2)}
-                  </p>
-                )}
-                {isNearLimit && (
-                  <p className="text-[11px] text-[#e0982a] font-semibold flex items-center gap-1 mt-1">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Soft Alert: Approaching limit ({Math.round(item.percentUsed)}% used)
-                  </p>
-                )}
-              </div>
-            );
-          })}
+                {showAllCategories ? "Show Configured Only" : "Show All Categories"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              className="text-[11px] font-semibold text-[#0f7a52] hover:underline bg-[#e7f4ec] px-2.5 py-1 rounded-md border border-[#0f7a52]/30 cursor-pointer"
+            >
+              Configure Limits
+            </button>
+          </div>
         </div>
+
+        {configuredCategoryItems.length === 0 && !showAllCategories ? (
+          <div className="p-5 bg-[#f7f3ea] rounded-xl border border-dashed border-[#d9d4c8] text-center space-y-3">
+            <div className="w-10 h-10 bg-[#e7f4ec] text-[#0f7a52] rounded-full mx-auto flex items-center justify-center">
+              <PieChart className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-display font-semibold text-sm text-[#1c1b19]">No Category Budget Limits Set</h4>
+              <p className="text-xs text-[#6b665c] max-w-md mx-auto mt-1">
+                No category budget limits have been configured by the business owner yet. Soft alerts are inactive until category limits are defined.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={onOpenSettings}
+                className="text-xs font-semibold text-white bg-[#0f7a52] hover:bg-[#0b5f40] px-3.5 py-2 rounded-lg cursor-pointer transition-transform active:scale-95 shadow-2xs"
+              >
+                Configure Category Budgets
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {displayedCategoryItems.map((item) => {
+              const isNearLimit = item.budget > 0 && item.percentUsed >= 80 && item.percentUsed < 100;
+              const isExceeded = item.budget > 0 && item.percentUsed >= 100;
+
+              return (
+                <div
+                  key={item.category.id}
+                  className={`p-3.5 rounded-xl border transition-colors ${
+                    isExceeded
+                      ? "bg-[#fbf1de] border-[#e0982a]"
+                      : isNearLimit
+                      ? "bg-amber-50/50 border-amber-200"
+                      : "bg-[#f7f3ea]/50 border-[#d9d4c8]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-display font-semibold text-xs text-[#1c1b19]">
+                      {item.category.name}
+                    </span>
+                    <span className="font-mono text-xs font-bold text-[#1c1b19]">
+                      {getCurrencySymbol(currency)}{item.spent.toFixed(2)}{" "}
+                      <span className="text-[#6b665c] font-normal">
+                        / {item.budget > 0 ? `${getCurrencySymbol(currency)}${item.budget}` : "No Limit Set"}
+                      </span>
+                    </span>
+                  </div>
+
+                  {/* Progress Bar — only rendered if budget is explicitly set */}
+                  {item.budget > 0 && (
+                    <div className="w-full h-2 bg-[#d9d4c8]/50 rounded-full overflow-hidden my-2">
+                      <div
+                        className={`h-full rounded-full transition-all duration-500 ${
+                          isExceeded ? "bg-[#ff5a3c]" : isNearLimit ? "bg-[#e0982a]" : "bg-[#0f7a52]"
+                        }`}
+                        style={{ width: `${Math.min(item.percentUsed, 100)}%` }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Soft Alert Banner — only rendered if budget is explicitly set */}
+                  {isExceeded && (
+                    <p className="text-[11px] text-[#ff5a3c] font-semibold flex items-center gap-1 mt-1">
+                      <ShieldAlert className="w-3.5 h-3.5 shrink-0" /> Soft Alert: Category budget exceeded by {getCurrencySymbol(currency)}{(item.spent - item.budget).toFixed(2)}
+                    </p>
+                  )}
+                  {isNearLimit && (
+                    <p className="text-[11px] text-[#e0982a] font-semibold flex items-center gap-1 mt-1">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Soft Alert: Approaching limit ({Math.round(item.percentUsed)}% used)
+                    </p>
+                  )}
+                  {item.budget <= 0 && (
+                    <p className="text-[10px] text-[#6b665c] font-mono mt-1">
+                      No budget limit set for this category.
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Spend Breakdown by Staff & Money Movement */}

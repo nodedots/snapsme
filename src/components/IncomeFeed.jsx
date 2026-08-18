@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from "react";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+import { UndoToast } from "./UndoToast";
 import { getCurrencySymbol } from "../lib/currencies.js";
 import {
   canEditRecord,
@@ -49,6 +51,8 @@ export const IncomeFeed = ({
   isOwner
 }) => {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleteModalConfig, setDeleteModalConfig] = useState(null);
+  const [undoToastState, setUndoToastState] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMember, setSelectedMember] = useState("all");
   const [selectedOrigin, setSelectedOrigin] = useState("all");
@@ -129,12 +133,30 @@ export const IncomeFeed = ({
   const handleDelete = (entry, e) => {
     if (e) e.stopPropagation();
     if (!canDeleteRecord(entry, currentUser).allowed) return;
-    if (confirmDeleteId === entry.id) {
-      onDeleteIncome?.(entry.id, { permanent: isSoftDeleted(entry) });
-      setConfirmDeleteId(null);
+
+    const title = entry.source || "Income record";
+    const isPermanent = isSoftDeleted(entry);
+
+    if (isPermanent) {
+      setDeleteModalConfig({
+        title: "Permanently Delete Income?",
+        description: `Are you sure you want to permanently delete "${title}"? This cannot be undone.`,
+        record: { ...entry, recordType: "income" },
+        isPermanent: true,
+        confirmText: "Delete Permanently",
+        onConfirm: () => {
+          onDeleteIncome?.(entry.id, { permanent: true });
+        }
+      });
     } else {
-      setConfirmDeleteId(entry.id);
-      setTimeout(() => setConfirmDeleteId(null), 3000);
+      onDeleteIncome?.(entry.id, { permanent: false });
+      setUndoToastState({
+        id: entry.id,
+        message: `Moved "${title}" to Trash.`,
+        onUndo: () => {
+          onRestoreIncome?.(entry.id);
+        }
+      });
     }
   };
 
@@ -354,16 +376,31 @@ export const IncomeFeed = ({
               type="button"
               disabled={selectedCount === 0}
               onClick={() => {
-                if (
-                  window.confirm(
-                    showDeleted
-                      ? `Permanently delete ${selectedCount} income record(s)? This cannot be undone.`
-                      : `Move ${selectedCount} income record(s) to trash?`
-                  )
-                ) {
-                  onBulkDelete?.([...selectedIds], { permanent: showDeleted });
-                  clearSelection();
-                }
+                const targetIds = [...selectedIds];
+                setDeleteModalConfig({
+                  title: showDeleted
+                    ? `Permanently Delete ${selectedCount} Income Record${selectedCount !== 1 ? "s" : ""}?`
+                    : `Move ${selectedCount} Income Record${selectedCount !== 1 ? "s" : ""} to Trash?`,
+                  description: showDeleted
+                    ? "This action is permanent and cannot be undone."
+                    : "Selected income entries will be moved to Trash. You can restore them anytime.",
+                  selectedCount,
+                  isPermanent: showDeleted,
+                  confirmText: showDeleted ? "Delete Forever" : "Move to Trash",
+                  onConfirm: () => {
+                    onBulkDelete?.(targetIds, { permanent: showDeleted });
+                    clearSelection();
+                    if (!showDeleted) {
+                      setUndoToastState({
+                        id: `bulk_inc_${Date.now()}`,
+                        message: `Moved ${selectedCount} income record${selectedCount !== 1 ? "s" : ""} to Trash.`,
+                        onUndo: () => {
+                          targetIds.forEach((id) => onRestoreIncome?.(id));
+                        }
+                      });
+                    }
+                  }
+                });
               }}
               className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#f64932] disabled:opacity-40 cursor-pointer ml-auto"
             >
@@ -529,6 +566,30 @@ export const IncomeFeed = ({
             </div>
           )}
         </div>
+      )}
+
+      {/* Branded Delete Confirmation Modal */}
+      {deleteModalConfig && (
+        <ConfirmDeleteModal
+          isOpen={!!deleteModalConfig}
+          title={deleteModalConfig.title}
+          description={deleteModalConfig.description}
+          record={deleteModalConfig.record}
+          selectedCount={deleteModalConfig.selectedCount}
+          isPermanent={deleteModalConfig.isPermanent}
+          confirmText={deleteModalConfig.confirmText}
+          currency={currency}
+          onConfirm={deleteModalConfig.onConfirm}
+          onClose={() => setDeleteModalConfig(null)}
+        />
+      )}
+
+      {/* Floating Undo Toast Banner */}
+      {undoToastState && (
+        <UndoToast
+          toastState={undoToastState}
+          onDismiss={() => setUndoToastState(null)}
+        />
       )}
     </div>
   );

@@ -7,11 +7,11 @@ export const BUSINESS_TYPES = [
     name: "Retail",
     description: "Physical or online storefronts, inventory, and merchandise",
     defaultCategories: [
-      { name: "Inventory & Stock", budget: 600 },
-      { name: "Fuel & Transport", budget: 400 },
-      { name: "Rent & Utilities", budget: 800 },
-      { name: "Marketing", budget: 300 },
-      { name: "Equipment & Supplies", budget: 500 }
+      { name: "Inventory & Stock", budget: 0 },
+      { name: "Fuel & Transport", budget: 0 },
+      { name: "Rent & Utilities", budget: 0 },
+      { name: "Marketing", budget: 0 },
+      { name: "Equipment & Supplies", budget: 0 }
     ]
   },
   {
@@ -19,11 +19,11 @@ export const BUSINESS_TYPES = [
     name: "Services",
     description: "Agencies, professional service firms, and client work",
     defaultCategories: [
-      { name: "Fuel & Transport", budget: 500 },
-      { name: "Office Supplies", budget: 300 },
-      { name: "Client Entertainment", budget: 400 },
-      { name: "Software & Subscriptions", budget: 350 },
-      { name: "Equipment", budget: 600 }
+      { name: "Fuel & Transport", budget: 0 },
+      { name: "Office Supplies", budget: 0 },
+      { name: "Client Entertainment", budget: 0 },
+      { name: "Software & Subscriptions", budget: 0 },
+      { name: "Equipment", budget: 0 }
     ]
   },
   {
@@ -31,11 +31,11 @@ export const BUSINESS_TYPES = [
     name: "Food & Beverage",
     description: "Restaurants, cafes, food trucks, and catering services",
     defaultCategories: [
-      { name: "Ingredients & Supplies", budget: 1000 },
-      { name: "Fuel & Transport", budget: 350 },
-      { name: "Equipment & Maintenance", budget: 500 },
-      { name: "Utilities", budget: 600 },
-      { name: "Packaging", budget: 400 }
+      { name: "Ingredients & Supplies", budget: 0 },
+      { name: "Fuel & Transport", budget: 0 },
+      { name: "Equipment & Maintenance", budget: 0 },
+      { name: "Utilities", budget: 0 },
+      { name: "Packaging", budget: 0 }
     ]
   },
   {
@@ -43,11 +43,11 @@ export const BUSINESS_TYPES = [
     name: "Construction",
     description: "Contractors, trade services, build projects, and sites",
     defaultCategories: [
-      { name: "Materials", budget: 1200 },
-      { name: "Fuel & Transport", budget: 700 },
-      { name: "Equipment & Tools", budget: 800 },
-      { name: "Labor/Contractor Payments", budget: 1500 },
-      { name: "Permits & Fees", budget: 300 }
+      { name: "Materials", budget: 0 },
+      { name: "Fuel & Transport", budget: 0 },
+      { name: "Equipment & Tools", budget: 0 },
+      { name: "Labor/Contractor Payments", budget: 0 },
+      { name: "Permits & Fees", budget: 0 }
     ]
   },
   {
@@ -55,11 +55,11 @@ export const BUSINESS_TYPES = [
     name: "Freelance/Consulting",
     description: "Solo operators, consultants, and independent contractors",
     defaultCategories: [
-      { name: "Software & Subscriptions", budget: 300 },
-      { name: "Fuel & Transport", budget: 250 },
-      { name: "Office Supplies", budget: 200 },
-      { name: "Client Entertainment", budget: 350 },
-      { name: "Equipment", budget: 500 }
+      { name: "Software & Subscriptions", budget: 0 },
+      { name: "Fuel & Transport", budget: 0 },
+      { name: "Office Supplies", budget: 0 },
+      { name: "Client Entertainment", budget: 0 },
+      { name: "Equipment", budget: 0 }
     ]
   },
   {
@@ -67,11 +67,11 @@ export const BUSINESS_TYPES = [
     name: "Other",
     description: "General business operations or custom category setup",
     defaultCategories: [
-      { name: "General Supplies", budget: 400 },
-      { name: "Fuel & Transport", budget: 400 },
-      { name: "Equipment", budget: 500 },
-      { name: "Utilities", budget: 400 },
-      { name: "Miscellaneous", budget: 300 }
+      { name: "General Supplies", budget: 0 },
+      { name: "Fuel & Transport", budget: 0 },
+      { name: "Equipment", budget: 0 },
+      { name: "Utilities", budget: 0 },
+      { name: "Miscellaneous", budget: 0 }
     ]
   }
 ];

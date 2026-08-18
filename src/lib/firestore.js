@@ -305,14 +305,14 @@ export async function createBusinessWorkspaceFirestore(ownerUser, data, defaultC
   const cats = Array.isArray(defaultCategories) && defaultCategories.length > 0
     ? defaultCategories
     : [
-        { name: "Fuel & Transport", budget: 400 },
-        { name: "Office Supplies", budget: 300 },
-        { name: "Meals & Food", budget: 300 },
-        { name: "Equipment & Tools", budget: 500 },
-        { name: "Utilities & Bills", budget: 400 },
-        { name: "Software & Subscriptions", budget: 300 },
-        { name: "Petty Cash Spend", budget: 200 },
-        { name: "Other Expenses", budget: 200 }
+        { name: "Fuel & Transport", budget: 0 },
+        { name: "Office Supplies", budget: 0 },
+        { name: "Meals & Food", budget: 0 },
+        { name: "Equipment & Tools", budget: 0 },
+        { name: "Utilities & Bills", budget: 0 },
+        { name: "Software & Subscriptions", budget: 0 },
+        { name: "Petty Cash Spend", budget: 0 },
+        { name: "Other Expenses", budget: 0 }
       ];
 
   for (let i = 0; i < cats.length; i++) {

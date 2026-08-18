@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { getCurrencySymbol } from "../lib/currencies.js";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
 import {
   Trash2,
   RotateCcw,
@@ -30,6 +31,7 @@ export const TrashView = ({
   const [confirmEmpty, setConfirmEmpty] = useState(false);
   const [confirmRestoreAll, setConfirmRestoreAll] = useState(false);
   const [selectedType, setSelectedType] = useState("all"); // "all" | "expenses" | "income"
+  const [deleteModalConfig, setDeleteModalConfig] = useState(null);
 
   // Filter trashed records
   const trashedExpenses = expenses.filter((e) => e.deletedAt);
@@ -168,34 +170,23 @@ export const TrashView = ({
               )}
 
               {/* Empty Trash */}
-              {!confirmEmpty ? (
-                <button
-                  onClick={() => setConfirmEmpty(true)}
-                  aria-label="Empty trash permanently"
-                  className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer bg-[#ff5a3c] hover:bg-[#e04a2f] text-white shadow-2xs min-h-[40px]"
-                >
-                  <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
-                  <span className="whitespace-nowrap">Empty Trash</span>
-                </button>
-              ) : (
-                <div className="flex items-center gap-2 bg-[#fbf1de] border border-[#ff5a3c]/40 rounded-lg p-1.5">
-                  <span className="text-[11px] font-semibold text-[#ff5a3c] px-1">
-                    Permanently delete all?
-                  </span>
-                  <button
-                    onClick={handleEmptyTrash}
-                    className="text-[11px] font-bold bg-[#ff5a3c] text-white px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-[#e04a2f] transition-colors"
-                  >
-                    Yes, delete
-                  </button>
-                  <button
-                    onClick={() => setConfirmEmpty(false)}
-                    className="text-[11px] font-bold bg-white text-[#6b665c] px-2.5 py-1.5 rounded-md cursor-pointer hover:bg-[#f7f3ea] transition-colors border border-[#d9d4c8]"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
+              <button
+                onClick={() => {
+                  setDeleteModalConfig({
+                    title: `Empty Trash (${totalTrashed} items)?`,
+                    description: "Are you sure you want to permanently erase all records in the trash? This action cannot be undone.",
+                    selectedCount: totalTrashed,
+                    isPermanent: true,
+                    confirmText: "Empty Trash Permanently",
+                    onConfirm: handleEmptyTrash
+                  });
+                }}
+                aria-label="Empty trash permanently"
+                className="flex-1 sm:flex-none font-display font-semibold text-xs px-4 py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer bg-[#ff5a3c] hover:bg-[#e04a2f] text-white shadow-2xs min-h-[40px]"
+              >
+                <Trash2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span className="whitespace-nowrap">Empty Trash</span>
+              </button>
             </div>
           )}
         </div>
@@ -315,7 +306,16 @@ export const TrashView = ({
                             <RotateCcw className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => onPermanentDeleteExpense?.(exp.id)}
+                            onClick={() => {
+                              setDeleteModalConfig({
+                                title: "Permanently Delete Expense?",
+                                description: `Are you sure you want to permanently delete "${exp.vendor || "this expense"}"? This action cannot be undone.`,
+                                record: { ...exp, recordType: "expense" },
+                                isPermanent: true,
+                                confirmText: "Delete Permanently",
+                                onConfirm: () => onPermanentDeleteExpense?.(exp.id)
+                              });
+                            }}
                             title="Permanently delete this expense"
                             className="p-1.5 rounded-md bg-[#fbf1de] text-[#ff5a3c] hover:bg-[#ff5a3c] hover:text-white transition-colors cursor-pointer"
                           >
@@ -375,7 +375,16 @@ export const TrashView = ({
                             <RotateCcw className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => onPermanentDeleteIncome?.(inc.id)}
+                            onClick={() => {
+                              setDeleteModalConfig({
+                                title: "Permanently Delete Income?",
+                                description: `Are you sure you want to permanently delete "${inc.source || "this income"}"? This action cannot be undone.`,
+                                record: { ...inc, recordType: "income" },
+                                isPermanent: true,
+                                confirmText: "Delete Permanently",
+                                onConfirm: () => onPermanentDeleteIncome?.(inc.id)
+                              });
+                            }}
                             title="Permanently delete this income entry"
                             className="p-1.5 rounded-md bg-[#fbf1de] text-[#ff5a3c] hover:bg-[#ff5a3c] hover:text-white transition-colors cursor-pointer"
                           >
@@ -412,6 +421,22 @@ export const TrashView = ({
             </p>
           </div>
         </div>
+      )}
+
+      {/* Branded Delete Confirmation Modal */}
+      {deleteModalConfig && (
+        <ConfirmDeleteModal
+          isOpen={!!deleteModalConfig}
+          title={deleteModalConfig.title}
+          description={deleteModalConfig.description}
+          record={deleteModalConfig.record}
+          selectedCount={deleteModalConfig.selectedCount}
+          isPermanent={deleteModalConfig.isPermanent}
+          confirmText={deleteModalConfig.confirmText}
+          currency={currency}
+          onConfirm={deleteModalConfig.onConfirm}
+          onClose={() => setDeleteModalConfig(null)}
+        />
       )}
     </div>
   );

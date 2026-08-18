@@ -1130,9 +1130,13 @@ export function App() {
             onOpenDashboard={() => setCurrentView("dashboard")}
             onOpenImport={(type) => { setImportType(type); setIsImportOpen(true); }}
             onEditExpense={(rec) => setEditingRecord({ type: "expense", record: rec })}
+            onEditIncome={(rec) => setEditingRecord({ type: "income", record: rec })}
             onDeleteExpense={handleDeleteExpense}
+            onDeleteIncome={handleDeleteIncome}
             onRestoreExpense={handleRestoreExpense}
+            onRestoreIncome={handleRestoreIncome}
             onBulkDelete={handleBulkDeleteExpenses}
+            onBulkDeleteIncome={handleBulkDeleteIncome}
             onBulkRecategorize={handleBulkRecategorizeExpenses}
             onBulkMoneyMovement={handleBulkMoneyMovement}
             currency={workspace?.currency || "USD"}

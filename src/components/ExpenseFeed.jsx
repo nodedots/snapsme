@@ -2,6 +2,8 @@ import React, { useState, useMemo } from "react";
 import { TornCard } from "./TornCard";
 import { StatusPill } from "./StatusPill";
 import { ConfidenceDot } from "./ConfidenceDot";
+import { ConfirmDeleteModal } from "./ConfirmDeleteModal";
+import { UndoToast } from "./UndoToast";
 import { getCurrencySymbol } from "../lib/currencies.js";
 import {
   canEditRecord,
@@ -29,61 +31,74 @@ import {
   FileSpreadsheet,
   Upload,
   TrendingUp,
+  ArrowDownLeft,
   Camera,
   Pencil,
   Trash2,
   ArrowUpDown,
   RotateCcw,
   CheckSquare,
-  LayoutDashboard
+  LayoutDashboard,
+  Mic,
+  Sparkles,
+  Download,
+  Wallet
 } from "lucide-react";
 
+
 export const ExpenseFeed = ({
-  expenses,
+  expenses = [],
   incomeEntries = [],
-  categories,
-  members,
+  categories = [],
+  members = [],
   currentUser = null,
   onOpenCapture,
   onAddIncome,
   onOpenDashboard,
   onOpenImport,
   onEditExpense,
+  onEditIncome,
   onDeleteExpense,
+  onDeleteIncome,
   onRestoreExpense,
+  onRestoreIncome,
   onBulkDelete,
+  onBulkDeleteIncome,
   onBulkRecategorize,
   onBulkMoneyMovement,
-  currency
+  currency = "USD"
 }) => {
+  const [transactionType, setTransactionType] = useState("all"); // "all" | "expense" | "income"
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedMember, setSelectedMember] = useState("all");
   const [selectedMoneyMovement, setSelectedMoneyMovement] = useState("all");
-  const [selectedExpense, setSelectedExpense] = useState(null);
+  const [selectedRecord, setSelectedRecord] = useState(null); // { type: "expense"|"income", data: record }
   const [sortKey, setSortKey] = useState("date");
   const [sortDir, setSortDir] = useState("desc");
   const [showDeleted, setShowDeleted] = useState(false);
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleteModalConfig, setDeleteModalConfig] = useState(null);
+  const [undoToastState, setUndoToastState] = useState(null);
   const [bulkCategoryId, setBulkCategoryId] = useState("");
   const [bulkMoneyMovement, setBulkMoneyMovement] = useState("");
 
   // Lightbox Modal state
-  const [lightboxExpense, setLightboxExpense] = useState(null);
+  const [lightboxRecord, setLightboxRecord] = useState(null);
   const [zoomScale, setZoomScale] = useState(1);
   const [rotation, setRotation] = useState(0);
 
-  const openLightbox = (expense, e) => {
+  const openLightbox = (record, e) => {
     if (e) e.stopPropagation();
-    setLightboxExpense(expense);
+    setLightboxRecord(record);
     setZoomScale(1);
     setRotation(0);
   };
 
   const closeLightbox = () => {
-    setLightboxExpense(null);
+    setLightboxRecord(null);
     setZoomScale(1);
     setRotation(0);
   };
@@ -91,36 +106,66 @@ export const ExpenseFeed = ({
   const isOwner = currentUser?.role === "owner";
   const canBulk = canBulkManage(currentUser);
 
-  const deletedCount = useMemo(
-    () => filterDeletedRecords(expenses).length,
-    [expenses]
-  );
+  // Combine and normalize expenses and income records into a unified pool
+  const allNormalizedRecords = useMemo(() => {
+    const normExpenses = (expenses || []).map((exp) => ({
+      ...exp,
+      recordType: "expense",
+      searchableTitle: exp.vendor || "",
+      searchableMeta: `${exp.categoryName || ""} ${exp.submittedByName || ""} ${exp.notes || ""}`
+    }));
 
-  // Filter + sort expenses
-  const filteredExpenses = useMemo(() => {
+    const normIncome = (incomeEntries || []).map((inc) => ({
+      ...inc,
+      recordType: "income",
+      searchableTitle: inc.source || "",
+      searchableMeta: `${inc.origin || ""} ${inc.submittedByName || ""} ${inc.notes || ""}`
+    }));
+
+    return [...normExpenses, ...normIncome];
+  }, [expenses, incomeEntries]);
+
+  const deletedCount = useMemo(() => {
+    return filterDeletedRecords(allNormalizedRecords).length;
+  }, [allNormalizedRecords]);
+
+  // Filter + sort combined records
+  const filteredRecords = useMemo(() => {
     const pool = showDeleted
-      ? filterDeletedRecords(expenses)
-      : filterActiveRecords(expenses);
+      ? filterDeletedRecords(allNormalizedRecords)
+      : filterActiveRecords(allNormalizedRecords);
 
-    const filtered = pool.filter((exp) => {
-      const vendor = (exp.vendor || "").toLowerCase();
-      const cat = (exp.categoryName || "").toLowerCase();
-      const by = (exp.submittedByName || "").toLowerCase();
-      const notes = (exp.notes || "").toLowerCase();
+    const filtered = pool.filter((rec) => {
+      // 1. Transaction Type filter
+      if (transactionType === "expense" && rec.recordType !== "expense") return false;
+      if (transactionType === "income" && rec.recordType !== "income") return false;
+
+      // 2. Search Query filter
+      const title = rec.searchableTitle.toLowerCase();
+      const meta = rec.searchableMeta.toLowerCase();
       const q = searchQuery.toLowerCase();
-      const matchesSearch =
-        !q || vendor.includes(q) || cat.includes(q) || by.includes(q) || notes.includes(q);
-      const catId = exp.categoryId || exp.category;
-      const matchesCategory = selectedCategory === "all" || catId === selectedCategory;
-      const matchesMember = selectedMember === "all" || exp.submittedBy === selectedMember;
+      const matchesSearch = !q || title.includes(q) || meta.includes(q);
+
+      // 3. Category filter (applies to expenses; income passes if category filter is all)
+      const catId = rec.categoryId || rec.category;
+      const matchesCategory =
+        selectedCategory === "all" || (rec.recordType === "expense" && catId === selectedCategory);
+
+      // 4. Member filter
+      const matchesMember = selectedMember === "all" || rec.submittedBy === selectedMember;
+
+      // 5. Money Movement filter (applies to expenses; income passes if movement filter is all)
       const matchesMM =
-        selectedMoneyMovement === "all" || exp.moneyMovement === selectedMoneyMovement;
+        selectedMoneyMovement === "all" ||
+        (rec.recordType === "expense" && rec.moneyMovement === selectedMoneyMovement);
+
       return matchesSearch && matchesCategory && matchesMember && matchesMM;
     });
 
     return sortRecords(filtered, sortKey, sortDir);
   }, [
-    expenses,
+    allNormalizedRecords,
+    transactionType,
     showDeleted,
     searchQuery,
     selectedCategory,
@@ -130,10 +175,21 @@ export const ExpenseFeed = ({
     sortDir
   ]);
 
-  const totalFilteredAmount = filteredExpenses.reduce(
-    (acc, curr) => acc + (Number(curr.amount) || 0),
-    0
-  );
+  // Calculate Cashflow Ledger Totals
+  const { totalInflow, totalOutflow, netBalance } = useMemo(() => {
+    let inflow = 0;
+    let outflow = 0;
+    for (const rec of filteredRecords) {
+      const amt = Number(rec.amount) || 0;
+      if (rec.recordType === "income") inflow += amt;
+      else outflow += amt;
+    }
+    return {
+      totalInflow: inflow,
+      totalOutflow: outflow,
+      netBalance: inflow - outflow
+    };
+  }, [filteredRecords]);
 
   const toggleSelect = (id, e) => {
     if (e) e.stopPropagation();
@@ -146,27 +202,55 @@ export const ExpenseFeed = ({
   };
 
   const selectAllVisible = () => {
-    setSelectedIds(new Set(filteredExpenses.map((e) => e.id)));
+    setSelectedIds(new Set(filteredRecords.map((e) => e.id)));
   };
 
   const clearSelection = () => setSelectedIds(new Set());
 
-  const handleRowDelete = (exp, e) => {
+  const handleRowDelete = (rec, e) => {
     if (e) e.stopPropagation();
-    if (!canDeleteRecord(exp, currentUser).allowed) return;
-    if (confirmDeleteId === exp.id) {
-      onDeleteExpense?.(exp.id, { permanent: isSoftDeleted(exp) });
-      setConfirmDeleteId(null);
-      if (selectedExpense?.id === exp.id) setSelectedExpense(null);
+    if (!canDeleteRecord(rec, currentUser).allowed) return;
+
+    const title = rec.recordType === "income" ? rec.source : rec.vendor;
+    const isPermanent = isSoftDeleted(rec);
+
+    if (isPermanent) {
+      // Permanent deletion: open branded confirmation modal
+      setDeleteModalConfig({
+        title: "Permanently Delete Record?",
+        description: `Are you sure you want to permanently delete "${title}"? This cannot be undone.`,
+        record: rec,
+        isPermanent: true,
+        confirmText: "Delete Permanently",
+        onConfirm: () => {
+          if (rec.recordType === "income") onDeleteIncome?.(rec.id, { permanent: true });
+          else onDeleteExpense?.(rec.id, { permanent: true });
+          if (selectedRecord?.data?.id === rec.id) setSelectedRecord(null);
+        }
+      });
     } else {
-      setConfirmDeleteId(exp.id);
-      setTimeout(() => setConfirmDeleteId(null), 3000);
+      // Soft deletion: move to trash & show interactive Undo Toast banner
+      if (rec.recordType === "income") {
+        onDeleteIncome?.(rec.id, { permanent: false });
+      } else {
+        onDeleteExpense?.(rec.id, { permanent: false });
+      }
+      if (selectedRecord?.data?.id === rec.id) setSelectedRecord(null);
+
+      setUndoToastState({
+        id: rec.id,
+        message: `Moved "${title}" to Trash.`,
+        onUndo: () => {
+          if (rec.recordType === "income") onRestoreIncome?.(rec.id);
+          else onRestoreExpense?.(rec.id);
+        }
+      });
     }
   };
 
   const selectedCount = selectedIds.size;
 
-  // CSV Export logic for accounting (FR-I5: income included, clearly typed)
+  // CSV Export logic for combined accounting ledger
   const handleExportCSV = () => {
     const escapeCsvCell = (val) => {
       if (val === undefined || val === null) return '""';
@@ -174,7 +258,7 @@ export const ExpenseFeed = ({
       return `"${str}"`;
     };
 
-    const commonHeaders = [
+    const headers = [
       "Type",
       "ID",
       "Date",
@@ -182,81 +266,65 @@ export const ExpenseFeed = ({
       "Amount",
       "Currency",
       "Category",
-      "Money Movement",
+      "Money Movement / Origin",
       "Submitted By",
-      "Intake Source",
       "Sync Status",
       "Notes"
     ];
 
-    const expenseRows = filteredExpenses.map((exp) => [
-      "Expense",
-      exp.id || "",
-      exp.date || "",
-      exp.vendor || "",
-      exp.amount ?? "",
-      exp.currency || currency,
-      exp.categoryName || "",
-      exp.moneyMovement || "",
-      exp.submittedByName || "",
-      exp.source || "",
-      exp.syncStatus || "",
-      exp.notes || ""
-    ].map(escapeCsvCell));
-
-    const incomeRows = (incomeEntries || []).map((i) => [
-      "Income",
-      i.id || "",
-      i.date || "",
-      i.source || "",
-      i.amount ?? "",
-      i.currency || currency,
-      "",
-      "",
-      i.submittedByName || "",
-      "manual",
-      "",
-      i.notes || ""
+    const rows = filteredRecords.map((rec) => [
+      rec.recordType === "income" ? "Income" : "Expense",
+      rec.id || "",
+      rec.date || "",
+      rec.recordType === "income" ? rec.source || "" : rec.vendor || "",
+      rec.amount ?? "",
+      rec.currency || currency,
+      rec.categoryName || (rec.recordType === "income" ? "Income" : ""),
+      rec.recordType === "income" ? rec.origin || "manual" : rec.moneyMovement || "",
+      rec.submittedByName || "",
+      rec.syncStatus || "synced",
+      rec.notes || ""
     ].map(escapeCsvCell));
 
     const lines = [];
-    lines.push("# SnapSME export — expenses and income");
+    lines.push("# SnapSME Financial Ledger Export — Expenses & Income");
     lines.push(`# Generated ${new Date().toISOString()}`);
+    lines.push(`# Filtered Total Inflow: ${totalInflow.toFixed(2)} ${currency}`);
+    lines.push(`# Filtered Total Outflow: ${totalOutflow.toFixed(2)} ${currency}`);
+    lines.push(`# Net Cashflow Balance: ${netBalance.toFixed(2)} ${currency}`);
     lines.push("");
-    lines.push("# === EXPENSES ===");
-    lines.push(commonHeaders.join(","));
-    if (expenseRows.length === 0) {
-      lines.push(escapeCsvCell("(no expense rows)"));
+    lines.push(headers.join(","));
+    if (rows.length === 0) {
+      lines.push(escapeCsvCell("(no records found)"));
     } else {
-      lines.push(...expenseRows);
-    }
-    lines.push("");
-    lines.push("# === INCOME ===");
-    lines.push(commonHeaders.join(","));
-    if (incomeRows.length === 0) {
-      lines.push(escapeCsvCell("(no income rows)"));
-    } else {
-      lines.push(...incomeRows);
+      lines.push(...rows);
     }
 
     const csvContent = lines.join("\n");
-
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     const dateStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute("download", `snapsme_export_${dateStr}.csv`);
+    link.setAttribute("download", `snapsme_ledger_export_${dateStr}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  };
+
   return (
     <div className="space-y-6">
       {/* Search & Filter Header Bar */}
-      <div className="bg-white p-4 rounded-xl border border-black/10 space-y-3">
+      <div className="bg-white p-4 rounded-xl border border-black/10 space-y-3 shadow-xs">
+        {/* Top Control Bar */}
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           {/* Search input */}
           <div className="relative flex-1">
@@ -265,108 +333,100 @@ export const ExpenseFeed = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search vendor, category, staff or note..."
+              placeholder="Search vendor, source, staff, category or note..."
               className="w-full bg-[#f6f5f4] border border-black/10 text-xs font-medium rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:border-[#0075de]"
             />
           </div>
 
+          {/* Feed Data Tools (Import & Export CSV) */}
           <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-            {/* Quick Stats Banner */}
-            <div className="flex items-center gap-3 justify-between bg-[#f6f5f4] border border-black/10 px-3.5 py-1.5 rounded-lg text-xs">
-              <span className="text-[#615d59] font-medium">Filtered Feed Total:</span>
-              <span className="font-mono text-[#000000] font-bold text-sm">
-                {getCurrencySymbol(currency)}{totalFilteredAmount.toFixed(2)} ({currency})
-              </span>
-              <span className="text-[10px] text-[#615d59] font-medium bg-white px-2 py-0.5 rounded border border-black/10">
-                {filteredExpenses.length} entries
-              </span>
-            </div>
-
-              {/* Record Expense — co-primary expense action */}
-              {onOpenCapture && (
-                <button
-                  type="button"
-                  onClick={onOpenCapture}
-                  aria-label="Record an expense"
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white transition-all whitespace-nowrap cursor-pointer"
-                  style={{ backgroundColor: 'var(--color-expense-action)' }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action-hover)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-expense-action)'}
-                  title="Snap, say, or type an expense"
-                >
-                  <Camera className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Record Expense</span>
-                </button>
-              )}
-
-              {/* Add Income — co-primary income action, equal weight to Record Expense */}
-              {onAddIncome && (
-                <button
-                  type="button"
-                  onClick={onAddIncome}
-                  aria-label="Add an income entry"
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold text-white transition-all whitespace-nowrap cursor-pointer"
-                  style={{ backgroundColor: 'var(--color-income-action)' }}
-                  onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action-hover)'}
-                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--color-income-action)'}
-                  title="Log money that came in"
-                >
-                  <TrendingUp className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Add Income</span>
-                </button>
-              )}
-
-              {/* Dashboard Navigation Button */}
-              {onOpenDashboard && (
-                <button
-                  type="button"
-                  onClick={onOpenDashboard}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/10 hover:border-black/30"
-                  title="Open spend dashboard"
-                >
-                  <LayoutDashboard className="w-3.5 h-3.5 text-[#0075de]" />
-                  <span>Dashboard</span>
-                </button>
-              )}
-
-              {/* Import CSV / Excel Button */}
-              {onOpenImport && (
-                <button
-                  type="button"
-                  onClick={() => onOpenImport("expenses")}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/10 hover:border-black/30"
-                  title="Bulk import expenses from a CSV or Excel file"
-                >
-                  <Upload className="w-3.5 h-3.5 text-[#0075de]" />
-                  <span>Import CSV/Excel</span>
-                </button>
-              )}
-
-              {/* Export CSV Button */}
+            {/* Import CSV / Excel Button */}
+            {onOpenImport && (
               <button
                 type="button"
-                onClick={handleExportCSV}
-                disabled={filteredExpenses.length === 0 && (incomeEntries || []).length === 0}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
-                  filteredExpenses.length > 0 || (incomeEntries || []).length > 0
-                    ? "bg-[#0075de] hover:bg-[#0060b8] text-white"
-                    : "bg-black/10 text-[#757575] cursor-not-allowed"
-                }`}
-                title="Export current filtered expenses as a CSV file for accounting"
+                onClick={() => onOpenImport("expenses")}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer bg-white hover:bg-[#f7f3ea] text-[#1c1b19] border border-black/10 hover:border-black/30"
+                title="Bulk import records from a CSV or Excel file"
               >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>Export CSV</span>
+                <Upload className="w-3.5 h-3.5 text-[#0075de]" />
+                <span className="hidden sm:inline">Import CSV</span>
               </button>
+            )}
+
+            {/* Export CSV Button */}
+            <button
+              type="button"
+              onClick={handleExportCSV}
+              disabled={filteredRecords.length === 0}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium transition-all whitespace-nowrap cursor-pointer ${
+                filteredRecords.length > 0
+                  ? "bg-[#0075de] hover:bg-[#0060b8] text-white"
+                  : "bg-black/10 text-[#757575] cursor-not-allowed"
+              }`}
+              title="Export current ledger transactions as a CSV file"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Export CSV</span>
+            </button>
           </div>
         </div>
 
-        {/* Category, Member & Money Movement Filter Controls */}
-        <div className="pt-2.5 border-t border-black/10 space-y-2.5">
+        {/* Ledger Transaction Type Tabs & Summary Cards */}
+        <div className="pt-2 border-t border-black/10 space-y-3">
+          {/* Transaction Type Tabs */}
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <span className="text-xs font-semibold text-[#1c1b19] flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-[#0075de]" /> Filter & sort:
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-[#f7f3ea] p-1 rounded-xl border border-[#d9d4c8]">
+              <button
+                type="button"
+                onClick={() => setTransactionType("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  transactionType === "all"
+                    ? "bg-white text-[#1c1b19] shadow-2xs border border-[#d9d4c8]"
+                    : "text-[#6b665c] hover:text-[#1c1b19]"
+                }`}
+              >
+                <Wallet className="w-3.5 h-3.5 text-[#0075de]" />
+                <span>All Cashflows</span>
+                <span className="bg-[#1c1b19]/10 text-[#1c1b19] text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold">
+                  {allNormalizedRecords.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTransactionType("income")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  transactionType === "income"
+                    ? "bg-[#e7f4ec] text-[#0f7a52] shadow-2xs border border-[#0f7a52]/30"
+                    : "text-[#6b665c] hover:text-[#0f7a52]"
+                }`}
+              >
+                <ArrowDownLeft className="w-3.5 h-3.5 text-[#0f7a52]" />
+                <span>Income (Inflow)</span>
+                <span className="bg-[#0f7a52]/15 text-[#0f7a52] text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold">
+                  {incomeEntries.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTransactionType("expense")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  transactionType === "expense"
+                    ? "bg-red-50 text-red-700 shadow-2xs border border-red-200"
+                    : "text-[#6b665c] hover:text-red-700"
+                }`}
+              >
+                <Receipt className="w-3.5 h-3.5 text-[#ff5a3c]" />
+                <span>Expenses (Outflow)</span>
+                <span className="bg-[#ff5a3c]/15 text-[#ff5a3c] text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold">
+                  {expenses.length}
+                </span>
+              </button>
+            </div>
+
+            {/* Trash & Bulk Select Toggles */}
+            <div className="flex items-center gap-2">
               {isOwner && deletedCount > 0 && (
                 <button
                   type="button"
@@ -374,7 +434,7 @@ export const ExpenseFeed = ({
                     setShowDeleted((v) => !v);
                     clearSelection();
                   }}
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer ${
+                  className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer ${
                     showDeleted
                       ? "bg-red-50 text-red-700 border-red-200"
                       : "bg-white text-[#6b665c] border-[#d9d4c8]"
@@ -390,7 +450,7 @@ export const ExpenseFeed = ({
                     setSelectMode((v) => !v);
                     clearSelection();
                   }}
-                  className={`text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer flex items-center gap-1 ${
+                  className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border cursor-pointer flex items-center gap-1 ${
                     selectMode
                       ? "bg-[#e6f3fe] text-[#0075de] border-[#0075de]/30"
                       : "bg-white text-[#6b665c] border-[#d9d4c8]"
@@ -417,14 +477,70 @@ export const ExpenseFeed = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full text-xs">
+          {/* Quick Ledger Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            {/* Total Inflow (Income) */}
+            <div className="bg-[#e7f4ec]/60 border border-[#0f7a52]/20 p-3 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-medium text-[#0f7a52] flex items-center gap-1">
+                  <ArrowDownLeft className="w-3.5 h-3.5" /> Total Income (Inflow)
+                </span>
+                <p className="font-mono font-bold text-lg text-[#0f7a52] mt-0.5">
+                  +{getCurrencySymbol(currency)}{totalInflow.toFixed(2)}
+                </p>
+              </div>
+              <span className="text-[10px] font-mono text-[#0f7a52] bg-white px-2 py-0.5 rounded border border-[#0f7a52]/20 font-bold">
+                {filteredRecords.filter((r) => r.recordType === "income").length} items
+              </span>
+            </div>
+
+            {/* Total Outflow (Expenses) */}
+            <div className="bg-red-50/60 border border-red-200 p-3 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-medium text-red-700 flex items-center gap-1">
+                  <Receipt className="w-3.5 h-3.5 text-[#ff5a3c]" /> Total Expenses (Outflow)
+                </span>
+                <p className="font-mono font-bold text-lg text-red-700 mt-0.5">
+                  -{getCurrencySymbol(currency)}{totalOutflow.toFixed(2)}
+                </p>
+              </div>
+              <span className="text-[10px] font-mono text-red-700 bg-white px-2 py-0.5 rounded border border-red-200 font-bold">
+                {filteredRecords.filter((r) => r.recordType === "expense").length} items
+              </span>
+            </div>
+
+            {/* Net Cashflow Balance */}
+            <div
+              className={`p-3 rounded-xl border flex items-center justify-between ${
+                netBalance >= 0
+                  ? "bg-[#e6f3fe]/60 border-[#0075de]/30 text-[#0075de]"
+                  : "bg-amber-50/60 border-amber-200 text-amber-800"
+              }`}
+            >
+              <div>
+                <span className="text-[11px] font-medium flex items-center gap-1">
+                  <Wallet className="w-3.5 h-3.5" /> Net Ledger Balance
+                </span>
+                <p className="font-mono font-bold text-lg mt-0.5">
+                  {netBalance >= 0 ? "+" : ""}
+                  {getCurrencySymbol(currency)}{netBalance.toFixed(2)}
+                </p>
+              </div>
+              <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-black/10 font-bold">
+                {filteredRecords.length} total
+              </span>
+            </div>
+          </div>
+
+          {/* Filter Dropdowns */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full text-xs pt-1">
             <div className="w-full min-w-0">
               <label htmlFor="feed-filter-category" className="sr-only">Filter by Category</label>
               <select
                 id="feed-filter-category"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:border-[#0075de] cursor-pointer box-border min-h-[44px] sm:min-h-0"
+                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de] cursor-pointer"
               >
                 <option value="all">All Categories ({categories.length})</option>
                 {categories.map((cat) => (
@@ -434,13 +550,14 @@ export const ExpenseFeed = ({
                 ))}
               </select>
             </div>
+
             <div className="w-full min-w-0">
               <label htmlFor="feed-filter-member" className="sr-only">Filter by Submitter</label>
               <select
                 id="feed-filter-member"
                 value={selectedMember}
                 onChange={(e) => setSelectedMember(e.target.value)}
-                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:border-[#0075de] cursor-pointer box-border min-h-[44px] sm:min-h-0"
+                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de] cursor-pointer"
               >
                 <option value="all">All Submitters ({members.length})</option>
                 {members.map((m) => (
@@ -450,13 +567,14 @@ export const ExpenseFeed = ({
                 ))}
               </select>
             </div>
+
             <div className="w-full min-w-0">
               <label htmlFor="feed-filter-money" className="sr-only">Filter by Money Movement</label>
               <select
                 id="feed-filter-money"
                 value={selectedMoneyMovement}
                 onChange={(e) => setSelectedMoneyMovement(e.target.value)}
-                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2.5 sm:py-2 focus:outline-none focus:border-[#0075de] cursor-pointer box-border min-h-[44px] sm:min-h-0"
+                className="w-full bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de] cursor-pointer"
               >
                 <option value="all">All Money Movements</option>
                 <option value="company_card">Company Card</option>
@@ -465,17 +583,18 @@ export const ExpenseFeed = ({
                 <option value="supplier_payment">Supplier Direct</option>
               </select>
             </div>
+
             <div className="w-full min-w-0 flex gap-1.5">
               <label htmlFor="feed-sort-key" className="sr-only">Sort by</label>
               <select
                 id="feed-sort-key"
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value)}
-                className="flex-1 bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de] cursor-pointer min-h-[44px] sm:min-h-0"
+                className="flex-1 bg-[#f7f3ea] border border-[#d9d4c8] text-xs font-semibold rounded-lg px-3 py-2 focus:outline-none focus:border-[#0075de] cursor-pointer"
               >
                 <option value="date">Sort: Date</option>
                 <option value="amount">Sort: Amount</option>
-                <option value="vendor">Sort: Vendor</option>
+                <option value="vendor">Sort: Vendor/Source</option>
                 <option value="submittedBy">Sort: Submitted by</option>
                 <option value="createdAt">Sort: Created</option>
               </select>
@@ -541,6 +660,7 @@ export const ExpenseFeed = ({
                 >
                   Apply category
                 </button>
+
                 <select
                   value={bulkMoneyMovement}
                   onChange={(e) => setBulkMoneyMovement(e.target.value)}
@@ -570,16 +690,41 @@ export const ExpenseFeed = ({
               type="button"
               disabled={selectedCount === 0}
               onClick={() => {
-                if (
-                  window.confirm(
-                    showDeleted
-                      ? `Permanently delete ${selectedCount} record(s)? This cannot be undone.`
-                      : `Move ${selectedCount} expense(s) to trash?`
-                  )
-                ) {
-                  onBulkDelete?.([...selectedIds], { permanent: showDeleted });
-                  clearSelection();
+                const expenseIds = [];
+                const incomeIds = [];
+                for (const id of selectedIds) {
+                  const rec = filteredRecords.find((r) => r.id === id);
+                  if (rec?.recordType === "income") incomeIds.push(id);
+                  else expenseIds.push(id);
                 }
+
+                setDeleteModalConfig({
+                  title: showDeleted
+                    ? `Permanently Delete ${selectedCount} Record${selectedCount !== 1 ? "s" : ""}?`
+                    : `Move ${selectedCount} Record${selectedCount !== 1 ? "s" : ""} to Trash?`,
+                  description: showDeleted
+                    ? "This action is permanent. All selected records and accounting data will be erased."
+                    : "The selected records will be moved to Trash. You can restore them anytime.",
+                  selectedCount,
+                  isPermanent: showDeleted,
+                  confirmText: showDeleted ? "Delete Forever" : "Move to Trash",
+                  onConfirm: () => {
+                    if (expenseIds.length > 0) onBulkDelete?.(expenseIds, { permanent: showDeleted });
+                    if (incomeIds.length > 0) onBulkDeleteIncome?.(incomeIds, { permanent: showDeleted });
+                    clearSelection();
+
+                    if (!showDeleted) {
+                      setUndoToastState({
+                        id: `bulk_${Date.now()}`,
+                        message: `Moved ${selectedCount} record${selectedCount !== 1 ? "s" : ""} to Trash.`,
+                        onUndo: () => {
+                          expenseIds.forEach((id) => onRestoreExpense?.(id));
+                          incomeIds.forEach((id) => onRestoreIncome?.(id));
+                        }
+                      });
+                    }
+                  }
+                });
               }}
               className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#f64932] disabled:opacity-40 cursor-pointer ml-auto"
             >
@@ -589,224 +734,290 @@ export const ExpenseFeed = ({
         </div>
       )}
 
-      {/* Expense Feed Grid */}
-      {filteredExpenses.length > 0 ? (
+      {/* Ledger Feed Grid */}
+      {filteredRecords.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredExpenses.map((exp) => (
-            <TornCard
-              key={exp.id}
-              onClick={() => {
-                if (selectMode) {
-                  toggleSelect(exp.id);
-                  return;
+          {filteredRecords.map((rec) => {
+            const isIncome = rec.recordType === "income";
+
+            return (
+              <TornCard
+                key={rec.id}
+                onClick={() => {
+                  if (selectMode) {
+                    toggleSelect(rec.id);
+                    return;
+                  }
+                  setSelectedRecord({ type: rec.recordType, data: rec });
+                }}
+                headerColor={
+                  isSoftDeleted(rec)
+                    ? "bg-red-500"
+                    : isIncome
+                    ? "bg-[#0f7a52]"
+                    : rec.moneyMovement === "company_card"
+                    ? "bg-blue-600"
+                    : rec.moneyMovement === "personal_reimbursement"
+                    ? "bg-[#e0982a]"
+                    : rec.moneyMovement === "petty_cash"
+                    ? "bg-[#0f7a52]"
+                    : "bg-purple-600"
                 }
-                setSelectedExpense(exp);
-              }}
-              headerColor={
-                isSoftDeleted(exp)
-                  ? "bg-red-500"
-                  : exp.moneyMovement === "company_card"
-                  ? "bg-blue-600"
-                  : exp.moneyMovement === "personal_reimbursement"
-                  ? "bg-[#e0982a]"
-                  : exp.moneyMovement === "petty_cash"
-                  ? "bg-[#0f7a52]"
-                  : "bg-purple-600"
-              }
-            >
-              {/* Header Badges + actions */}
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  {selectMode && (
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.has(exp.id)}
-                      onChange={(e) => toggleSelect(exp.id, e)}
-                      onClick={(e) => e.stopPropagation()}
-                      className="h-4 w-4 rounded shrink-0"
-                    />
-                  )}
-                  <StatusPill type="moneyMovement" value={exp.moneyMovement} size="sm" />
-                  {isSoftDeleted(exp) && (
-                    <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
-                      Deleted
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <StatusPill type="sync" value={exp.syncStatus} />
-                  {!selectMode && canEditRecord(exp, currentUser).allowed && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEditExpense?.(exp);
-                      }}
-                      className="p-1 rounded-md text-[#6b665c] hover:text-[#0075de] hover:bg-[#e6f3fe] cursor-pointer"
-                      title="Edit expense"
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  {!selectMode && isSoftDeleted(exp) && canRestoreRecord(exp, currentUser).allowed && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRestoreExpense?.(exp.id);
-                      }}
-                      className="p-1 rounded-md text-[#0f7a52] hover:bg-[#e7f4ec] cursor-pointer"
-                      title="Restore"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                  {!selectMode && canDeleteRecord(exp, currentUser).allowed && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleRowDelete(exp, e)}
-                      className={`p-1 rounded-md cursor-pointer ${
-                        confirmDeleteId === exp.id
-                          ? "bg-red-50 text-red-600"
-                          : "text-[#6b665c] hover:text-red-600 hover:bg-red-50"
-                      }`}
-                      title={
-                        confirmDeleteId === exp.id
-                          ? isSoftDeleted(exp)
-                            ? "Click again to permanently delete"
-                            : "Click again to confirm trash"
-                          : isSoftDeleted(exp)
-                            ? "Delete forever"
-                            : "Move to trash"
-                      }
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
+              >
+                {/* Header Badges + actions */}
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    {selectMode && (
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(rec.id)}
+                        onChange={(e) => toggleSelect(rec.id, e)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 rounded shrink-0"
+                      />
+                    )}
 
-              {/* Vendor & Amount */}
-              <div className="flex items-start justify-between gap-2 my-2">
-                <div>
-                  <h3 className="font-display font-bold text-base text-[#1c1b19] line-clamp-1">
-                    {exp.vendor}
-                  </h3>
-                  <div className="flex items-center gap-1.5 text-xs text-[#6b665c] font-medium mt-0.5">
-                    <Tag className="w-3 h-3 text-[#0f7a52]" />
-                    <span>{exp.categoryName}</span>
+                    {isIncome ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider bg-[#e7f4ec] text-[#0f7a52] border border-[#0f7a52]/30 px-2 py-0.5 rounded-md">
+                        <ArrowDownLeft className="w-3 h-3" /> Income Inflow
+                      </span>
+                    ) : (
+                      <StatusPill type="moneyMovement" value={rec.moneyMovement} size="sm" />
+                    )}
+
+                    {isSoftDeleted(rec) && (
+                      <span className="text-[10px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                        Deleted
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <StatusPill type="sync" value={rec.syncStatus || "synced"} />
+
+                    {!selectMode && canEditRecord(rec, currentUser).allowed && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isIncome) onEditIncome?.(rec);
+                          else onEditExpense?.(rec);
+                        }}
+                        className="p-1 rounded-md text-[#6b665c] hover:text-[#0075de] hover:bg-[#e6f3fe] cursor-pointer transition-colors"
+                        title={isIncome ? "Edit income" : "Edit expense"}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {!selectMode && isSoftDeleted(rec) && canRestoreRecord(rec, currentUser).allowed && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isIncome) onRestoreIncome?.(rec.id);
+                          else onRestoreExpense?.(rec.id);
+                        }}
+                        className="p-1 rounded-md text-[#0f7a52] hover:bg-[#e7f4ec] cursor-pointer transition-colors"
+                        title="Restore record"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+
+                    {!selectMode && canDeleteRecord(rec, currentUser).allowed && (
+                      <button
+                        type="button"
+                        onClick={(e) => handleRowDelete(rec, e)}
+                        className={`p-1 rounded-md cursor-pointer transition-colors ${
+                          confirmDeleteId === rec.id
+                            ? "bg-red-50 text-red-600"
+                            : "text-[#6b665c] hover:text-red-600 hover:bg-red-50"
+                        }`}
+                        title={
+                          confirmDeleteId === rec.id
+                            ? isSoftDeleted(rec)
+                              ? "Click again to permanently delete"
+                              : "Click again to confirm trash"
+                            : isSoftDeleted(rec)
+                              ? "Delete forever"
+                              : "Move to trash"
+                        }
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 
-                <div className="text-right shrink-0">
-                  <div className="font-mono text-lg font-bold text-[#1c1b19]">
-                    {getCurrencySymbol(exp.currency || currency)}{exp.amount.toFixed(2)}
-                  </div>
-                  <div className="text-[10px] font-mono font-semibold text-[#6b665c]">
-                    {exp.currency || currency} (Accounting)
-                  </div>
-                  {exp.originalCurrency && exp.originalCurrency !== (exp.currency || currency) && (
-                    <div className="mt-1 bg-[#e7f4ec] text-[#0f7a52] border border-[#0f7a52]/20 text-[10px] font-mono font-medium px-1.5 py-0.5 rounded text-right">
-                      Doc: {getCurrencySymbol(exp.originalCurrency)}{exp.originalAmount ? exp.originalAmount.toFixed(2) : exp.amount.toFixed(2)} {exp.originalCurrency}
+                {/* Title (Vendor/Source) & Amount */}
+                <div className="flex items-start justify-between gap-2 my-2">
+                  <div>
+                    <h3 className="font-display font-bold text-base text-[#1c1b19] line-clamp-1">
+                      {isIncome ? rec.source : rec.vendor}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-xs text-[#6b665c] font-medium mt-0.5">
+                      {isIncome ? (
+                        <>
+                          <TrendingUp className="w-3 h-3 text-[#0f7a52]" />
+                          <span>Income Source · {rec.origin || "manual"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Tag className="w-3 h-3 text-[#0f7a52]" />
+                          <span>{rec.categoryName}</span>
+                        </>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              {/* Duplicate Warning Pill per PRD FR20 */}
-              {exp.duplicateOf && (
-                <div className="bg-[#fbf1de] border border-[#e0982a] p-2 rounded-lg my-2 flex items-center gap-1.5 text-[11px] font-medium text-[#1c1b19]">
-                  <AlertOctagon className="w-3.5 h-3.5 text-[#e0982a] shrink-0" />
-                  <span className="truncate">
-                    <strong>Possible Duplicate</strong> (48h match)
-                  </span>
-                </div>
-              )}
-
-              {/* Receipt Image Thumbnail preview trigger */}
-              {exp.receiptImageUrl && (
-                <div
-                  className="my-2.5 relative rounded-lg border border-[#d9d4c8] overflow-hidden group/img bg-[#f7f3ea] h-28 cursor-pointer"
-                  onClick={(e) => openLightbox(exp, e)}
-                >
-                  <img
-                    src={exp.receiptImageUrl}
-                    alt="Receipt thumbnail"
-                    className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-[#1c1b19]/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-display text-xs font-semibold backdrop-blur-[1px]">
-                    <ZoomIn className="w-4 h-4" /> Preview Receipt
+                  <div className="text-right shrink-0">
+                    <div
+                      className={`font-mono text-lg font-bold ${
+                        isIncome ? "text-[#0f7a52]" : "text-[#1c1b19]"
+                      }`}
+                    >
+                      {isIncome ? "+" : "-"}
+                      {getCurrencySymbol(rec.currency || currency)}
+                      {Number(rec.amount).toFixed(2)}
+                    </div>
+                    <div className="text-[10px] font-mono font-semibold text-[#6b665c]">
+                      {rec.currency || currency} ({isIncome ? "Inflow" : "Accounting"})
+                    </div>
+                    {rec.originalCurrency && rec.originalCurrency !== (rec.currency || currency) && (
+                      <div className="mt-1 bg-[#e7f4ec] text-[#0f7a52] border border-[#0f7a52]/20 text-[10px] font-mono font-medium px-1.5 py-0.5 rounded text-right">
+                        Doc: {getCurrencySymbol(rec.originalCurrency)}
+                        {rec.originalAmount ? Number(rec.originalAmount).toFixed(2) : Number(rec.amount).toFixed(2)}{" "}
+                        {rec.originalCurrency}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
 
-              {/* Voice Note Badge */}
-              {exp.source === "voice" && exp.voiceTranscript && (
-                <div className="bg-purple-50 border border-purple-200 p-2 rounded-lg my-2 text-[11px] text-purple-900 line-clamp-2 italic font-mono">
-                  "{exp.voiceTranscript}"
-                </div>
-              )}
+                {/* Duplicate Warning Pill per PRD FR20 */}
+                {rec.duplicateOf && (
+                  <div className="bg-[#fbf1de] border border-[#e0982a] p-2 rounded-lg my-2 flex items-center gap-1.5 text-[11px] font-medium text-[#1c1b19]">
+                    <AlertOctagon className="w-3.5 h-3.5 text-[#e0982a] shrink-0" />
+                    <span className="truncate">
+                      <strong>Possible Duplicate</strong> (48h match)
+                    </span>
+                  </div>
+                )}
 
-              {/* Footer Submitter & Date Info */}
-              <div className="pt-2 mt-2 border-t border-[#d9d4c8]/60 flex items-center justify-between text-[11px] text-[#6b665c]">
-                <div className="flex items-center gap-1.5 font-medium">
-                  <User className="w-3 h-3 text-[#1c1b19]" />
-                  <span className="truncate max-w-[110px]">{exp.submittedByName}</span>
-                </div>
-
-                <div className="flex items-center gap-2 font-mono">
-                  {exp.aiConfidence && (
-                    <ConfidenceDot
-                      score={
-                        (exp.aiConfidence.vendor +
-                          exp.aiConfidence.amount +
-                          exp.aiConfidence.date +
-                          exp.aiConfidence.category) /
-                        4
-                      }
-                      fieldName="Avg AI"
+                {/* Image/Document Thumbnail preview trigger */}
+                {rec.receiptImageUrl && (
+                  <div
+                    className="my-2.5 relative rounded-lg border border-[#d9d4c8] overflow-hidden group/img bg-[#f7f3ea] h-28 cursor-pointer"
+                    onClick={(e) => openLightbox(rec, e)}
+                  >
+                    <img
+                      src={rec.receiptImageUrl}
+                      alt={isIncome ? "Income document thumbnail" : "Receipt thumbnail"}
+                      className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-300"
                     />
-                  )}
-                  <span>{exp.date}</span>
+                    <div className="absolute inset-0 bg-[#1c1b19]/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-display text-xs font-semibold backdrop-blur-[1px]">
+                      <ZoomIn className="w-4 h-4" /> Preview {isIncome ? "Income Document" : "Receipt"}
+                    </div>
+                  </div>
+                )}
+
+                {/* Voice Note Badge */}
+                {rec.sourceType === "voice" || rec.source === "voice" ? (
+                  rec.voiceTranscript && (
+                    <div className="bg-purple-50 border border-purple-200 p-2 rounded-lg my-2 text-[11px] text-purple-900 line-clamp-2 italic font-mono flex items-start gap-1.5">
+                      <Mic className="w-3.5 h-3.5 text-purple-600 shrink-0 mt-0.5" />
+                      <span>"{rec.voiceTranscript}"</span>
+                    </div>
+                  )
+                ) : null}
+
+                {/* Footer Submitter & Date Info */}
+                <div className="pt-2 mt-2 border-t border-[#d9d4c8]/60 flex items-center justify-between text-[11px] text-[#6b665c]">
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <User className="w-3 h-3 text-[#1c1b19]" />
+                    <span className="truncate max-w-[110px]">{rec.submittedByName || "Team"}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 font-mono">
+                    {rec.aiConfidence && (
+                      <ConfidenceDot
+                        score={
+                          isIncome
+                            ? ((rec.aiConfidence.source || 0) +
+                                (rec.aiConfidence.amount || 0) +
+                                (rec.aiConfidence.date || 0)) / 3
+                            : ((rec.aiConfidence.vendor || 0) +
+                                (rec.aiConfidence.amount || 0) +
+                                (rec.aiConfidence.date || 0) +
+                                (rec.aiConfidence.category || 0)) / 4
+                        }
+                        fieldName="Avg AI"
+                      />
+                    )}
+                    <span>{formatDate(rec.date)}</span>
+                  </div>
                 </div>
-              </div>
-            </TornCard>
-          ))}
+              </TornCard>
+            );
+          })}
         </div>
       ) : (
-        <div className="bg-white p-12 text-center rounded-2xl border border-dashed border-[#d9d4c8] space-y-3">
+        <div className="bg-white p-12 text-center rounded-2xl border border-dashed border-[#d9d4c8] space-y-3 shadow-2xs">
           <div className="w-12 h-12 bg-[#f7f3ea] text-[#6b665c] rounded-full mx-auto flex items-center justify-center">
-            <Receipt className="w-6 h-6" />
+            {transactionType === "income" ? (
+              <ArrowDownLeft className="w-6 h-6 text-[#0f7a52]" />
+            ) : (
+              <Receipt className="w-6 h-6 text-[#ff5a3c]" />
+            )}
           </div>
           <h3 className="font-display font-bold text-lg text-[#1c1b19]">Nothing here yet</h3>
           <p className="text-xs text-[#6b665c] max-w-sm mx-auto">
-            {expenses.length === 0 ? "Nothing here yet — snap your first receipt to get started." : "No expenses match your search query or filters. Try adjusting your search."}
+            {allNormalizedRecords.length === 0
+              ? "Your ledger is empty — record your first income or expense entry to start tracking money flow."
+              : "No ledger records match your active search query or filters. Try adjusting your search."}
           </p>
-          <button
-            onClick={onOpenCapture}
-            className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-bold text-xs px-4 py-2 rounded-xl transition-transform active:scale-95 cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
-          >
-            Record Expense
-          </button>
+          <div className="flex items-center gap-2 justify-center pt-1">
+            <button
+              onClick={onOpenCapture}
+              className="bg-[#ff5a3c] hover:bg-[#e0482c] text-white font-display font-bold text-xs px-4 py-2 rounded-xl transition-transform active:scale-95 cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              Record Expense
+            </button>
+            <button
+              onClick={onAddIncome}
+              className="bg-[#0f7a52] hover:bg-[#0b5f40] text-white font-display font-bold text-xs px-4 py-2 rounded-xl transition-transform active:scale-95 cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              Add Income
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Expense Detail Modal */}
-      {selectedExpense && (
+      {/* Record Detail Modal (Expense or Income) */}
+      {selectedRecord && selectedRecord.data && (
         <div className="fixed inset-0 z-50 bg-[#1c1b19]/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#ffffff] border border-[#d9d4c8] rounded-2xl shadow-xl w-full max-w-lg overflow-hidden my-auto max-h-[90vh] flex flex-col">
+          <div className="bg-[#ffffff] border border-[#d9d4c8] rounded-2xl shadow-xl w-full max-w-lg overflow-hidden my-auto max-h-[90vh] flex flex-col animate-scale-up">
             {/* Modal Header */}
             <div className="bg-[#f7f3ea] p-4 border-b border-[#d9d4c8] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <StatusPill type="moneyMovement" value={selectedExpense.moneyMovement} />
-                <StatusPill type="source" value={selectedExpense.source} />
+                {selectedRecord.type === "income" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-mono font-bold bg-[#e7f4ec] text-[#0f7a52] border border-[#0f7a52]/30 px-2.5 py-1 rounded-lg">
+                    <ArrowDownLeft className="w-3.5 h-3.5" /> Income Inflow
+                  </span>
+                ) : (
+                  <StatusPill type="moneyMovement" value={selectedRecord.data.moneyMovement} />
+                )}
+                <StatusPill type="sync" value={selectedRecord.data.syncStatus || "synced"} />
               </div>
 
               <button
-                onClick={() => setSelectedExpense(null)}
+                type="button"
+                onClick={() => setSelectedRecord(null)}
                 className="text-[#6b665c] hover:text-[#1c1b19] p-1 rounded-lg cursor-pointer"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -815,48 +1026,64 @@ export const ExpenseFeed = ({
               <div className="flex items-start justify-between border-b border-[#d9d4c8] pb-3">
                 <div>
                   <h2 className="font-display font-bold text-xl text-[#1c1b19]">
-                    {selectedExpense.vendor}
+                    {selectedRecord.type === "income"
+                      ? selectedRecord.data.source
+                      : selectedRecord.data.vendor}
                   </h2>
-                  <p className="text-xs text-[#6b665c] font-medium">{selectedExpense.categoryName}</p>
+                  <p className="text-xs text-[#6b665c] font-medium mt-0.5">
+                    {selectedRecord.type === "income"
+                      ? `Origin: ${selectedRecord.data.origin || "manual"}`
+                      : selectedRecord.data.categoryName}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-mono text-2xl font-bold text-[#1c1b19]">
-                    ${selectedExpense.amount.toFixed(2)}
+                  <p
+                    className={`font-mono text-2xl font-bold ${
+                      selectedRecord.type === "income" ? "text-[#0f7a52]" : "text-[#1c1b19]"
+                    }`}
+                  >
+                    {selectedRecord.type === "income" ? "+" : "-"}
+                    {getCurrencySymbol(selectedRecord.data.currency || currency)}
+                    {Number(selectedRecord.data.amount).toFixed(2)}
                   </p>
-                  <p className="text-xs text-[#6b665c] font-mono">{selectedExpense.currency || currency}</p>
+                  <p className="text-xs text-[#6b665c] font-mono">
+                    {selectedRecord.data.currency || currency} ({selectedRecord.type === "income" ? "Inflow" : "Accounting"})
+                  </p>
                 </div>
               </div>
 
               {/* Duplicate Banner */}
-              {selectedExpense.duplicateOf && (
+              {selectedRecord.data.duplicateOf && (
                 <div className="bg-[#fbf1de] border border-[#e0982a] p-3 rounded-xl flex items-center gap-2 text-xs text-[#1c1b19]">
                   <AlertOctagon className="w-4 h-4 text-[#e0982a] shrink-0" />
                   <span>
-                    <strong>Duplicate Warning:</strong> This expense matches another entry submitted within 48 hours.
+                    <strong>Duplicate Warning:</strong> Matches another record submitted within 48 hours.
                   </span>
                 </div>
               )}
 
-              {/* Receipt Image */}
-              {selectedExpense.receiptImageUrl && (
+              {/* Image / Document Preview */}
+              {selectedRecord.data.receiptImageUrl && (
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#1c1b19]">Receipt Image</span>
+                    <span className="text-xs font-semibold text-[#1c1b19]">
+                      {selectedRecord.type === "income" ? "Income Document" : "Receipt Image"}
+                    </span>
                     <button
                       type="button"
-                      onClick={(e) => openLightbox(selectedExpense, e)}
+                      onClick={(e) => openLightbox(selectedRecord.data, e)}
                       className="text-xs text-[#0f7a52] hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                     >
-                      <ZoomIn className="w-3.5 h-3.5" /> Open Full Screen Lightbox
+                      <ZoomIn className="w-3.5 h-3.5" /> Full Screen Lightbox
                     </button>
                   </div>
                   <div
                     className="rounded-xl border border-[#d9d4c8] overflow-hidden bg-[#f7f3ea] max-h-56 cursor-pointer relative group"
-                    onClick={(e) => openLightbox(selectedExpense, e)}
+                    onClick={(e) => openLightbox(selectedRecord.data, e)}
                   >
                     <img
-                      src={selectedExpense.receiptImageUrl}
-                      alt="Receipt"
+                      src={selectedRecord.data.receiptImageUrl}
+                      alt="Record attachment"
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute inset-0 bg-[#1c1b19]/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1">
@@ -867,13 +1094,13 @@ export const ExpenseFeed = ({
               )}
 
               {/* Voice Transcript */}
-              {selectedExpense.voiceTranscript && (
+              {selectedRecord.data.voiceTranscript && (
                 <div>
-                  <span className="text-xs font-semibold text-[#1c1b19] block mb-1">
-                    Voice Note Audio Transcript
+                  <span className="text-xs font-semibold text-[#1c1b19] block mb-1 flex items-center gap-1">
+                    <Mic className="w-3.5 h-3.5 text-purple-600" /> Voice Note Audio Transcript
                   </span>
-                  <p className="bg-[#f7f3ea] border border-[#d9d4c8] p-3 rounded-xl text-xs font-mono italic text-[#1c1b19]">
-                    "{selectedExpense.voiceTranscript}"
+                  <p className="bg-purple-50/70 border border-purple-200 p-3 rounded-xl text-xs font-mono italic text-purple-900">
+                    "{selectedRecord.data.voiceTranscript}"
                   </p>
                 </div>
               )}
@@ -882,64 +1109,102 @@ export const ExpenseFeed = ({
               <div className="grid grid-cols-2 gap-3 text-xs bg-[#f7f3ea]/50 p-3 rounded-xl border border-[#d9d4c8]">
                 <div>
                   <span className="text-[#6b665c] block">Submitted By</span>
-                  <span className="font-semibold text-[#1c1b19]">{selectedExpense.submittedByName}</span>
+                  <span className="font-semibold text-[#1c1b19]">
+                    {selectedRecord.data.submittedByName || "Team member"}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[#6b665c] block">Expense Date</span>
-                  <span className="font-semibold font-mono text-[#1c1b19]">{selectedExpense.date}</span>
+                  <span className="text-[#6b665c] block">Record Date</span>
+                  <span className="font-semibold font-mono text-[#1c1b19]">
+                    {formatDate(selectedRecord.data.date)}
+                  </span>
                 </div>
                 <div>
                   <span className="text-[#6b665c] block">Sync Status</span>
-                  <StatusPill type="sync" value={selectedExpense.syncStatus} />
+                  <StatusPill type="sync" value={selectedRecord.data.syncStatus || "synced"} />
                 </div>
                 <div>
-                  <span className="text-[#6b665c] block">Entry ID</span>
-                  <span className="font-mono text-[10px] text-[#6b665c]">{selectedExpense.id}</span>
+                  <span className="text-[#6b665c] block">Record ID</span>
+                  <span className="font-mono text-[10px] text-[#6b665c] truncate block">
+                    {selectedRecord.data.id}
+                  </span>
                 </div>
               </div>
 
               {/* AI Confidence Scores */}
-              {selectedExpense.aiConfidence && (
+              {selectedRecord.data.aiConfidence && (
                 <div className="space-y-1.5 border-t border-[#d9d4c8] pt-3">
                   <span className="text-xs font-semibold text-[#1c1b19] flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-[#0f7a52]" /> AI Extraction Confidence Scores
+                    <Sparkles className="w-3.5 h-3.5 text-[#0f7a52]" /> AI Extraction Confidence Ratings
                   </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
-                      <span className="text-[10px] text-[#6b665c] block">Vendor</span>
-                      <ConfidenceDot score={selectedExpense.aiConfidence.vendor} showPercent />
-                    </div>
-                    <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
-                      <span className="text-[10px] text-[#6b665c] block">Amount</span>
-                      <ConfidenceDot score={selectedExpense.aiConfidence.amount} showPercent />
-                    </div>
-                    <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
-                      <span className="text-[10px] text-[#6b665c] block">Date</span>
-                      <ConfidenceDot score={selectedExpense.aiConfidence.date} showPercent />
-                    </div>
-                    <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
-                      <span className="text-[10px] text-[#6b665c] block">Category</span>
-                      <ConfidenceDot score={selectedExpense.aiConfidence.category} showPercent />
-                    </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    {selectedRecord.type === "income" ? (
+                      <>
+                        <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
+                          <span className="text-[10px] text-[#6b665c] block">Source</span>
+                          <ConfidenceDot score={selectedRecord.data.aiConfidence.source} showPercent />
+                        </div>
+                        <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
+                          <span className="text-[10px] text-[#6b665c] block">Amount</span>
+                          <ConfidenceDot score={selectedRecord.data.aiConfidence.amount} showPercent />
+                        </div>
+                        <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
+                          <span className="text-[10px] text-[#6b665c] block">Date</span>
+                          <ConfidenceDot score={selectedRecord.data.aiConfidence.date} showPercent />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
+                          <span className="text-[10px] text-[#6b665c] block">Vendor</span>
+                          <ConfidenceDot score={selectedRecord.data.aiConfidence.vendor} showPercent />
+                        </div>
+                        <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
+                          <span className="text-[10px] text-[#6b665c] block">Amount</span>
+                          <ConfidenceDot score={selectedRecord.data.aiConfidence.amount} showPercent />
+                        </div>
+                        <div className="bg-[#f7f3ea] p-2 rounded-lg text-center">
+                          <span className="text-[10px] text-[#6b665c] block">Date</span>
+                          <ConfidenceDot score={selectedRecord.data.aiConfidence.date} showPercent />
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* Notes */}
-              {selectedExpense.notes && (
+              {selectedRecord.data.notes && (
                 <div>
-                  <span className="text-xs font-semibold text-[#1c1b19] block mb-1">Notes</span>
+                  <span className="text-xs font-semibold text-[#1c1b19] block mb-1">Notes & Context</span>
                   <p className="text-xs text-[#6b665c] bg-[#f7f3ea] p-2.5 rounded-lg border border-[#d9d4c8]">
-                    {selectedExpense.notes}
+                    {selectedRecord.data.notes}
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="bg-[#f7f3ea] p-4 border-t border-[#d9d4c8] flex justify-end">
+            <div className="bg-[#f7f3ea] p-4 border-t border-[#d9d4c8] flex items-center justify-between">
+              {canEditRecord(selectedRecord.data, currentUser).allowed && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const rec = selectedRecord.data;
+                    const isInc = selectedRecord.type === "income";
+                    setSelectedRecord(null);
+                    if (isInc) onEditIncome?.(rec);
+                    else onEditExpense?.(rec);
+                  }}
+                  className="px-3.5 py-2 text-xs font-semibold text-[#0075de] bg-[#e6f3fe] border border-[#0075de]/30 rounded-xl hover:bg-[#d5ebfe] flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                  Edit Record
+                </button>
+              )}
               <button
-                onClick={() => setSelectedExpense(null)}
-                className="bg-[#1c1b19] text-white text-xs font-semibold px-4 py-2 rounded-xl cursor-pointer"
+                type="button"
+                onClick={() => setSelectedRecord(null)}
+                className="bg-[#1c1b19] text-white text-xs font-semibold px-4 py-2 rounded-xl cursor-pointer ml-auto"
               >
                 Close Details
               </button>
@@ -949,7 +1214,7 @@ export const ExpenseFeed = ({
       )}
 
       {/* Lightbox Modal Preview Component */}
-      {lightboxExpense && (
+      {lightboxRecord && (
         <div
           className="fixed inset-0 z-50 bg-[#1c1b19]/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
           onClick={closeLightbox}
@@ -961,18 +1226,32 @@ export const ExpenseFeed = ({
             {/* Lightbox Controls Header */}
             <div className="bg-[#1c1b19] px-5 py-3 border-b border-white/10 flex items-center justify-between text-white">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-[#ff5a3c] text-white flex items-center justify-center font-bold">
-                  <Receipt className="w-4 h-4" />
+                <div
+                  className={`w-8 h-8 rounded-lg text-white flex items-center justify-center font-bold ${
+                    lightboxRecord.recordType === "income" ? "bg-[#0f7a52]" : "bg-[#ff5a3c]"
+                  }`}
+                >
+                  {lightboxRecord.recordType === "income" ? (
+                    <ArrowDownLeft className="w-4 h-4" />
+                  ) : (
+                    <Receipt className="w-4 h-4" />
+                  )}
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-sm text-white flex items-center gap-2">
-                    {lightboxExpense.vendor}
-                    <span className="text-emerald-400 font-mono font-bold">
-                      ${lightboxExpense.amount.toFixed(2)}
+                    {lightboxRecord.recordType === "income" ? lightboxRecord.source : lightboxRecord.vendor}
+                    <span
+                      className={`font-mono font-bold ${
+                        lightboxRecord.recordType === "income" ? "text-emerald-400" : "text-amber-400"
+                      }`}
+                    >
+                      {lightboxRecord.recordType === "income" ? "+" : "-"}
+                      {getCurrencySymbol(lightboxRecord.currency || currency)}
+                      {Number(lightboxRecord.amount).toFixed(2)}
                     </span>
                   </h3>
                   <p className="text-[11px] text-gray-400">
-                    {lightboxExpense.date} • Submitted by {lightboxExpense.submittedByName}
+                    {formatDate(lightboxRecord.date)} • Submitted by {lightboxRecord.submittedByName || "Team"}
                   </p>
                 </div>
               </div>
@@ -1031,41 +1310,74 @@ export const ExpenseFeed = ({
 
             {/* Lightbox Image Stage */}
             <div className="flex-1 bg-black/90 p-4 flex items-center justify-center overflow-auto min-h-[350px] relative">
-              {lightboxExpense.receiptImageUrl ? (
+              {lightboxRecord.receiptImageUrl ? (
                 <img
-                  src={lightboxExpense.receiptImageUrl}
-                  alt="Receipt Full Preview"
+                  src={lightboxRecord.receiptImageUrl}
+                  alt="Full Document Preview"
                   className="max-h-[70vh] object-contain transition-transform duration-200 select-none shadow-2xl rounded"
                   style={{
                     transform: `scale(${zoomScale}) rotate(${rotation}deg)`
                   }}
                 />
               ) : (
-                <div className="text-gray-400 text-xs text-center">No image available</div>
+                <div className="text-gray-400 text-xs text-center">No image attachment available</div>
               )}
             </div>
 
             {/* Lightbox Footer Bar */}
             <div className="bg-[#1c1b19] px-5 py-3 border-t border-white/10 flex items-center justify-between text-xs text-gray-300">
               <div className="flex items-center gap-3">
-                <StatusPill type="moneyMovement" value={lightboxExpense.moneyMovement} />
-                <span className="text-gray-400 font-mono">Category: {lightboxExpense.categoryName}</span>
+                {lightboxRecord.recordType === "income" ? (
+                  <span className="text-emerald-400 font-mono font-semibold">
+                    Origin: {lightboxRecord.origin || "manual"}
+                  </span>
+                ) : (
+                  <StatusPill type="moneyMovement" value={lightboxRecord.moneyMovement} />
+                )}
+                <span className="text-gray-400 font-mono">
+                  Category: {lightboxRecord.categoryName || "Income"}
+                </span>
               </div>
 
-              {lightboxExpense.receiptImageUrl && (
+              {lightboxRecord.receiptImageUrl && (
                 <a
-                  href={lightboxExpense.receiptImageUrl}
+                  href={lightboxRecord.receiptImageUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
                 >
-                  <Download className="w-3.5 h-3.5" /> Download Full Receipt
+                  <Download className="w-3.5 h-3.5" /> Download Attachment
                 </a>
               )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Branded Delete Confirmation Modal */}
+      {deleteModalConfig && (
+        <ConfirmDeleteModal
+          isOpen={!!deleteModalConfig}
+          title={deleteModalConfig.title}
+          description={deleteModalConfig.description}
+          record={deleteModalConfig.record}
+          selectedCount={deleteModalConfig.selectedCount}
+          isPermanent={deleteModalConfig.isPermanent}
+          confirmText={deleteModalConfig.confirmText}
+          currency={currency}
+          onConfirm={deleteModalConfig.onConfirm}
+          onClose={() => setDeleteModalConfig(null)}
+        />
+      )}
+
+      {/* Floating Undo Toast Banner */}
+      {undoToastState && (
+        <UndoToast
+          toastState={undoToastState}
+          onDismiss={() => setUndoToastState(null)}
+        />
+      )}
     </div>
   );
 };
+
