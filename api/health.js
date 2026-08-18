@@ -4,7 +4,5 @@ import { createGetHandler } from "./_lib/vercelHandler.js";
 export default createGetHandler(async () => handleHealth());
 
 export const config = {
-  api: {
-    bodyParser: false
-  }
+  maxDuration: 10
 };

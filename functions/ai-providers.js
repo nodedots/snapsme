@@ -13,7 +13,7 @@ export const AI_PROVIDER_NAMES = ["grok", "nvidia"];
 const PROVIDER_DEFAULTS = {
   grok: {
     baseUrl: "https://api.x.ai/v1",
-    model: "grok-4.5"
+    model: "grok-4.3"
   },
   nvidia: {
     baseUrl: "https://integrate.api.nvidia.com/v1",
@@ -21,7 +21,7 @@ const PROVIDER_DEFAULTS = {
   }
 };
 
-const GROK_MODEL_CANDIDATES = ["grok-4.5", "grok-4.6", "grok-4.3"];
+const GROK_MODEL_CANDIDATES = ["grok-4.3", "grok-4.5", "grok-4.6"];
 const NVIDIA_VISION_MODELS = [
   "meta/llama-3.2-11b-vision-instruct",
   "meta/llama-3.2-90b-vision-instruct"
@@ -141,54 +141,66 @@ async function callOpenAICompatible(provider, { prompt, imageBase64, mimeType, t
   ];
 
   let lastErr = null;
+  const timeoutMs = provider.name === "grok" ? 90000 : 45000;
+  const formatVariants =
+    provider.name === "grok"
+      ? [{ response_format: { type: "json_object" } }, {}]
+      : [{}];
 
   for (const modelCandidate of modelCandidates) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000);
+    for (const extra of formatVariants) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    try {
-      const body = {
-        model: modelCandidate,
-        messages,
-        temperature: 0.1,
-        max_tokens: 2048
-      };
-      if (provider.name === "grok") {
-        body.response_format = { type: "json_object" };
+      try {
+        const body = {
+          model: modelCandidate,
+          messages,
+          temperature: 0.1,
+          max_tokens: provider.name === "grok" ? 4096 : 2048,
+          ...extra
+        };
+
+        const res = await fetch(`${provider.baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${provider.apiKey}`
+          },
+          signal: controller.signal,
+          body: JSON.stringify(body)
+        });
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          const errBody = await res.text().catch(() => "");
+          lastErr = new Error(
+            `${provider.name} API error ${res.status} (${modelCandidate}): ${errBody.slice(0, 220)}`
+          );
+          console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" failed: ${lastErr.message}`);
+          continue;
+        }
+
+        const json = await res.json();
+        const choice = json?.choices?.[0]?.message || {};
+        const text =
+          (typeof choice.content === "string" && choice.content) ||
+          (Array.isArray(choice.content)
+            ? choice.content.map((c) => c?.text || c?.content || "").join("")
+            : "") ||
+          "";
+
+        if (!text || !String(text).trim()) {
+          lastErr = new Error(`${provider.name} returned an empty response (${modelCandidate})`);
+          continue;
+        }
+
+        return { success: true, provider: provider.name, model: modelCandidate, text: String(text) };
+      } catch (err) {
+        clearTimeout(timeoutId);
+        lastErr = err;
+        console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" threw: ${err.message}`);
       }
-
-      const res = await fetch(`${provider.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${provider.apiKey}`
-        },
-        signal: controller.signal,
-        body: JSON.stringify(body)
-      });
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        const errBody = await res.text().catch(() => "");
-        lastErr = new Error(
-          `${provider.name} API error ${res.status} (${modelCandidate}): ${errBody.slice(0, 220)}`
-        );
-        console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" failed: ${lastErr.message}`);
-        continue;
-      }
-
-      const json = await res.json();
-      const text = json?.choices?.[0]?.message?.content || "";
-      if (!text) {
-        lastErr = new Error(`${provider.name} returned an empty response (${modelCandidate})`);
-        continue;
-      }
-
-      return { success: true, provider: provider.name, model: modelCandidate, text };
-    } catch (err) {
-      clearTimeout(timeoutId);
-      lastErr = err;
-      console.warn(`[AI Failover] ${provider.name} model "${modelCandidate}" threw: ${err.message}`);
     }
   }
 
