@@ -358,16 +358,38 @@ function parseVoiceIncomeLocal(transcript = "") {
 }
 
 /** @returns {{ status: number, body: object }} */
-export async function handleHealth() {
-  return {
-    status: 200,
-    body: {
-      status: "ok",
-      providers: getProviderStatus(),
-      activeProviders: getConfiguredProviders().map((p) => p.name),
-      timestamp: new Date().toISOString()
-    }
+export async function handleHealth(query = {}) {
+  const body = {
+    status: "ok",
+    providers: getProviderStatus(),
+    activeProviders: getConfiguredProviders().map((p) => p.name),
+    timestamp: new Date().toISOString()
   };
+
+  // Optional live probe: /api/health?probe=1 — returns first-provider ping result (no secrets)
+  if (String(query.probe || "") === "1") {
+    try {
+      const result = await extractWithAI({
+        prompt:
+          'Return strictly valid JSON only: {"ok":true,"vendor":"Probe Cafe","amount":1}',
+        transcript: "Paid 1 dollar at Probe Cafe",
+        task: "health-probe"
+      });
+      body.probe = {
+        ok: true,
+        provider: result.provider,
+        model: result.model,
+        preview: String(result.text || "").slice(0, 160)
+      };
+    } catch (err) {
+      body.probe = {
+        ok: false,
+        error: err?.message || String(err)
+      };
+    }
+  }
+
+  return { status: 200, body };
 }
 
 /** @returns {{ status: number, body: object }} */
